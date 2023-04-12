@@ -1,7 +1,12 @@
-// const {Buffer} = require('buffer');
 const axios = import("axios");
-
 const TIMEOUT = 20000;
+
+// CHANGE THESE TO MATCH POLAR
+const POLAR_HOST = "http://127.0.0.1";
+const POLAR_PORT = "18443";
+const POLAR_USER = "polaruser";
+const POLAR_PASS = "polarpass";
+
 
 class ElectrumClient {
   endpoint;
@@ -14,7 +19,7 @@ class ElectrumClient {
     let res;
     try {
       res = (
-        await ElectrumClient.get("http://127.0.0.1:18443/rest/chaininfo.json")
+        await ElectrumClient.get("rest/chaininfo.json")
       ).data;
     } catch (e) {
       console.log('Error Getting Block Height')
@@ -29,7 +34,7 @@ class ElectrumClient {
     let res;
     try {
       res = (
-        await ElectrumClient.get("http://127.0.0.1:18443/rest/chaininfo.json")
+        await ElectrumClient.get("rest/chaininfo.json")
       ).data;
       return res.blocks;
     } catch (e) {
@@ -43,7 +48,7 @@ class ElectrumClient {
       console.log("ElectrumClient->HEIGHT: ", height);
       currentBlockHash = (
         await ElectrumClient.get(
-          `http://127.0.0.1:18443/rest/blockhashbyheight/${height}.json`
+          `rest/blockhashbyheight/${height}.json`
         )
       ).data.blockhash;
     } catch (e) {
@@ -56,7 +61,7 @@ class ElectrumClient {
     try {
       res = (
         await ElectrumClient.get(
-          `http://127.0.0.1:18443/rest/headers/1/${currentBlockHash}.hex`
+          `rest/headers/1/${currentBlockHash}.hex`
         )
       ).data;
     } catch (e) {
@@ -74,7 +79,7 @@ class ElectrumClient {
   async getTxIdData(txid: string) {
 
     let res = (
-      await ElectrumClient.get(`http://127.0.0.1:18443/rest/tx/${txid}.json`)
+      await ElectrumClient.get(`rest/tx/${txid}.json`)
     ).data;
 
     return { txid: res.txid, vout: res.vin[0].vout, sequence: res.vin[0].sequence };
@@ -83,7 +88,7 @@ class ElectrumClient {
   static async get(endpoint: string, timeout_ms = TIMEOUT) {
     const axios = (await import("axios")).default;
 
-    const url = endpoint;
+    const url = POLAR_HOST + ":" + POLAR_PORT + "/" + endpoint;
     const config = {
       method: "get",
       url: url,
@@ -108,7 +113,7 @@ class ElectrumClient {
     };
 
     axios
-      .post("http://polaruser:polarpass@127.0.0.1:18443/", options)
+      .post("http://" + POLAR_USER + ":" + POLAR_PASS + "@" + POLAR_HOST + ":" + POLAR_PORT + "/", options)
       .then((response) => {
         console.log("RESPONSE: ", response.data);
         return response.data;
