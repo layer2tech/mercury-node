@@ -1,0 +1,9 @@
+node_modules
+channel_manager_data.bin
+lightning-mock.db
+lightning.db
+network_graph_data.bin
+package-lock.json
+.ldk
+.scorer
+channels
