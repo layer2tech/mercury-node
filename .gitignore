@@ -6,3 +6,4 @@ network_graph_data.bin
 package-lock.json
 .ldk
 .scorer
+channels
