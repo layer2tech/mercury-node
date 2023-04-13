@@ -247,16 +247,18 @@ router.delete("/forceCloseChannel/:id", async (req, res) => {
       return;
     } else if (row) {
       const pubkey = row.pubkey;
-      const success = getLDKClient().channelManager.force_close_broadcasting_latest_txn(new Uint8Array(channel_id), pubkey);
-      if (success) {
-        const result = await deleteChannelById(channel_id); 
-        res.status(result.status).json({ message: result.message });
-      } else {
-        res.status(500).json({ error: "Failed to force close channel" });
+      const channels: ChannelDetails[] = getLDKClient().getChannels();
+      const channel = channels.find((c) => c.get_counterparty().get_node_id().toString() === pubkey);
+      if (channel) {
+        const success = getLDKClient().channelManager.force_close_broadcasting_latest_txn(channel.get_channel_id(), pubkey);
+        if (success) {
+          const result = await deleteChannelById(channel_id); 
+          res.status(result.status).json({ message: result.message });
+          return;
+        }
       }
-    } else {
-      res.status(500).json({ error: "Failed to force close channel" });
     }
+    res.status(500).json({ error: "Failed to force close channel" });
   });
 });
 
