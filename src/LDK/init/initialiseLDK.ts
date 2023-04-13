@@ -108,6 +108,8 @@ class ChannelMonitorRead {
 }
 
 async function setUpLDK(electrum: string = "prod") {
+  console.log('[initializeLDK.ts]: setupLdk ran')
+
   // Initialize the LDK data directory if necessary.
   const ldk_data_dir = "./.ldk/";
   if (!fs.existsSync(ldk_data_dir)) {
@@ -159,7 +161,7 @@ async function setUpLDK(electrum: string = "prod") {
   // Step 5: Initialize the ChainMonitor
   const filter = Filter.new_impl(new MercuryFilter());
 
-  const chainMonitor = ChainMonitor.constructor_new(
+  const chainMonitor:ChainMonitor = ChainMonitor.constructor_new(
     Option_FilterZ.constructor_none(),
     txBroadcaster,
     logger,
@@ -190,11 +192,13 @@ async function setUpLDK(electrum: string = "prod") {
   let signer_provider = keysManager.as_SignerProvider();
 
   // Step 7: Read ChannelMonitor state from disk
-  console.log('reading channel monitor data...');
+  console.log("[initialiseLDK.ts]: reading channel monitor data...");
   let channel_monitor_data: ChannelMonitorRead[] = [];
   if (fs.existsSync("channels/channel_lookup.json")) {
     try {
-      channel_monitor_data = readChannelsFromDictionary("channels/channel_lookup.json");
+      channel_monitor_data = readChannelsFromDictionary(
+        "channels/channel_lookup.json"
+      );
     } catch (e) {
       console.log(e);
     }
@@ -237,30 +241,33 @@ async function setUpLDK(electrum: string = "prod") {
   // Step 11: Initialize the ChannelManager
   const config = UserConfig.constructor_default();
 
+  console.log('[initialiseLDK.ts]: block_height, block_hash, block_header');
   let block_height: number = await bitcointd_client.getBlockHeight();
   let block_hash: string = await bitcointd_client.getBestBlockHash();
+  let block_header = await bitcointd_client.getLatestBlockHeader(block_height);
 
+  console.log('[initialiseLDK.ts]: chain parameters');
   const params = ChainParameters.constructor_new(
     Network.LDKNetwork_Regtest,
-    BestBlock.constructor_new(
-      Buffer.from(
-        block_hash,
-        "hex"
-      ),
-      block_height
-    )
+    BestBlock.constructor_new(Buffer.from(block_hash, "hex"), block_height)
   );
 
   const channel_monitor_mut_references: ChannelMonitor[] = [];
   let channelManager: ChannelManager;
+  console.log('[initialiseLDK.ts]: ChannelManager create/restore');
   if (fs.existsSync("channel_manager_data.bin")) {
     console.log("Loading the channel manager from disk...");
     const f = fs.readFileSync(`channel_manager_data.bin`);
 
-    console.log('create channel_monitor_references')
+    console.log("create channel_monitor_references");
 
     channel_monitor_data.forEach((channel_monitor: ChannelMonitorRead) => {
-      let val: any = UtilMethods.constructor_C2Tuple_BlockHashChannelMonitorZ_read(channel_monitor.bytes, entropy_source, signer_provider);
+      let val: any =
+        UtilMethods.constructor_C2Tuple_BlockHashChannelMonitorZ_read(
+          channel_monitor.bytes,
+          entropy_source,
+          signer_provider
+        );
       if (val.is_ok()) {
         let read_channelMonitor: TwoTuple_BlockHashChannelMonitorZ = val.res;
         let channel_monitor = read_channelMonitor.get_b();
@@ -269,7 +276,7 @@ async function setUpLDK(electrum: string = "prod") {
     });
 
     try {
-      console.log('try and read the channel manager');
+      console.log("try and read the channel manager");
       let readManager: any =
         UtilMethods.constructor_C2Tuple_BlockHashChannelManagerZ_read(
           f,
@@ -296,6 +303,7 @@ async function setUpLDK(electrum: string = "prod") {
       console.log("error:", e);
     }
   } else {
+    console.log('[initialiseLDK.ts]: Create fresh channel manager');
     // fresh manager
     channelManager = ChannelManager.constructor_new(
       feeEstimator,
@@ -314,18 +322,34 @@ async function setUpLDK(electrum: string = "prod") {
   const channelHandshakeConfig = ChannelHandshakeConfig.constructor_default();
 
   // Step 12: Sync ChannelMonitors and ChannelManager to chain tip - TODO
+
   /*
-  let relevent_txids_1 = channelManager?.as_Confirm().get_relevant_txids();
-  let relevent_txids_2 = chainMonitor?.as_Confirm().get_relevant_txids();
+  // Retrieve transaction IDs to check the chain for un-confirmation.
+  let relevent_txids_1: TwoTuple_TxidBlockHashZ[] = channelManager.as_Confirm().get_relevant_txids();
+  let relevent_txids_2: TwoTuple_TxidBlockHashZ[] = chainMonitor.as_Confirm().get_relevant_txids();
+
+  // merge into one array
   let relevant_txids: TwoTuple_TxidBlockHashZ[] = [];
   if (relevent_txids_1 && Symbol.iterator in Object(relevent_txids_1)) {
     relevant_txids.push(...relevent_txids_1);
   }
   if (relevent_txids_2 && Symbol.iterator in Object(relevent_txids_2)) {
     relevant_txids.push(...relevent_txids_2);
-  }*/
-  //channelManager?.as_Confirm().transaction_unconfirmed();
-   
+  }
+
+  let unconfirmed_txids: TwoTuple_TxidBlockHashZ[] = [];
+
+  // TODO: <insert code to find out from your chain source
+  //  if any of relevant_txids have been reorged out
+  //  of the chain>
+
+  unconfirmed_txids.forEach((txid) => {
+    channelManager.as_Confirm().transaction_unconfirmed(txid.get_a());
+    chainMonitor.as_Confirm().transaction_unconfirmed(txid.get_a());
+  });
+  channelManager.as_Confirm().best_block_updated(block_header, block_height);
+  chainMonitor.as_Confirm().best_block_updated(block_header, block_height);*/
+  
 
   // Step 13: Give ChannelMonitors to ChainMonitor
   if (channel_monitor_mut_references.length > 0) {
@@ -333,12 +357,15 @@ async function setUpLDK(electrum: string = "prod") {
 
     channel_monitor_data.forEach((channel_monitor: ChannelMonitorRead) => {
       // Rebuild OutPoint from the first Uint8Array in the tuple
-      const outpointResult: Result_OutPointDecodeErrorZ = OutPoint.constructor_read(channel_monitor.outpoint);
+      const outpointResult: Result_OutPointDecodeErrorZ =
+        OutPoint.constructor_read(channel_monitor.outpoint);
       if (outpointResult.is_ok()) {
-        const outpoint: OutPoint = (<Result_OutPointDecodeErrorZ_OK>outpointResult).res;
+        const outpoint: OutPoint = (<Result_OutPointDecodeErrorZ_OK>(
+          outpointResult
+        )).res;
         outpoints_mut.push(outpoint);
       }
-    })
+    });
 
     // ensure outpoints_mut and channel_monitor_mut are the same length
     if (outpoints_mut.length !== channel_monitor_mut_references.length) {
@@ -410,6 +437,7 @@ async function setUpLDK(electrum: string = "prod") {
   // check on interval
 
   // Step 18: Handle LDK Events
+  console.log('[initialiseLDK.ts]: Create EventHandler');
   let eventHandler;
 
   if (channelManager) {
