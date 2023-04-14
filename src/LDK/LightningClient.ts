@@ -178,10 +178,10 @@ export default class LightningClient implements LightningClientInterface {
         paid,
         payment_address
       );
-      console.log(result);
+      console.log("[LightningClient.ts]:" + result);
       channel_id = result.channel_id;
     } catch (err) {
-      console.log(err);
+      console.log("[LightningClient.ts]:" + err);
       throw err;
     }
     console.log(
@@ -199,12 +199,12 @@ export default class LightningClient implements LightningClientInterface {
     vout: number,
     addr: string
   ) {
-    console.log("[LightningClient.ts] - saveChannelFundingToDatabase");
+    console.log("[LightningClient.ts]: saveChannelFundingToDatabase");
     try {
       const result = await saveTxDataToDB(amount, paid, txid, vout, addr);
       return result;
     } catch (err) {
-      console.log(err);
+      console.log("[LightningClient.ts]: " + err);
       throw err;
     }
   }

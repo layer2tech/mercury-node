@@ -2,7 +2,7 @@ import { getLDKClient } from "../init/getLDK.ts";
 import db from "../../db/db.ts";
 
 export const closeConnections = () => {
-  console.log("Closing all the connections");
+  console.log("[ldk-utils.ts]: Closing all the connections");
   let LDK = getLDKClient();
   LDK.netHandler?.stop();
 };

@@ -51,7 +51,7 @@ class ElectrumClient {
         )
       ).data.blockhash;
     } catch (e) {
-      console.log("Error Getting Current Block Hash");
+      console.log("[ElectrumClient.mts]: Error Getting Current Block Hash");
     }
 
     // return currentBlockHash
@@ -64,7 +64,7 @@ class ElectrumClient {
         )
       ).data;
     } catch (e) {
-      console.log("Error in getting header: ", e);
+      console.log("[ElectrumClient.mts]: Error in getting header: ", e);
     }
 
     if (res) {
@@ -114,11 +114,11 @@ class ElectrumClient {
     axios
       .post("http://" + POLAR_USER + ":" + POLAR_PASS + "@" + POLAR_HOST + ":" + POLAR_PORT + "/", options)
       .then((response) => {
-        console.log("RESPONSE: ", response.data);
+        console.log("[ElectrumClient.mts]: RESPONSE: ", response.data);
         return response.data;
       })
       .catch((error) => {
-        console.log("ERROR: ", error);
+        console.log("[ElectrumClient.mts]: ERROR: ", error);
       });
   }
 }

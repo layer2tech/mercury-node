@@ -46,9 +46,6 @@ class MercuryEventHandler implements EventHandlerInterface {
       case e instanceof Event_FundingGenerationReady:
         this.handleFundingGenerationReadyEvent_Auto(e);
         break;
-      // case e instanceof Event_PaymentReceived:
-      //   this.handlePaymentReceivedEvent(e);
-      //   break;
       case e instanceof Event_PaymentSent:
         this.handlePaymentSentEvent(e);
         break;
@@ -71,7 +68,7 @@ class MercuryEventHandler implements EventHandlerInterface {
         this.handleChannelClosedEvent(e);
         break;
       default:
-        console.debug("Event not handled: ", e);
+        console.debug("[MercuryEventHandler.ts]: Event not handled: ", e);
     }
   }
 
@@ -129,7 +126,10 @@ class MercuryEventHandler implements EventHandlerInterface {
     funding_tx[witness_pos + 5] = 0;
     funding_tx[witness_pos + 6] = 0; // lock time 0
 
-    console.log("funding_tx->", uint8ArrayToHexString(funding_tx));
+    console.log(
+      "[MercuryEventHandler.ts]: funding_tx->",
+      uint8ArrayToHexString(funding_tx)
+    );
 
     let fund = this.channelManager.funding_transaction_generated(
       temporary_channel_id,
@@ -159,12 +159,12 @@ class MercuryEventHandler implements EventHandlerInterface {
 
     const network = bitcoin.networks.regtest;
 
-    if (this.privateKey === undefined) throw Error("private key is undefined");
+    if (this.privateKey === undefined) throw Error("[MercuryEventHandler.ts]: private key is undefined");
     let electrum_wallet = ECPair.fromPrivateKey(this.privateKey, {
       network: network,
     });
     if (electrum_wallet === undefined)
-      throw Error("electrum wallet is undefined");
+      throw Error("[MercuryEventHandler.ts]: electrum wallet is undefined");
 
     console.log("[MercuryEventHandler.ts]: ECPair.fromPrivateKey:", ECPair.fromPrivateKey(this.privateKey, { network: network }));
 
@@ -176,24 +176,16 @@ class MercuryEventHandler implements EventHandlerInterface {
       pubkey: electrum_wallet.publicKey,
       network: network,
     });
-    if (p2wpkh.output === undefined) throw Error("p2wpkh output is undefined");
-
-    // Hard coded values for now
-    /*
-    let hash =
-      "ab0916b951ee9e56e7d16710e5ac5f8b25d7cc2117e5cdddca7e6554373caa40";
-    let vout = 1;
-    let sequence = 4294967294;
-    let witnessUtxoScript = "0014400115aeada96c6a9c953b584280ab0784bb233c";*/
+    if (p2wpkh.output === undefined) throw Error("[MercuryEventHandler.ts]: p2wpkh output is undefined");
 
     if (MercuryEventHandler.txid === null) {
-      throw Error("No TXID was set");
+      throw Error("[MercuryEventHandler.ts]: No TXID was set");
     }
     if (MercuryEventHandler.vout === null) {
-      throw Error("No VOUT was set");
+      throw Error("[MercuryEventHandler.ts]: No VOUT was set");
     }
     if (MercuryEventHandler.sequence === null) {
-      throw Error("No sequence was set");
+      throw Error("[MercuryEventHandler.ts]: No sequence was set");
     }
 
     psbt.addInput({
@@ -226,13 +218,15 @@ class MercuryEventHandler implements EventHandlerInterface {
         funding_tx
       );
     } catch (e) {
-      console.log('error occured in funding transaction generated method..');
+      console.log(
+        "[MercuryEventHandler.ts]: error occured in funding transaction generated method.."
+      );
     }
   }
 
   handlePaymentSentEvent(e: Event_PaymentSent) {
     console.log(
-      `Payment with preimage '${uint8ArrayToHexString(
+      `[MercuryEventHandler.ts]: Payment with preimage '${uint8ArrayToHexString(
         e.payment_preimage
       )}' sent.`
     );
@@ -240,7 +234,7 @@ class MercuryEventHandler implements EventHandlerInterface {
 
   handlePaymentPathFailedEvent(e: Event_PaymentPathFailed) {
     console.log(
-      `Payment with payment hash '${uint8ArrayToHexString(
+      `[MercuryEventHandler.ts]: Payment with payment hash '${uint8ArrayToHexString(
         e.payment_hash
       )}' failed.`
     );
@@ -272,7 +266,10 @@ class MercuryEventHandler implements EventHandlerInterface {
       claim_from_onchain_tx, //: boolean;
     } = event;
 
-    console.log("Received payment forwarded event", event);
+    console.log(
+      "[MercuryEventHandler.ts]: Received payment forwarded event",
+      event
+    );
   }
 
   handleOpenChannelRequestEvent(event: Event_OpenChannelRequest) {
@@ -284,11 +281,14 @@ class MercuryEventHandler implements EventHandlerInterface {
       channel_type, // ChannelTypeFeatures
     } = event;
 
-    console.log("Received open channel request:", event);
+    console.log(
+      "[MercuryEventHandler.ts]: Received open channel request:",
+      event
+    );
   }
 
   handleChannelClosedEvent(event: Event_ChannelClosed) {
-    console.log("Event Channel Closed!", event);
+    console.log("[MercuryEventHandler.ts]: Event Channel Closed!", event);
   }
 }
 

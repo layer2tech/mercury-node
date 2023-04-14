@@ -51,7 +51,9 @@ class TorClient {
         "[TorClient.mts]: block_height: ",
         height
       );
-      console.log(`${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HASH}`);
+      console.log(
+        `[TorClient.mts]: ${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HASH}`
+      );
       let res = await TorClient.get(
         `${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HASH}`
       );
@@ -107,7 +109,7 @@ class TorClient {
     };
 
     return await axios(config).catch((error) => {
-      console.log("ERROR: ", error);
+      console.log("[TorClient.mts]: ERROR: ", error);
     });
   }
 
@@ -127,11 +129,11 @@ class TorClient {
     axios
       .post(endpoint, options)
       .then((response) => {
-        console.log("RESPONSE: ", response.data);
+        console.log("[TorClient.mts]: RESPONSE: ", response.data);
         return response.data;
       })
       .catch((error) => {
-        console.log("ERROR: ", error);
+        console.log("[TorClient.mts]: ERROR: ", error);
       });
   }
 }

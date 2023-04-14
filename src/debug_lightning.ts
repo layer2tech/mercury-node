@@ -4,28 +4,24 @@ import { hexToUint8Array } from "./LDK/utils/utils.js";
 import { UserConfig } from "lightningdevkit";
 
 export async function debug_lightning() {
-
-  console.log('[debug_lightning.ts]: running');
+  console.log("[debug_lightning.ts]: running");
 
   await initialiseWasm();
 
   console.log("[debug_lightning.ts]: import LDK");
   await createLDK("dev");
 
-  console.log('getLDKClient')
+  console.log("[debug_lightning.ts]: getLDKClient");
   const LightningClient = await getLDKClient();
 
   console.log("[debug_lightning.ts]: start LDK");
   await LightningClient.start();
 
-
   console.log("[debug_lightning.ts]: getBlockHeight");
   let blockHeight = await LightningClient.getBlockHeight();
 
-
   console.log("[debug_lightning.ts]: getBestBlockHash");
   let bestBlockHash = await LightningClient.getBestBlockHash();
-
 
   // Polar node details
   let pubkeyHex =
@@ -34,7 +30,7 @@ export async function debug_lightning() {
   let port = 9735;
 
   // Connect to the peer node
-  console.log("Connect to Peer");
+  console.log("[debug_lightning.ts]: Connect to Peer");
   await LightningClient.connectToPeer(pubkeyHex, hostname, port);
 
   // Set the TXID for the funding generation event
@@ -46,7 +42,7 @@ export async function debug_lightning() {
 
   // Connect to the channel
   let pubkey = hexToUint8Array(pubkeyHex);
-  //console.log("Connect to channel");
+  //console.log("[debug_lightning.ts]: Connect to channel");
   if (pubkey) {
     //await LightningClient.connectToChannel(pubkey, 100000, 0, 1, true);
   }

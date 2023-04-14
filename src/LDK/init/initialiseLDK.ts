@@ -138,7 +138,7 @@ async function setUpLDK(electrum: string = "prod") {
   const txBroadcaster = BroadcasterInterface.new_impl({
     // Need to call the sendrawtransaction call for the RPC service, loggin this for now to determined when to implement
     broadcast_transaction(tx: any) {
-      console.log("Tx Broadcast: " + tx);
+      console.log("[initialiseLDK.ts]: Tx Broadcast: " + tx);
     },
   });
 
@@ -146,7 +146,7 @@ async function setUpLDK(electrum: string = "prod") {
   const txBroadcasted = new Promise((resolve, reject) => {
     txBroadcaster.broadcast_transaction = (tx: any) => {
       // Need to call the sendrawtransaction call for the RPC service, loggin this for now to determined when to implement
-      console.log("Tx Broadcast: " + tx);
+      console.log("[initialiseLDK.ts]: Tx Broadcast: " + tx);
       resolve(tx);
     };
   });
@@ -197,7 +197,7 @@ async function setUpLDK(electrum: string = "prod") {
         "channels/channel_lookup.json"
       );
     } catch (e) {
-      console.log(e);
+      console.log("[initialiseLDK.ts]: error:" + e);
     }
   }
 
@@ -297,7 +297,7 @@ async function setUpLDK(electrum: string = "prod") {
         throw Error("Couldn't recreate channel manager from disk");
       }
     } catch (e) {
-      console.log("error:", e);
+      console.log("[initialiseLDK.ts]: error:", e);
     }
   } else {
     console.log('[initialiseLDK.ts]: Create fresh channel manager');
