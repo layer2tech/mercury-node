@@ -61,5 +61,5 @@ const onSigInt = () => {
 process.on("exit", onExit);
 process.on("SIGINT", onSigInt);
 
-// change this to a module
+
 export default app;
