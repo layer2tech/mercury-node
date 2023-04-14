@@ -68,9 +68,6 @@ class ElectrumClient {
     }
 
     if (res) {
-      // console.log('BLOCK JEADER::: ',res)
-      // console.log(res);
-      // const blockArray = new Uint8Array(Buffer.from(JSON.stringify(res.tx)))
       return res;
     }
   }

@@ -1,7 +1,6 @@
 import initialiseWasm from "./LDK/init/initialiseWasm.js";
 import { getLDKClient, createLDK } from "./LDK/init/getLDK.js";
-import { hexToUint8Array } from "./LDK/utils/utils.js";
-import { UserConfig } from "lightningdevkit";
+import { hexToUint8Array } from "./LDK/utils/utils.ts";
 
 export async function debug_lightning() {
   console.log("[debug_lightning.ts]: running");

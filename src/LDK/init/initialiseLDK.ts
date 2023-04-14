@@ -38,16 +38,16 @@ import fs from "fs";
 import crypto from "crypto";
 
 import MercuryFeeEstimator from "../structs/MercuryFeeEstimator.mts";
-import MercuryLogger from "../structs/MercuryLogger";
+import MercuryLogger from "../structs/MercuryLogger.ts";
 // @ts-ignore
-import MercuryEventHandler from "../structs/MercuryEventHandler";
-import MercuryFilter from "../structs/MercuryFilter";
-import LightningClientInterface from "../types/LightningClientInterface";
+import MercuryEventHandler from "../structs/MercuryEventHandler.ts";
+import MercuryFilter from "../structs/MercuryFilter.ts";
+import LightningClientInterface from "../types/LightningClientInterface.ts";
 import ElectrumClient from "../bitcoin_clients/ElectrumClient.mts";
 import LightningClient from "../LightningClient.ts";
 import TorClient from "../bitcoin_clients/TorClient.mts";
-import MercuryPersist from "../structs/MercuryPersist";
-import MercuryPersister from "../structs/MercuryPersister";
+import MercuryPersist from "../structs/MercuryPersist.ts";
+import MercuryPersister from "../structs/MercuryPersister.ts";
 
 export default async function initLDK(electrum: string = "prod") {
   const initLDK = await setUpLDK(electrum);

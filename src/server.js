@@ -1,14 +1,14 @@
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import serverRoutes from "./routes/serverRoutes";
-import peerRoutes from "./routes/peerRoutes";
-import channelRoutes from "./routes/channelRoutes";
-import { closeConnections } from "./LDK/utils/ldk-utils";
-import initialiseWasm from "./LDK/init/initialiseWasm";
-import { getLDKClient, createLDK } from "./LDK/init/getLDK";
-import LightningClient from "./LDK/LightningClient";
-import { debug_lightning } from "./debug_lightning";
+import serverRoutes from "./routes/serverRoutes.ts";
+import peerRoutes from "./routes/peerRoutes.ts";
+import channelRoutes from "./routes/channelRoutes.ts";
+import { closeConnections } from "./LDK/utils/ldk-utils.ts";
+import initialiseWasm from "./LDK/init/initialiseWasm.ts";
+import { getLDKClient, createLDK } from "./LDK/init/getLDK.ts";
+import LightningClient from "./LDK/LightningClient.ts";
+import { debug_lightning } from "./debug_lightning.ts";
 
 // Constants
 const PORT = 3003;

@@ -25,7 +25,7 @@ import {
 } from "lightningdevkit";
 import ElectrumClient from "../bitcoin_clients/ElectrumClient.mts";
 import TorClient from "../bitcoin_clients/TorClient.mts";
-import MercuryEventHandler from "../structs/MercuryEventHandler";
+import MercuryEventHandler from "../structs/MercuryEventHandler.ts";
 
 export default interface LightningClientInterface {
   feeEstimator: FeeEstimator;

@@ -1,5 +1,5 @@
-import LightningClient from "../LightningClient";
-import initLDK from "./initialiseLDK";
+import LightningClient from "../LightningClient.ts";
+import initLDK from "./initialiseLDK.ts";
 
 let LDKClient: LightningClient;
 
