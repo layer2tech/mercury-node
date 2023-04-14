@@ -8,6 +8,6 @@ export default async function initialiseWasm() {
     );
     await ldk.initializeWasmFromBinary(wasm_file);
   } catch (e) {
-    throw new Error(`InitialiseWasmError: ${e}`);
+    throw new Error(`[initialiseWasm.ts]: InitialiseWasmError: ${e}`);
   }
 }
