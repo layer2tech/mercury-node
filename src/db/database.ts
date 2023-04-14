@@ -9,7 +9,7 @@ const db = new sqlite3.Database("lightning.db", (err) => {
   if (err) {
     console.error(err.message);
   }
-  console.log("Connected to/Created the SQLite database.");
+  console.log("[database.ts]: Connected to/Created the SQLite database.");
 
   ////////////////////////////////////////////////////////////
   //////// peerlist table ////////////////////////////////////
@@ -26,7 +26,7 @@ const db = new sqlite3.Database("lightning.db", (err) => {
     if (err) {
       console.error(err.message);
     }
-    console.log("Table 'peers' created or already exist");
+    console.log("[database.ts]: Table 'peers' created or already exist");
 
     if (isDev) {
       const sampleData = [
@@ -99,7 +99,7 @@ const db = new sqlite3.Database("lightning.db", (err) => {
     if (err) {
       console.error(err.message);
     }
-    console.log("Table 'channels' created or already exists");
+    console.log("[database.ts]: Table 'channels' created or already exists");
 
     if (isDev) {
       // Insert some sample data into the 'channels' table if there's no data
@@ -108,7 +108,9 @@ const db = new sqlite3.Database("lightning.db", (err) => {
           console.error(err.message);
         }
         if (row.count === 0) {
-          console.log("Inserting sample data for table channels ...");
+          console.log(
+            "[database.ts]: Inserting sample data for table channels ..."
+          );
           const sampleData = [
             {
               name: "channel1",
@@ -168,14 +170,14 @@ const db = new sqlite3.Database("lightning.db", (err) => {
           });
         } else {
           console.log(
-            "Table 'channels' already contains data, skipping the sample data insertion."
+            "[database.ts]: Table 'channels' already contains data, skipping the sample data insertion."
           );
         }
       });
     }
   });
 
-  console.log("Insert complete");
+  console.log("[database.ts]: Insert complete");
 });
 
 export default db;

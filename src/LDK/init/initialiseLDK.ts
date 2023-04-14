@@ -37,20 +37,17 @@ import {
 import fs from "fs";
 import crypto from "crypto";
 
-import MercuryFeeEstimator from "../structs/MercuryFeeEstimator.mjs";
-import MercuryLogger from "../structs/MercuryLogger.js";
+import MercuryFeeEstimator from "../structs/MercuryFeeEstimator.mts";
+import MercuryLogger from "../structs/MercuryLogger";
 // @ts-ignore
-import MercuryEventHandler from "../structs/MercuryEventHandler.js";
-import MercuryFilter from "../structs/MercuryFilter.js";
-import LightningClientInterface from "../types/LightningClientInterface.js";
-import ElectrumClient from "../bitcoin_clients/ElectrumClient.mjs";
-import LightningClient from "../LightningClient.js";
-import TorClient from "../bitcoin_clients/TorClient.mjs";
-import MercuryPersist from "../structs/MercuryPersist.js";
-import MercuryPersister from "../structs/MercuryPersister.js";
-
-import JSONbig from "json-bigint";
-import { uint8ArrayToHexString } from "../utils/utils.js";
+import MercuryEventHandler from "../structs/MercuryEventHandler";
+import MercuryFilter from "../structs/MercuryFilter";
+import LightningClientInterface from "../types/LightningClientInterface";
+import ElectrumClient from "../bitcoin_clients/ElectrumClient.mts";
+import LightningClient from "../LightningClient.ts";
+import TorClient from "../bitcoin_clients/TorClient.mts";
+import MercuryPersist from "../structs/MercuryPersist";
+import MercuryPersister from "../structs/MercuryPersister";
 
 export default async function initLDK(electrum: string = "prod") {
   const initLDK = await setUpLDK(electrum);
@@ -118,12 +115,12 @@ async function setUpLDK(electrum: string = "prod") {
 
   // Initialize our bitcoind client.
   let bitcointd_client;
-  console.log("INIT CLIENT: ", electrum);
+  console.log("[initialiseLDK.ts]: INIT CLIENT: ", electrum);
   if (electrum === "prod") {
-    console.log("Init TorClient");
+    console.log("[initialiseLDK.ts]: Init TorClient");
     bitcointd_client = new TorClient("");
   } else {
-    console.log("Init ElectrumClient");
+    console.log("[initialiseLDK.ts]: Init ElectrumClient");
     bitcointd_client = new ElectrumClient("");
   }
 
@@ -256,10 +253,10 @@ async function setUpLDK(electrum: string = "prod") {
   let channelManager: ChannelManager;
   console.log('[initialiseLDK.ts]: ChannelManager create/restore');
   if (fs.existsSync("channel_manager_data.bin")) {
-    console.log("Loading the channel manager from disk...");
+    console.log("[initialiseLDK.ts]: Loading the channel manager from disk...");
     const f = fs.readFileSync(`channel_manager_data.bin`);
 
-    console.log("create channel_monitor_references");
+    console.log("[initialiseLDK.ts]: create channel_monitor_references");
 
     channel_monitor_data.forEach((channel_monitor: ChannelMonitorRead) => {
       let val: any =
@@ -276,7 +273,7 @@ async function setUpLDK(electrum: string = "prod") {
     });
 
     try {
-      console.log("try and read the channel manager");
+      console.log("[initialiseLDK.ts]: try and read the channel manager");
       let readManager: any =
         UtilMethods.constructor_C2Tuple_BlockHashChannelManagerZ_read(
           f,

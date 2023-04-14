@@ -3,9 +3,9 @@ import db from "../db/db.js";
 
 import * as bitcoin from "bitcoinjs-lib";
 
-import { getLDKClient } from "../LDK/init/getLDK.js";
-import { createNewChannel } from "../LDK/utils/ldk-utils.js";
-import { hexToUint8Array, uint8ArrayToHexString } from "../LDK/utils/utils.js";
+import { getLDKClient } from "../LDK/init/getLDK";
+import { createNewChannel } from "../LDK/utils/ldk-utils";
+import { hexToUint8Array, uint8ArrayToHexString } from "../LDK/utils/utils";
 import { ChannelDetails } from "lightningdevkit";
 
 const router = express.Router();

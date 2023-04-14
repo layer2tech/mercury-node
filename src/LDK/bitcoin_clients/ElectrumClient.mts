@@ -1,4 +1,3 @@
-const axios = import("axios");
 const TIMEOUT = 20000;
 
 // CHANGE THESE TO MATCH POLAR
@@ -15,14 +14,14 @@ class ElectrumClient {
   }
 
   async getBestBlockHash() {
-    console.log("Get Block Height...");
+    console.log("[ElectrumClient.mts]: getBestBlockHash...");
     let res;
     try {
       res = (
         await ElectrumClient.get("rest/chaininfo.json")
       ).data;
     } catch (e) {
-      console.log('Error Getting Block Height')
+      console.log("[ElectrumClient.mts]: Error Getting Block Height");
     }
     if (res) {
       return res.bestblockhash;
@@ -30,7 +29,7 @@ class ElectrumClient {
   }
 
   async getBlockHeight() {
-    console.log("Get Block Height...");
+    console.log("[ElectrumClient.mts]: getBlockHeight...");
     let res;
     try {
       res = (
@@ -38,14 +37,14 @@ class ElectrumClient {
       ).data;
       return res.blocks;
     } catch (e) {
-      console.log('Error Getting Block Height')
+      console.log("[ElectrumClient.mts]: Error Getting Block Height");
     }
   }
 
   async getLatestBlockHeader(height: number) {
     let currentBlockHash;
     try {
-      console.log("ElectrumClient->HEIGHT: ", height);
+      console.log("[ElectrumClient.mts]: getLatestBlockHeader, block_height:", height);
       currentBlockHash = (
         await ElectrumClient.get(
           `rest/blockhashbyheight/${height}.json`
@@ -56,7 +55,7 @@ class ElectrumClient {
     }
 
     // return currentBlockHash
-    console.log("Get Latest Block Header...");
+    console.log("[ElectrumClient.mts]: Get Latest Block Header...");
     let res;
     try {
       res = (

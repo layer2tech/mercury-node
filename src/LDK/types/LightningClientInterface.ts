@@ -23,9 +23,9 @@ import {
   IgnoringMessageHandler,
   Persister,
 } from "lightningdevkit";
-import ElectrumClient from "../bitcoin_clients/ElectrumClient.mjs";
-import TorClient from "../bitcoin_clients/TorClient.mjs";
-import MercuryEventHandler from "../structs/MercuryEventHandler.js";
+import ElectrumClient from "../bitcoin_clients/ElectrumClient.mts";
+import TorClient from "../bitcoin_clients/TorClient.mts";
+import MercuryEventHandler from "../structs/MercuryEventHandler";
 
 export default interface LightningClientInterface {
   feeEstimator: FeeEstimator;

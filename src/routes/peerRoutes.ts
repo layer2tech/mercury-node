@@ -6,9 +6,9 @@ import {
   TwoTuple_PublicKeyCOption_NetAddressZZ,
 } from "lightningdevkit";
 const router = express.Router();
-import db from "../db/db.js";
-import { getLDKClient } from "../LDK/init/getLDK.js";
-import { hexToUint8Array, uint8ArrayToHexString } from "../LDK/utils/utils.js";
+import db from "../db/db";
+import { getLDKClient } from "../LDK/init/getLDK";
+import { hexToUint8Array, uint8ArrayToHexString } from "../LDK/utils/utils";
 
 router.get("/liveChainMonitors", async (req, res) => {
   let chainMonitor: ChainMonitor = await getLDKClient().getChainMonitor();
