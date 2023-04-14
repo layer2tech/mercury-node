@@ -108,7 +108,7 @@ export default class LightningClient implements LightningClientInterface {
 
       this.latestBlockHeader = hexToBytes(latestBlockHeader);
     } else {
-      throw Error("Block Height undefined");
+      throw Error("[LightningClient.ts]: Block Height undefined");
     }
     return this.latestBlockHeader;
   }
@@ -162,7 +162,7 @@ export default class LightningClient implements LightningClientInterface {
       console.log(err);
       throw err;
     }
-    console.log("Peer created, saveds its id: ", peer_id);
+    console.log("[LightningClient.ts]: Peer created, saveds its id: ", peer_id);
 
     let channel_id = null;
     // Save the channel
@@ -184,7 +184,10 @@ export default class LightningClient implements LightningClientInterface {
       console.log(err);
       throw err;
     }
-    console.log("Channel Created, saved its id: ", channel_id);
+    console.log(
+      "[LightningClient.ts]: Channel Created, saved its id: ",
+      channel_id
+    );
 
     return channel_id;
   }
@@ -220,7 +223,7 @@ export default class LightningClient implements LightningClientInterface {
         let socket = await this.create_socket(peerDetails);
         return true; // return true if the connection is successful
       } catch (e) {
-        console.error("error on create_socket", e);
+        console.error("[LightningClient.ts]: error on create_socket", e);
         throw e; // re-throw the error to the parent function
       }
     }
@@ -234,7 +237,7 @@ export default class LightningClient implements LightningClientInterface {
     channelId: number,
     channelType: boolean
   ) {
-    console.log("pubkey found:", pubkey);
+    console.log("[LightningClient.ts]: pubkey found:", pubkey);
 
     await this.getBlockHeight();
     await this.getLatestBlockHeader(this.blockHeight);
@@ -250,7 +253,7 @@ export default class LightningClient implements LightningClientInterface {
       .set_announced_channel(channelType);
 
     let channelCreateResponse;
-    console.log("Reached here ready to create channel...");
+    console.log("[LightningClient.ts]: Reached here ready to create channel...");
     try {
       channelCreateResponse = this.channelManager.create_channel(
         pubkey,
@@ -261,11 +264,11 @@ export default class LightningClient implements LightningClientInterface {
       );
     } catch (e) {
       if (pubkey.length !== 33) {
-        console.log("Entered incorrect pubkey - ", e);
+        console.log("[LightningClient.ts]: Entered incorrect pubkey - ", e);
       } else {
         var pubkeyHex = uint8ArrayToHexString(pubkey);
         console.log(
-          `Lightning node with pubkey ${pubkeyHex} unreachable - `,
+          `[LightningClient.ts]: Lightning node with pubkey ${pubkeyHex} unreachable - `,
           e
         );
       }
@@ -280,7 +283,10 @@ export default class LightningClient implements LightningClientInterface {
       // this.chain_monitor.block_connected(this.latest_block_header, this.txdata, this.block_height);
     }
 
-    console.log("Channel Create Response: ", channelCreateResponse);
+    console.log(
+      "[LightningClient.ts]: Channel Create Response: ",
+      channelCreateResponse
+    );
     // Should return Ok response to display to user
     return true;
   }
@@ -296,7 +302,7 @@ export default class LightningClient implements LightningClientInterface {
     try {
       await this.netHandler.connect_peer(host, port, pubkey);
     } catch (e) {
-      console.log("Error connecting to peer: ", e);
+      console.log("[LightningClient.ts]: Error connecting to peer: ", e);
       throw e; // or handle the error in a different way
     }
 
@@ -341,9 +347,12 @@ export default class LightningClient implements LightningClientInterface {
 
   // starts the lightning LDK
   async start() {
-    console.log("Calling ChannelManager's timer_tick_occurred on startup");
+    console.log(
+      "[LightningClient.ts]: Calling ChannelManager's timer_tick_occurred on startup"
+    );
     this.channelManager.timer_tick_occurred();
 
+    console.log('[LightningClient.ts]: Listening for events')
     setInterval(async () => {
       // processes events on ChannelManager and ChainMonitor
       await this.processPendingEvents();
