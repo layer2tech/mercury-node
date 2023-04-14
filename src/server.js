@@ -35,7 +35,7 @@ app.listen(PORT, async () => {
   console.log("[Server.ts]: Finished initialiseWasm");
   await createLDK("dev"); // prod or dev
   console.log("[Server.ts]: Finished create LDK");
-  const LightningClient: LightningClient = getLDKClient();
+  const LightningClient = getLDKClient();
   console.log("[Server.ts]: Starting LDK Client");
   await LightningClient.start();
   console.log("[Server.ts]: LDK Client started");

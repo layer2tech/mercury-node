@@ -26,7 +26,7 @@
   },
   "version": "1.0.0",
   "description": "",
-  "main": "src/server.ts",
+  "main": "src/server.js",
   "type": "module",
   "ava": {
     "extensions": {
@@ -40,8 +40,8 @@
     ]
   },
   "scripts": {
-    "dev": "ts-node-dev --respawn --pretty --transpile-only src/server.mts",
-    "start": "node --loader ts-node/esm --experimental-specifier-resolution=node ./src/server.ts",
+    "dev": "ts-node-dev --respawn --pretty --transpile-only src/server.js",
+    "start": "node --loader ts-node/esm --experimental-specifier-resolution=node ./src/server.js",
     "test": "node --loader ts-node/esm --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "moduleFileExtensions": [
