@@ -22,6 +22,7 @@ import {
   ChannelManager,
   IgnoringMessageHandler,
   Persister,
+  Router
 } from "lightningdevkit";
 import ElectrumClient from "../bitcoin_clients/ElectrumClient.mts";
 import TorClient from "../bitcoin_clients/TorClient.mts";
@@ -49,6 +50,7 @@ export default interface LightningClientInterface {
   params: ChainParameters;
   channelManager: ChannelManager;
   peerManager: PeerManager;
+  router: Router;
   txdata: any;
   currentConnections: Array<any>; // array of current peer connections
   blockHeight: number | undefined;
