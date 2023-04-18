@@ -6,9 +6,9 @@ import {
   TwoTuple_PublicKeyCOption_NetAddressZZ,
 } from "lightningdevkit";
 const router = express.Router();
-import db from "../db/db.js";
-import { getLDKClient } from "../LDK/init/getLDK.js";
-import { hexToUint8Array, uint8ArrayToHexString } from "../LDK/utils/utils.js";
+import db from "../db/db";
+import { getLDKClient } from "../LDK/init/getLDK";
+import { hexToUint8Array, uint8ArrayToHexString } from "../LDK/utils/utils";
 
 router.get("/liveChainMonitors", async (req, res) => {
   let chainMonitor: ChainMonitor = await getLDKClient().getChainMonitor();
@@ -64,24 +64,44 @@ router.post("/connectToPeer", async (req, res) => {
   console.log("//////////////////////////////////////////////////////");
 
   if (pubkey === undefined || host === undefined || port === undefined) {
-    res.status(500).send("Missing required parameters");
+    res.status(500)
+      .json({
+        status: 500,
+        message: "Missing required parameters",
+      });
   } else {
     // try and connect to a peer, return success if it can, fail if it can't
     try {
       const connection = await getLDKClient().connectToPeer(pubkey, host, port);
       if (connection) {
-        res.status(200).send("Connected to peer");
+        res.status(200)
+          .json({
+            status: 200,
+            message: "Connected to peer",
+          });
       } else {
-        res.status(500).send("Failed to connect to peer");
+        res.status(500)
+          .json({
+            status: 500,
+            message: "Failed to connect to peer",
+          });
       }
     } catch (e) {
       if (
         e instanceof Error &&
         e.message.includes("already tried to connect to this peer")
       ) {
-        res.status(500).send("You're already connected to this peer!");
+        res.status(500)
+          .json({
+            status: 500,
+            message: "You're already connected to this peer!",
+          });
       } else {
-        res.status(500).send("Error connecting to peer");
+        res.status(500)
+          .json({
+            status: 500,
+            message: "Error connecting to peer",
+          });
       }
     }
   }

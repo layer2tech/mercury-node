@@ -1,10 +1,6 @@
 import { RawAxiosRequestConfig } from "axios";
 
-// const {Buffer} = require('buffer');
-const axios = import("axios");
-
 const TIMEOUT = 20000;
-
 const TOR_ENDPOINT = "http://localhost:3001";
 
 class TorClient {
@@ -14,7 +10,7 @@ class TorClient {
   }
 
   async getBlockHeight() {
-    console.log("Get Block Height...");
+    console.log("[TorClient.mts]: getBlockHeight...");
     let res;
     try {
       res = await TorClient.get(
@@ -23,7 +19,7 @@ class TorClient {
 
       res = res && res.data;
     } catch (e) {
-      console.log("Error Getting Block Height");
+      console.log("[TorClient.mts]: Error Getting Block Height");
     }
     if (res) {
       return res;
@@ -31,7 +27,7 @@ class TorClient {
   }
 
   async getBestBlockHash() {
-    console.log("Get Block Height...");
+    console.log("[TorClient.mts]: getBestBlockHash...");
     let res;
     try {
       res = await TorClient.get(
@@ -40,7 +36,7 @@ class TorClient {
 
       res = res && res.data;
     } catch (e) {
-      console.log("Error Getting Block Height");
+      console.log("[TorClient.mts]: Error Getting Block Height");
     }
     if (res) {
       return res;
@@ -50,20 +46,25 @@ class TorClient {
   async getLatestBlockHeader(height: number) {
     let currentBlockHash;
     try {
-      console.log("Get latest block header...............");
-      console.log("TorClient->getLatestBlockHeader->HEIGHT: ", height);
-      console.log(`${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HASH}`);
+      console.log("[TorClient.mts]: Get latest block header...............");
+      console.log(
+        "[TorClient.mts]: block_height: ",
+        height
+      );
+      console.log(
+        `[TorClient.mts]: ${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HASH}`
+      );
       let res = await TorClient.get(
         `${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HASH}`
       );
 
       currentBlockHash = res && res.data;
     } catch (e) {
-      console.log("Error Getting Current Block Hash");
+      console.log("[TorClient.mts]: Error Getting Current Block Hash");
     }
 
     // return currentBlockHash
-    console.log("Get Latest Block Header...");
+    console.log("[TorClient.mts]: Get Latest Block Header...");
     let res;
     try {
       res = await TorClient.get(
@@ -72,7 +73,7 @@ class TorClient {
 
       res = res && res.data;
     } catch (e) {
-      console.log("Error in getting header: ", e);
+      console.log("[TorClient.mts]: Error in getting header: ", e);
     }
 
     if (res) {
@@ -108,7 +109,7 @@ class TorClient {
     };
 
     return await axios(config).catch((error) => {
-      console.log("ERROR: ", error);
+      console.log("[TorClient.mts]: ERROR: ", error);
     });
   }
 
@@ -128,11 +129,11 @@ class TorClient {
     axios
       .post(endpoint, options)
       .then((response) => {
-        console.log("RESPONSE: ", response.data);
+        console.log("[TorClient.mts]: RESPONSE: ", response.data);
         return response.data;
       })
       .catch((error) => {
-        console.log("ERROR: ", error);
+        console.log("[TorClient.mts]: ERROR: ", error);
       });
   }
 }

@@ -1,21 +1,21 @@
-import LightningClient from "../LightningClient.js";
-import initLDK from "./initialiseLDK.js";
+import LightningClient from "../LightningClient.ts";
+import initLDK from "./initialiseLDK.ts";
 
 let LDKClient: LightningClient;
 
 export async function createLDK(bitcoind_client: string = "prod") {
-  console.log("Electrum: ", bitcoind_client);
+  console.log("[getLDK.ts]: bitcoind_client settings: ", bitcoind_client);
 
   try {
     LDKClient = await initLDK(bitcoind_client);
   } catch (e) {
-    throw Error("Couldn't init LDK");
+    throw Error("[getLDK.ts]: Couldn't init LDK");
   }
 }
 
 export function getLDKClient(): LightningClient {
   if (!LDKClient) {
-    throw new Error("LDKClient is not instantiated.");
+    throw new Error("[getLDK.ts]: LDKClient is not instantiated.");
   }
 
   return LDKClient;

@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import { closeConnections } from '../LDK/utils/ldk-utils.js';
+import { closeConnections } from '../LDK/utils/ldk-utils';
 
 router.get("/closeConnections", async function (req, res) {
   // Closing all connections

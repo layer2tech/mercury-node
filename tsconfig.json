@@ -28,7 +28,6 @@
       "skipLibCheck": true,
       "allowSyntheticDefaultImports": true,
       "forceConsistentCasingInFileNames": true,
-      "moduleResolution": "node16",
       "esModuleInterop": true,
       "noEmit": true,
       "noFallthroughCasesInSwitch": true,
@@ -55,5 +54,6 @@
       "noPropertyAccessFromIndexSignature": true,
       "allowUnusedLabels": false,
       "allowUnreachableCode": false,
+      "allowImportingTsExtensions": true
     }
   }
