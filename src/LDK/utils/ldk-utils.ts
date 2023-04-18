@@ -49,6 +49,7 @@ export const saveNewPeerToDB = (
   port: number,
   pubkey: string
 ): Promise<{
+  channel_id: { status: number; message?: string; error?: string; peer_id?: number; };
   status: number;
   message?: string;
   error?: string;
@@ -138,43 +139,60 @@ export const saveNewChannelToDB = (
   console.log("[ldk-utils.ts] - saveNewChannelToDB");
   return new Promise((resolve, reject) => {
     let channelId: number;
-
-    const insertData = `INSERT INTO channels (name, amount, push_msat, public, wallet_name, peer_id, privkey, paid, payment_address) VALUES (?,?,?,?,?,?,?,?,?)`;
-    db.run(
-      insertData,
-      [
-        name,
-        amount,
-        push_msat,
-        channelType,
-        wallet_name,
-        peer_id,
-        privkey,
-        paid,
-        payment_address,
-      ],
-      function (err: any, result: any) {
+    db.get(
+      `SELECT id FROM channels WHERE peer_id = ?`,
+      [peer_id],
+      (err: any, row: any) => {
         if (err) {
           reject({
             status: 500,
-            error: "Failed to insert channel into database" + err,
+            error: "Failed to query database" + err,
           });
+        } else if (row) {
+          resolve({
+            status: 409,
+            message: "Channel already exists with this peer"
+          }); 
         } else {
-          db.get(
-            `SELECT last_insert_rowid() as channel_id`,
-            (err: any, row: any) => {
+          const insertData = `INSERT INTO channels (name, amount, push_msat, public, wallet_name, peer_id, privkey, paid, payment_address) VALUES (?,?,?,?,?,?,?,?,?)`;
+          db.run(
+            insertData,
+            [
+              name,
+              amount,
+              push_msat,
+              channelType,
+              wallet_name,
+              peer_id,
+              privkey,
+              paid,
+              payment_address,
+            ],
+            function (err: any, result: any) {
               if (err) {
                 reject({
                   status: 500,
-                  error: "Failed to get last inserted channel ID",
+                  error: "Failed to insert channel into database" + err,
                 });
               } else {
-                channelId = row.channel_id;
-                resolve({
-                  status: 201,
-                  message: "Channel saved successfully",
-                  channel_id: channelId,
-                });
+                db.get(
+                  `SELECT last_insert_rowid() as channel_id`,
+                  (err: any, row: any) => {
+                    if (err) {
+                      reject({
+                        status: 500,
+                        error: "Failed to get last inserted channel ID",
+                      });
+                    } else {
+                      channelId = row.channel_id;
+                      resolve({
+                        status: 201,
+                        message: "Channel saved successfully",
+                        channel_id: channelId,
+                      });
+                    }
+                  }
+                );
               }
             }
           );
