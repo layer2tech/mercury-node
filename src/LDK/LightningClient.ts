@@ -12,7 +12,9 @@ import {
   ChannelHandshakeConfig,
   ChainParameters,
   ChannelManager,
-  Persister
+  Persister,
+  ChannelDetails,
+  Result_NoneAPIErrorZ
 } from "lightningdevkit";
 import { NodeLDKNet } from "./structs/NodeLDKNet.mjs";
 import LightningClientInterface from "./types/LightningClientInterface.js";
@@ -229,14 +231,19 @@ export default class LightningClient implements LightningClientInterface {
     }
   }
 
-  // This function runs after createNewChannel->connectToChannel
-  async connectToChannel(
+  // This function runs after createNewChannel->createChannel
+  async createChannel(
     pubkey: Uint8Array,
     amount: number,
     push_msat: number,
     channelId: number,
     channelType: boolean
   ) {
+
+    // To stop this from calling twice - check the database if a channel has already been created.
+
+
+
     console.log("[LightningClient.ts]: pubkey found:", pubkey);
 
     await this.getBlockHeight();
@@ -289,6 +296,28 @@ export default class LightningClient implements LightningClientInterface {
     );
     // Should return Ok response to display to user
     return true;
+  }
+
+  // Forces a channel to close
+  forceCloseChannel(pubkey: string): boolean {
+    const channels: ChannelDetails[] = this.getChannels();
+
+    console.log('[LightningClient.ts]: channels found->', channels);
+
+    channels.forEach(chn => {
+      const hexId = uint8ArrayToHexString(chn.get_channel_id());
+      console.log('channelId found->', hexId);
+      if (hexId === pubkey) {
+        const result: Result_NoneAPIErrorZ = this.channelManager.force_close_broadcasting_latest_txn(chn.get_channel_id(), chn.get_counterparty().get_node_id());
+
+        if (result.is_ok()) {
+          return true;
+        }
+        return false;
+      }
+    })
+
+    throw new Error("Trying to close a channel that doen't exist on LDK");
   }
 
   /**
