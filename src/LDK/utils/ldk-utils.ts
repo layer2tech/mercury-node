@@ -274,7 +274,7 @@ export const deleteChannelById = (
   });
 }
 
-export const deleteChannelByAddr = (
+export const deleteChannelByPaymentAddr = (
   addr: string
 ): Promise<{
   status: number;
