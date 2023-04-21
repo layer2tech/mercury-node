@@ -1,17 +1,15 @@
 import express from "express";
 import db from "../db/db.js";
 
-import * as bitcoin from "bitcoinjs-lib";
-
-import { getLDKClient } from "../LDK/init/getLDK";
-import { createNewChannel } from "../LDK/utils/ldk-utils";
-import { hexToUint8Array, uint8ArrayToHexString } from "../LDK/utils/utils";
+import { getLDKClient } from "../LDK/init/getLDK.js";
+import { hexToUint8Array, uint8ArrayToHexString } from "../LDK/utils/utils.js";
 import { ChannelDetails } from "lightningdevkit";
 
 const router = express.Router();
 
 interface Channel {
   id: number;
+  hexId: string;
   name: string;
   amount: number;
   push_msat: number;
@@ -22,10 +20,6 @@ interface Channel {
   vout: number;
   paid: boolean;
   payment_address: string;
-}
-
-interface DuplicateChannel extends Channel {
-  count: number;
 }
 
 // Get the Node ID of our wallet
@@ -46,10 +40,14 @@ router.get("/liveChannels", async function (req, res) {
   if (channels && channels.length > 0) {
     for (const channel of channels) {
       jsonChannels.push({
-        channelId: channel.get_channel_id().toString(),
-        fundingTXO: channel.get_funding_txo().get_index().toString(),
-        channelAmount: channel.get_channel_value_satoshis().toString(),
-        channelType: channel.get_is_public(),
+        //id: channel.get_channel_id().toString(),
+        channel_hexId: uint8ArrayToHexString(channel.get_channel_id()),
+        usable: channel.get_is_usable(),
+        ready: channel.get_is_channel_ready(),
+        counterparty_hexId: uint8ArrayToHexString(channel.get_counterparty().get_node_id()),
+        funding_txo: uint8ArrayToHexString(channel.get_funding_txo().get_txid()),
+        amount_in_satoshis: channel.get_channel_value_satoshis().toString(),
+        public: channel.get_is_public(),
       });
     }
     res.json(jsonChannels);
@@ -73,7 +71,7 @@ router.post("/connectToChannel", async (req, res) => {
     channelType === "Public" ? true : false;
     try {
       if (pubkey.length !== 33) {
-        const connection = await getLDKClient().connectToChannel(
+        const connection = await getLDKClient().createChannel(
           hexToUint8Array(pubkey),
           amount,
           push_msat,
@@ -236,19 +234,18 @@ router.get("/removeDuplicateChannels", (req, res) => {
   });
 });
 
-router.delete("/deleteChannel/:id", (req, res) => {
-  // delete channel by id
-  const deleteData = `DELETE FROM channels WHERE id=?`;
-  db.run(deleteData, [req.params.id], function (err: any) {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    res.json({ message: "Data deleted successfully" });
-  });
+// takes hexadecimal format of channelId
+router.delete("/forceCloseChannel/:id", async (req, res) => {
+  const channel_id = req.params.id;
+  const closeChannelReq = getLDKClient().forceCloseChannel(channel_id);
+  if (closeChannelReq) {
+    res.status(200).json({ status: 200, message: "Success" });
+  } else {
+    res.status(500).json({ error: "Failed to force close channel" });
+  }
 });
 
-router.delete("/deleteChannelByAddr/:addr", (req, res) => {
+router.delete("/deleteChannelByPaymentAddr/:addr", (req, res) => {
   // delete channel by id
   const deleteData = `DELETE FROM channels WHERE payment_address=?`;
   db.run(deleteData, [req.params.addr], function (err: any) {

@@ -1,14 +1,14 @@
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import serverRoutes from "./routes/serverRoutes.ts";
-import peerRoutes from "./routes/peerRoutes.ts";
-import channelRoutes from "./routes/channelRoutes.ts";
-import { closeConnections } from "./LDK/utils/ldk-utils.ts";
-import initialiseWasm from "./LDK/init/initialiseWasm.ts";
-import { getLDKClient, createLDK } from "./LDK/init/getLDK.ts";
-import LightningClient from "./LDK/LightningClient.ts";
-import { debug_lightning } from "./debug_lightning.ts";
+import serverRoutes from "./routes/serverRoutes";
+import peerRoutes from "./routes/peerRoutes";
+import channelRoutes from "./routes/channelRoutes";
+import { closeConnections } from "./LDK/utils/ldk-utils";
+import initialiseWasm from "./LDK/init/initialiseWasm";
+import { getLDKClient, createLDK } from "./LDK/init/getLDK";
+import LightningClient from "./LDK/LightningClient";
+import { debug_lightning } from "./debug_lightning";
 
 // Constants
 const PORT = 3003;
@@ -28,6 +28,7 @@ app.use("/channel", channelRoutes);
 // Starting the express server
 app.listen(PORT, async () => {
   /* PRODUCTION CODE */
+  /*
   console.log(
     `[Server.ts]: lightning-adapter listening at http://localhost:${PORT}`
   );
@@ -38,10 +39,10 @@ app.listen(PORT, async () => {
   const LightningClient = getLDKClient();
   console.log("[Server.ts]: Starting LDK Client");
   await LightningClient.start();
-  console.log("[Server.ts]: LDK Client started");
+  console.log("[Server.ts]: LDK Client started");*/
 
   // DEBUGGING CODE TO RUN IN REGTEST (POLAR LIGHTNING NODE SEE ELECTRUMCLIENT.MTS)
-  // debug_lightning();
+  debug_lightning();
 });
 
 // Exit handlers
