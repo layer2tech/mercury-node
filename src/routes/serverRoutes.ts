@@ -14,11 +14,13 @@ router.post("/generate_invoice", async function (req, res) {
       amt_in_sats: req.body.amt_in_sats,
       invoice_expiry_secs: req.body.invoice_expiry_secs,
       description: req.body.description,
+      privkey_hex: req.body.privkey_hex
     };
     let invoice = createInvoice(
       invoice_config.amt_in_sats,
       invoice_config.invoice_expiry_secs,
-      invoice_config.description
+      invoice_config.description,
+      invoice_config.privkey_hex
     );
     // log("info", `Generating Invoice`);
     let response = invoice;
