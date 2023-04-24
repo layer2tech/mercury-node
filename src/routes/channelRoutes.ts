@@ -245,6 +245,17 @@ router.delete("/forceCloseChannel/:id", async (req, res) => {
   }
 });
 
+// takes hexadecimal format of channelId
+router.delete("/mutualCloseChannel/:id", async (req, res) => {
+  const channel_id = req.params.id;
+  const closeChannelReq = getLDKClient().mutualCloseChannel(channel_id);
+  if (closeChannelReq) {
+    res.status(200).json({ status: 200, message: "Success" });
+  } else {
+    res.status(500).json({ error: "Failed to mutual close channel" });
+  }
+});
+
 router.delete("/deleteChannelByPaymentAddr/:addr", (req, res) => {
   // delete channel by id
   const deleteData = `DELETE FROM channels WHERE payment_address=?`;
