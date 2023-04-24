@@ -14,7 +14,7 @@ import {
   ChannelManager,
   Persister,
   ChannelDetails,
-  Result_NoneAPIErrorZ
+  Result_NoneAPIErrorZ,
 } from "lightningdevkit";
 import { NodeLDKNet } from "./structs/NodeLDKNet.mjs";
 import LightningClientInterface from "./types/LightningClientInterface.js";
@@ -28,11 +28,11 @@ import {
   saveNewPeerToDB,
   saveNewChannelToDB,
   saveTxDataToDB,
+  createInvoice,
 } from "./utils/ldk-utils.js";
 import MercuryEventHandler from "./structs/MercuryEventHandler.js";
 
 export default class LightningClient implements LightningClientInterface {
-
   feeEstimator: FeeEstimator;
   bitcointd_client: any;
   logger: Logger;
@@ -115,6 +115,28 @@ export default class LightningClient implements LightningClientInterface {
     return this.latestBlockHeader;
   }
 
+  async createInvoice(
+    amt_in_sats: any,
+    invoice_expiry_secs: any,
+    description: any,
+    privkey_hex: any
+  ) {
+    try {
+      let res = createInvoice(
+        amt_in_sats,
+        invoice_expiry_secs,
+        description,
+        privkey_hex
+      );
+
+      console.log("[LightningClient.ts]: Invoice created:", res);
+
+      return res;
+    } catch (e) {
+      throw new Error("Error occured during create invoice." + e);
+    }
+  }
+
   async setEventTXData(txid: any) {
     this.txdata = await this.getTxData(txid);
     MercuryEventHandler.setInputTx(this.txdata);
@@ -122,7 +144,7 @@ export default class LightningClient implements LightningClientInterface {
 
   async getTxData(txid: any) {
     let txData = await this.bitcointd_client.getTxIdData(txid);
-    console.log('[LightningClient.ts]-> getTxData ->', txData);
+    console.log("[LightningClient.ts]-> getTxData ->", txData);
     return txData;
   }
 
@@ -239,10 +261,7 @@ export default class LightningClient implements LightningClientInterface {
     channelId: number,
     channelType: boolean
   ) {
-
     // To stop this from calling twice - check the database if a channel has already been created.
-
-
 
     console.log("[LightningClient.ts]: pubkey found:", pubkey);
 
@@ -260,7 +279,9 @@ export default class LightningClient implements LightningClientInterface {
       .set_announced_channel(channelType);
 
     let channelCreateResponse;
-    console.log("[LightningClient.ts]: Reached here ready to create channel...");
+    console.log(
+      "[LightningClient.ts]: Reached here ready to create channel..."
+    );
     try {
       channelCreateResponse = this.channelManager.create_channel(
         pubkey,
@@ -302,20 +323,24 @@ export default class LightningClient implements LightningClientInterface {
   forceCloseChannel(pubkey: string): boolean {
     const channels: ChannelDetails[] = this.getChannels();
 
-    console.log('[LightningClient.ts]: channels found->', channels);
+    console.log("[LightningClient.ts]: channels found->", channels);
 
-    channels.forEach(chn => {
+    channels.forEach((chn) => {
       const hexId = uint8ArrayToHexString(chn.get_channel_id());
-      console.log('channelId found->', hexId);
+      console.log("channelId found->", hexId);
       if (hexId === pubkey) {
-        const result: Result_NoneAPIErrorZ = this.channelManager.force_close_broadcasting_latest_txn(chn.get_channel_id(), chn.get_counterparty().get_node_id());
+        const result: Result_NoneAPIErrorZ =
+          this.channelManager.force_close_broadcasting_latest_txn(
+            chn.get_channel_id(),
+            chn.get_counterparty().get_node_id()
+          );
 
         if (result.is_ok()) {
           return true;
         }
         return false;
       }
-    })
+    });
 
     throw new Error("Trying to close a channel that doen't exist on LDK");
   }
@@ -381,7 +406,7 @@ export default class LightningClient implements LightningClientInterface {
     );
     this.channelManager.timer_tick_occurred();
 
-    console.log('[LightningClient.ts]: Listening for events')
+    console.log("[LightningClient.ts]: Listening for events");
     setInterval(async () => {
       // processes events on ChannelManager and ChainMonitor
       await this.processPendingEvents();
