@@ -76,7 +76,25 @@ class MercuryEventHandler implements EventHandlerInterface {
     this.channelManager = channelManager;
   }
 
+  static validateTx(txData: any): void {
+    // validate txData
+    if (!txData || typeof txData !== "object") {
+      throw new Error("Invalid transaction data provided");
+    }
+    if (txData.vout === undefined) {
+      throw new Error("Invalid vout was set in txid");
+    }
+    if (txData.txid === undefined) {
+      throw new Error("Invalid txid was set in txid");
+    }
+    if (txData.sequence === undefined) {
+      throw new Error("Invalid sequence was set in txid");
+    }
+  }
+
   static setInputTx(txData: any) {
+    this.validateTx(txData);
+
     this.vout = txData.vout;
     this.txid = txData.txid;
     this.sequence = txData.sequence;
@@ -159,14 +177,18 @@ class MercuryEventHandler implements EventHandlerInterface {
 
     const network = bitcoin.networks.regtest;
 
-    if (this.privateKey === undefined) throw Error("[MercuryEventHandler.ts]: private key is undefined");
+    if (this.privateKey === undefined)
+      throw Error("[MercuryEventHandler.ts]: private key is undefined");
     let electrum_wallet = ECPair.fromPrivateKey(this.privateKey, {
       network: network,
     });
     if (electrum_wallet === undefined)
       throw Error("[MercuryEventHandler.ts]: electrum wallet is undefined");
 
-    console.log("[MercuryEventHandler.ts]: ECPair.fromPrivateKey:", ECPair.fromPrivateKey(this.privateKey, { network: network }));
+    console.log(
+      "[MercuryEventHandler.ts]: ECPair.fromPrivateKey:",
+      ECPair.fromPrivateKey(this.privateKey, { network: network })
+    );
 
     // Create the psbt transaction
     const psbt = new bitcoin.Psbt({ network: network });
@@ -176,7 +198,8 @@ class MercuryEventHandler implements EventHandlerInterface {
       pubkey: electrum_wallet.publicKey,
       network: network,
     });
-    if (p2wpkh.output === undefined) throw Error("[MercuryEventHandler.ts]: p2wpkh output is undefined");
+    if (p2wpkh.output === undefined)
+      throw Error("[MercuryEventHandler.ts]: p2wpkh output is undefined");
 
     if (MercuryEventHandler.txid === null) {
       throw Error("[MercuryEventHandler.ts]: No TXID was set");
@@ -206,9 +229,8 @@ class MercuryEventHandler implements EventHandlerInterface {
     psbt.finalizeAllInputs();
     let funding_tx: any = psbt.extractTransaction().toBuffer();
 
-
-    console.log('[MercuryEventHandler.ts]: privateKey ->', this.privateKey);
-    console.log('[MercuryEventHandler.ts]: funding_tx ->', funding_tx);
+    console.log("[MercuryEventHandler.ts]: privateKey ->", this.privateKey);
+    console.log("[MercuryEventHandler.ts]: funding_tx ->", funding_tx);
 
     try {
       // Send the funding transaction to the channel manager
