@@ -7,8 +7,6 @@ import channelRoutes from "./routes/channelRoutes";
 import { closeConnections } from "./LDK/utils/ldk-utils";
 import initialiseWasm from "./LDK/init/initialiseWasm";
 import { getLDKClient, createLDK } from "./LDK/init/getLDK";
-import LightningClient from "./LDK/LightningClient";
-import { debug_lightning } from "./debug_lightning";
 
 // Constants
 const PORT = 3003;
@@ -28,7 +26,6 @@ app.use("/channel", channelRoutes);
 // Starting the express server
 app.listen(PORT, async () => {
   /* PRODUCTION CODE */
-  /*
   console.log(
     `[Server.ts]: lightning-adapter listening at http://localhost:${PORT}`
   );
@@ -39,10 +36,7 @@ app.listen(PORT, async () => {
   const LightningClient = getLDKClient();
   console.log("[Server.ts]: Starting LDK Client");
   await LightningClient.start();
-  console.log("[Server.ts]: LDK Client started");*/
-
-  // DEBUGGING CODE TO RUN IN REGTEST (POLAR LIGHTNING NODE SEE ELECTRUMCLIENT.MTS)
-  debug_lightning();
+  console.log("[Server.ts]: LDK Client started");
 });
 
 // Exit handlers
@@ -61,6 +55,5 @@ const onSigInt = () => {
 
 process.on("exit", onExit);
 process.on("SIGINT", onSigInt);
-
 
 export default app;
