@@ -1,7 +1,7 @@
 import express from "express";
 import db from "../db/db.js";
 
-import { getLDKClient } from "../LDK/init/getLDK.js";
+import LDKClientFactory from "../LDK/init/LDKClientFactory.js";
 import { hexToUint8Array, uint8ArrayToHexString } from "../LDK/utils/utils.js";
 import {
   ChannelDetails,
@@ -29,15 +29,17 @@ interface Channel {
 
 // Get the Node ID of our wallet
 router.get("/nodeID", async function (req, res) {
-  const nodeId = getLDKClient().channelManager.get_our_node_id();
+  const nodeId =
+    LDKClientFactory.getLDKClient().channelManager.get_our_node_id();
   const hexNodeId = uint8ArrayToHexString(nodeId);
   res.json({ nodeID: hexNodeId });
 });
 
 // This is live channels that the LDK adapter has open - different to channels persisted in database.
 router.get("/liveChannels", async function (req, res) {
-  const channels: ChannelDetails[] = getLDKClient().getChannels();
-  let activeChannels = getLDKClient().getUsableChannels();
+  const channels: ChannelDetails[] =
+    LDKClientFactory.getLDKClient().getChannels();
+  let activeChannels = LDKClientFactory.getLDKClient().getUsableChannels();
   console.log("active channels:", activeChannels);
   console.log("channels: ", channels);
 
@@ -80,7 +82,7 @@ router.post("/createChannel", async (req, res) => {
     channelType === "Public" ? true : false;
     try {
       if (pubkey.length !== 33) {
-        const connection = await getLDKClient().createChannel(
+        const connection = await LDKClientFactory.getLDKClient().createChannel(
           hexToUint8Array(pubkey),
           amount,
           push_msat,
@@ -100,7 +102,8 @@ router.post("/createChannel", async (req, res) => {
 });
 
 router.get("/usableChannels", async function (req, res) {
-  const activeChannels: ChannelDetails[] = getLDKClient().getUsableChannels();
+  const activeChannels: ChannelDetails[] =
+    LDKClientFactory.getLDKClient().getUsableChannels();
 
   let jsonChannels = [];
   activeChannels.forEach((channel: ChannelDetails) => {
@@ -268,7 +271,8 @@ router.get("/removeDuplicateChannels", (req, res) => {
 router.delete("/forceCloseChannel/:id", async (req, res) => {
   try {
     const channel_id = req.params.id;
-    const closeChannelReq = getLDKClient().forceCloseChannel(channel_id);
+    const closeChannelReq =
+      LDKClientFactory.getLDKClient().forceCloseChannel(channel_id);
     if (closeChannelReq) {
       res.status(200).json({ status: 200, message: "Success" });
     } else {
@@ -284,7 +288,8 @@ router.delete("/forceCloseChannel/:id", async (req, res) => {
 router.delete("/mutualCloseChannel/:id", async (req, res) => {
   try {
     const channel_id = req.params.id;
-    const closeChannelReq = getLDKClient().mutualCloseChannel(channel_id);
+    const closeChannelReq =
+      LDKClientFactory.getLDKClient().mutualCloseChannel(channel_id);
     if (closeChannelReq) {
       res.status(200).json({ status: 200, message: "Success" });
     } else {

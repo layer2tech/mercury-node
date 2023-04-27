@@ -5,8 +5,8 @@ import serverRoutes from "./routes/serverRoutes";
 import peerRoutes from "./routes/peerRoutes";
 import channelRoutes from "./routes/channelRoutes";
 import { closeConnections } from "./LDK/utils/ldk-utils";
-import initialiseWasm from "./LDK/init/initialiseWasm";
-import { getLDKClient, createLDK } from "./LDK/init/getLDK";
+import initialiseWasm from "./LDK/init/initializeWasm";
+import LDKClientFactory from "./LDK/init/LDKClientFactory";
 
 // Constants
 const PORT = 3003;
@@ -31,9 +31,9 @@ app.listen(PORT, async () => {
   );
   await initialiseWasm();
   console.log("[Server.ts]: Finished initialiseWasm");
-  await createLDK("dev"); // prod or dev
+  await LDKClientFactory.createLDKClient("dev"); // prod or dev
   console.log("[Server.ts]: Finished create LDK");
-  const LightningClient = getLDKClient();
+  const LightningClient = LDKClientFactory.getLDKClient();
   console.log("[Server.ts]: Starting LDK Client");
   await LightningClient.start();
   console.log("[Server.ts]: LDK Client started");

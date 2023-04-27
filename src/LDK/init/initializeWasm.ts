@@ -1,7 +1,7 @@
 import * as ldk from "lightningdevkit";
 import fs from "fs";
 
-export default async function initialiseWasm() {
+export default async function initializeWasm() {
   try {
     const wasm_file = fs.readFileSync(
       "node_modules/lightningdevkit/liblightningjs.wasm"

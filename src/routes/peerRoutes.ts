@@ -7,11 +7,12 @@ import {
 } from "lightningdevkit";
 const router = express.Router();
 import db from "../db/db";
-import { getLDKClient } from "../LDK/init/getLDK";
+import LDKClientFactory from "../LDK/init/LDKClientFactory";
 import { hexToUint8Array, uint8ArrayToHexString } from "../LDK/utils/utils";
 
 router.get("/liveChainMonitors", async (req, res) => {
-  let chainMonitor: ChainMonitor = await getLDKClient().getChainMonitor();
+  let chainMonitor: ChainMonitor =
+    await LDKClientFactory.getLDKClient().getChainMonitor();
   if (chainMonitor) {
     res.status(200).json({ chainMonitors: chainMonitor.list_monitors() });
   } else {
@@ -20,7 +21,8 @@ router.get("/liveChainMonitors", async (req, res) => {
 });
 
 router.get("/livePeers", async (req, res) => {
-  let peerManager: PeerManager = await getLDKClient().getPeerManager();
+  let peerManager: PeerManager =
+    await LDKClientFactory.getLDKClient().getPeerManager();
   if (peerManager) {
     let peer_node_ids: TwoTuple_PublicKeyCOption_NetAddressZZ[] | any =
       peerManager.get_peer_node_ids();
@@ -67,7 +69,11 @@ router.post("/connectToPeer", async (req, res) => {
   } else {
     // try and connect to a peer, return success if it can, fail if it can't
     try {
-      const connection = await getLDKClient().connectToPeer(pubkey, host, port);
+      const connection = await LDKClientFactory.getLDKClient().connectToPeer(
+        pubkey,
+        host,
+        port
+      );
       if (connection) {
         res.status(200).json({
           status: 200,
@@ -134,18 +140,19 @@ router.post("/savePeerAndChannelToDb", async (req, res) => {
   channelType === "Public" ? true : false;
 
   try {
-    const result = await getLDKClient().savePeerAndChannelToDatabase(
-      amount,
-      pubkey,
-      host,
-      port,
-      channel_name,
-      wallet_name,
-      channelType,
-      privkey,
-      paid,
-      payment_address
-    );
+    const result =
+      await LDKClientFactory.getLDKClient().savePeerAndChannelToDatabase(
+        amount,
+        pubkey,
+        host,
+        port,
+        channel_name,
+        wallet_name,
+        channelType,
+        privkey,
+        paid,
+        payment_address
+      );
 
     if (result && result.status === 409) {
       res.status(409).json({
@@ -184,7 +191,7 @@ router.post("/setTxData", async (req, res) => {
     });
   } else {
     try {
-      await getLDKClient().setEventTXData(txid);
+      await LDKClientFactory.getLDKClient().setEventTXData(txid);
       res.status(200).json({
         status: 200,
         message: "Txid was set correctly.",
@@ -219,7 +226,7 @@ router.post("/saveChannelPaymentInfoToDb", async (req, res) => {
     });
   } else {
     try {
-      await getLDKClient().saveChannelFundingToDatabase(
+      await LDKClientFactory.getLDKClient().saveChannelFundingToDatabase(
         amount,
         paid,
         txid,

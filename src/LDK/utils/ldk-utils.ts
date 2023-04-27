@@ -1,9 +1,9 @@
-import { getLDKClient } from "../init/getLDK";
+import LDKClientFactory from "../init/LDKClientFactory";
 import db from "../../db/db";
 
 export const closeConnections = () => {
   console.log("[ldk-utils.ts]: Closing all the connections");
-  let LDK = getLDKClient();
+  let LDK = LDKClientFactory.getLDKClient();
   LDK.netHandler?.stop();
 };
 

@@ -1,5 +1,5 @@
-import initialiseWasm from "./LDK/init/initialiseWasm.js";
-import { getLDKClient, createLDK } from "./LDK/init/getLDK.js";
+import initialiseWasm from "./LDK/init/initializeWasm.js";
+import LDKClientFactory from "./LDK/init/LDKClientFactory.js";
 import { hexToUint8Array } from "./LDK/utils/utils";
 import crypto from "crypto";
 import express from "express";
@@ -17,10 +17,10 @@ export async function debug_lightning() {
   await initialiseWasm();
 
   console.log("[debug_lightning.ts]: import LDK");
-  await createLDK("dev");
+  await LDKClientFactory.createLDKClient("dev");
 
   console.log("[debug_lightning.ts]: getLDKClient");
-  const LightningClient = await getLDKClient();
+  const LightningClient = await LDKClientFactory.getLDKClient();
 
   console.log("[debug_lightning.ts]: start LDK");
   await LightningClient.start();
