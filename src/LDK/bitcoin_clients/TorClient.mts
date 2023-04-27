@@ -30,9 +30,7 @@ class TorClient {
     console.log("[TorClient.mts]: getBestBlockHash...");
     let res;
     try {
-      res = await TorClient.get(
-        `${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HASH}`
-      );
+      res = await TorClient.get(`${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HASH}`);
 
       res = res && res.data;
     } catch (e) {
@@ -47,10 +45,7 @@ class TorClient {
     let currentBlockHash;
     try {
       console.log("[TorClient.mts]: Get latest block header...............");
-      console.log(
-        "[TorClient.mts]: block_height: ",
-        height
-      );
+      console.log("[TorClient.mts]: block_height: ", height);
       console.log(
         `[TorClient.mts]: ${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HASH}`
       );
@@ -92,6 +87,7 @@ class TorClient {
         const result = res.data;
         return [result.blockheight, result.hex];
       }
+      throw new Error("No res.data found");
     } catch (e: any) {
       throw new Error(e);
     }

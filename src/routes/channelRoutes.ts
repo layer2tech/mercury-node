@@ -3,7 +3,12 @@ import db from "../db/db.js";
 
 import { getLDKClient } from "../LDK/init/getLDK.js";
 import { hexToUint8Array, uint8ArrayToHexString } from "../LDK/utils/utils.js";
-import { ChannelDetails } from "lightningdevkit";
+import {
+  ChannelDetails,
+  Option_u32Z,
+  Option_u32Z_None,
+  Option_u32Z_Some,
+} from "lightningdevkit";
 
 const router = express.Router();
 
@@ -52,7 +57,7 @@ router.get("/liveChannels", async function (req, res) {
         ),
         amount_in_satoshis: channel.get_channel_value_satoshis().toString(),
         public: channel.get_is_public(),
-        confirmations: channel.get_confirmations().some,
+        //confirmations: channel.get_confirmations().some,
       });
     }
     res.json(jsonChannels);
@@ -60,7 +65,6 @@ router.get("/liveChannels", async function (req, res) {
     res.json([]);
   }
 });
-
 
 router.post("/createChannel", async (req, res) => {
   const { pubkey, amount, push_msat, channelId, channelType } = req.body;
@@ -100,6 +104,8 @@ router.get("/usableChannels", async function (req, res) {
 
   let jsonChannels = [];
   activeChannels.forEach((channel: ChannelDetails) => {
+    let confirmations: Option_u32Z | Option_u32Z_Some | Option_u32Z_None | any;
+
     jsonChannels.push({
       channel_hexId: uint8ArrayToHexString(channel.get_channel_id()),
       balance_msat: channel.get_balance_msat(),
@@ -109,7 +115,7 @@ router.get("/usableChannels", async function (req, res) {
       funding_txo: uint8ArrayToHexString(channel.get_funding_txo().get_txid()),
       amount_in_satoshis: channel.get_channel_value_satoshis().toString(),
       public: channel.get_is_public(),
-      confirmations: channel.get_confirmations().some,
+      confirmations: confirmations?.some,
     });
   });
 });
@@ -268,7 +274,7 @@ router.delete("/forceCloseChannel/:id", async (req, res) => {
     } else {
       res.status(500).json({ error: "Failed to force close channel" });
     }
-  } catch(e) {
+  } catch (e) {
     console.log("Error ", e);
     res.status(500).json({ error: e });
   }
@@ -284,7 +290,7 @@ router.delete("/mutualCloseChannel/:id", async (req, res) => {
     } else {
       res.status(500).json({ error: "Failed to mutual close channel" });
     }
-  } catch(e) {
+  } catch (e) {
     console.log("Error ", e);
     res.status(500).json({ error: e });
   }

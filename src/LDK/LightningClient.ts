@@ -22,6 +22,7 @@ import {
   Route,
   Option_u64Z_Some,
   Result_InvoiceParseOrSemanticErrorZ_OK,
+  Result_InvoiceParseOrSemanticErrorZ_Err,
   Invoice,
   Router,
   UtilMethods,
@@ -30,6 +31,8 @@ import {
   Result_InvoiceSignOrCreationErrorZ_OK,
   Result_InvoiceSignOrCreationErrorZ_Err,
   Result_InvoiceSignOrCreationErrorZ,
+  Result_InvoiceParseOrSemanticErrorZ,
+  EventHandler,
 } from "lightningdevkit";
 import { NodeLDKNet } from "./structs/NodeLDKNet.mjs";
 import LightningClientInterface from "./types/LightningClientInterface.js";
@@ -59,7 +62,7 @@ export default class LightningClient implements LightningClientInterface {
   filter: Filter;
   persist: Persist;
   persister: Persister;
-  eventHandler: MercuryEventHandler;
+  eventHandler: EventHandler;
   chainMonitor: ChainMonitor;
   chainWatch: any;
   keysManager: KeysManager;
@@ -173,27 +176,33 @@ export default class LightningClient implements LightningClientInterface {
       invoice
     );
 
-    if (invoice.err) {
+    if (invoice instanceof Result_InvoiceSignOrCreationErrorZ_Err) {
       console.log(
         "[LightningClient.ts][createInvoiceUtil]: ",
         invoice.err.to_str()
       );
+      throw new Error(
+        "[LightningClient.ts][createInvoiceUtil]:" + invoice.err.to_str()
+      );
+    } else if (invoice instanceof Result_InvoiceSignOrCreationErrorZ_OK) {
+      let successful_invoice: any =
+        Result_InvoiceSignOrCreationErrorZ_OK.constructor_ok(invoice.res);
+      console.log(
+        "[LightningClient.ts][createInvoiceUtil]: Invoice generated with UTIL METHODS:",
+        successful_invoice.res
+      );
+      let encoded_invoice: Invoice = successful_invoice.res;
+      console.log(
+        "[LightningClient.ts][createInvoiceUtil]: Encoded_invoice:",
+        encoded_invoice.to_str()
+      );
+
+      return encoded_invoice.to_str();
     }
 
-    let successful_invoice: Result_InvoiceSignOrCreationErrorZ_OK =
-      Result_InvoiceSignOrCreationErrorZ_OK.constructor_ok(invoice.res);
-    console.log(
-      "[LightningClient.ts][createInvoiceUtil]: Invoice generated with UTIL METHODS:",
-      successful_invoice.res
+    throw new Error(
+      "Error occured in [LightningClient.ts/createInvoiceUtil] method not in fail or success state"
     );
-
-    let encoded_invoice: Invoice = successful_invoice.res;
-    console.log(
-      "[LightningClient.ts][createInvoiceUtil]: Encoded_invoice:",
-      encoded_invoice.to_str()
-    );
-
-    return encoded_invoice.to_str();
   }
 
   async setEventTXData(txid: any) {
@@ -285,17 +294,20 @@ export default class LightningClient implements LightningClientInterface {
 
     if (parsed_invoice instanceof Result_InvoiceParseOrSemanticErrorZ_OK) {
       const invoice = parsed_invoice.res;
-      console.log(invoice); // this will log the Invoice object
+      console.log("[LightningClient.ts/sendPayment]: " + invoice);
 
-      let amt_msat = 0;
+      let amt_msat: bigint = 0n;
 
-      if (invoice.amount_milli_satoshis() instanceof Option_u64Z_Some) {
-        amt_msat = invoice.amount_milli_satoshis().some;
+      let invoiceSome = invoice.amount_milli_satoshis();
+      if (invoiceSome instanceof Option_u64Z_Some) {
+        amt_msat = invoiceSome.some;
         console.log(amt_msat);
       }
 
-      if (amt_msat == 0) {
-        throw Error("[LightningClient.ts]: Invalid or zero value invoice");
+      if (amt_msat === 0n) {
+        throw Error(
+          "[LightningClient.ts/sendPayment]: Invalid or zero value invoice"
+        );
       }
 
       let route: Route;
@@ -306,11 +318,13 @@ export default class LightningClient implements LightningClientInterface {
       );
       let route_params = RouteParameters.constructor_new(
         payment_params,
-        BigInt(amt_msat)
+        amt_msat
       );
 
-      console.log("USABLE CHANNELS");
-      console.log(this.channelManager.list_usable_channels());
+      console.log(
+        "[LightningClient.ts/sendPayment]: USABLE CHANNELS",
+        this.channelManager.list_usable_channels()
+      );
       const route_res = this.router.find_route(
         this.channelManager.get_our_node_id(),
         route_params,
@@ -332,7 +346,13 @@ export default class LightningClient implements LightningClientInterface {
         console.log(payment_res);
         return payment_res;
       }
+    } else if (
+      parsed_invoice instanceof Result_InvoiceParseOrSemanticErrorZ_Err
+    ) {
+      return parsed_invoice.err.to_str();
     }
+
+    throw Error("Error occured in [LightningClient.ts/sendPayment] method");
   }
 
   async saveChannelFundingToDatabase(
@@ -370,6 +390,7 @@ export default class LightningClient implements LightningClientInterface {
         throw e; // re-throw the error to the parent function
       }
     }
+    throw new Error("Was not able to convert pubkeyHex to a uint8array");
   }
 
   // This function runs after createNewChannel->createChannel
@@ -442,11 +463,20 @@ export default class LightningClient implements LightningClientInterface {
   forceCloseChannel(pubkey: string): boolean {
     const channels: ChannelDetails[] = this.getChannels();
 
-    console.log("[LightningClient.ts]: channels found->", channels);
+    console.log(
+      "[LightningClient.ts/forceCloseChannel]: channels found->",
+      channels
+    );
 
-    channels.forEach((chn) => {
+    let channelClosed = false;
+
+    for (const chn of channels) {
       const hexId = uint8ArrayToHexString(chn.get_channel_id());
-      console.log("channelId found->", hexId);
+      console.log(
+        "[LightningClient.ts/forceCloseChannel]: channelId found->",
+        hexId
+      );
+
       if (hexId === pubkey) {
         const result: Result_NoneAPIErrorZ =
           this.channelManager.force_close_broadcasting_latest_txn(
@@ -455,35 +485,51 @@ export default class LightningClient implements LightningClientInterface {
           );
 
         if (result.is_ok()) {
-          return true;
+          channelClosed = true;
+          break;
         }
-        return false;
       }
-    });
+    }
 
-    throw new Error("Trying to close a channel that doen't exist on LDK");
+    if (channelClosed) {
+      return true;
+    } else {
+      throw new Error("Trying to close a channel that doesn't exist on LDK");
+    }
   }
 
   // Mutual close a channel
   mutualCloseChannel(pubkey: string): boolean {
     const channels: ChannelDetails[] = this.getChannels();
 
-    console.log('[LightningClient.ts]: channels found->', channels);
+    console.log(
+      "[LightningClient.ts/mutualCloseChannel]: channels found->",
+      channels
+    );
 
-    channels.forEach(chn => {
+    for (const chn of channels) {
       const hexId = uint8ArrayToHexString(chn.get_channel_id());
-      console.log('channelId found->', hexId);
+      console.log(
+        "[LightningClient.ts/mutualCloseChannel]: channelId found->",
+        hexId
+      );
       if (hexId === pubkey) {
-        const result: Result_NoneAPIErrorZ = this.channelManager.close_channel(chn.get_channel_id(), chn.get_counterparty().get_node_id());
+        const result: Result_NoneAPIErrorZ = this.channelManager.close_channel(
+          chn.get_channel_id(),
+          chn.get_counterparty().get_node_id()
+        );
 
         if (result.is_ok()) {
           return true;
+        } else {
+          return false;
         }
-        return false;
       }
-    })
+    }
 
-    throw new Error("Trying to close a channel that doen't exist on LDK");
+    throw new Error(
+      "[LightningClient.ts/mutualCloseChannel]: Trying to close a channel that doesn't exist on LDK"
+    );
   }
 
   /**
@@ -497,7 +543,10 @@ export default class LightningClient implements LightningClientInterface {
     try {
       await this.netHandler.connect_peer(host, port, pubkey);
     } catch (e) {
-      console.log("[LightningClient.ts]: Error connecting to peer: ", e);
+      console.log(
+        "[LightningClient.ts/create_socket]: Error connecting to peer: ",
+        e
+      );
       throw e; // or handle the error in a different way
     }
 
@@ -543,11 +592,11 @@ export default class LightningClient implements LightningClientInterface {
   // starts the lightning LDK
   async start() {
     console.log(
-      "[LightningClient.ts]: Calling ChannelManager's timer_tick_occurred on startup"
+      "[LightningClient.ts/start]: Calling ChannelManager's timer_tick_occurred on startup"
     );
     this.channelManager.timer_tick_occurred();
 
-    console.log("[LightningClient.ts]: Listening for events");
+    console.log("[LightningClient.ts/start]: Listening for events");
     setInterval(async () => {
       // processes events on ChannelManager and ChainMonitor
       await this.processPendingEvents();
