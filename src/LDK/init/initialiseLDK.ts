@@ -162,7 +162,7 @@ async function setUpLDK(electrum: string = "prod") {
   const filter = Filter.new_impl(new MercuryFilter());
 
   const chainMonitor: ChainMonitor = ChainMonitor.constructor_new(
-    Option_FilterZ.constructor_none(),
+    Option_FilterZ.constructor_some(filter),
     txBroadcaster,
     logger,
     feeEstimator,
