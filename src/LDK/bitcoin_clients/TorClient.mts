@@ -58,7 +58,6 @@ class TorClient {
       console.log("[TorClient.mts]: Error Getting Current Block Hash");
     }
 
-    // return currentBlockHash
     console.log("[TorClient.mts]: Get Latest Block Header...");
     let res;
     try {
@@ -72,9 +71,6 @@ class TorClient {
     }
 
     if (res) {
-      // console.log('BLOCK JEADER::: ',res)
-      // console.log(res);
-      // const blockArray = new Uint8Array(Buffer.from(JSON.stringify(res.tx)))
       return res;
     }
   }
