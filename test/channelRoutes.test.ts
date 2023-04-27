@@ -3,7 +3,7 @@ import express from "express";
 import router from "../src/routes/channelRoutes";
 import { describe, expect, it, beforeAll } from "@jest/globals";
 
-jest.mock("../src/LDK/init/importLDK", () => {
+jest.mock("../src/LDK/init/initialiseLDK", () => {
   const nodeIdMock = new Uint8Array([0x00, 0x01, 0x02, 0x03]);
   return {
     getLDKClient: jest.fn(() => {

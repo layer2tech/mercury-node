@@ -2,7 +2,7 @@ import request from "supertest";
 import express from "express";
 import router from "../src/routes/peerRoutes.js";
 
-jest.mock("../src/LDK/init/importLDK", () => {
+jest.mock("../src/LDK/init/initialiseLDK", () => {
   return {
     getLDKClient: jest.fn().mockImplementation(() => {
       return {
