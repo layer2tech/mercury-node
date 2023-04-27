@@ -162,7 +162,7 @@ export default class LightningClient implements LightningClientInterface {
         this.channelManager,
         this.keysManager.as_NodeSigner(),
         this.logger,
-        Currency.LDKCurrency_Regtest,
+        this.network,
         some_amount,
         description,
         durationSinceEpoch,
