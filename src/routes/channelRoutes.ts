@@ -236,23 +236,33 @@ router.get("/removeDuplicateChannels", (req, res) => {
 
 // takes hexadecimal format of channelId
 router.delete("/forceCloseChannel/:id", async (req, res) => {
-  const channel_id = req.params.id;
-  const closeChannelReq = getLDKClient().forceCloseChannel(channel_id);
-  if (closeChannelReq) {
-    res.status(200).json({ status: 200, message: "Success" });
-  } else {
-    res.status(500).json({ error: "Failed to force close channel" });
+  try {
+    const channel_id = req.params.id;
+    const closeChannelReq = getLDKClient().forceCloseChannel(channel_id);
+    if (closeChannelReq) {
+      res.status(200).json({ status: 200, message: "Success" });
+    } else {
+      res.status(500).json({ error: "Failed to force close channel" });
+    }
+  } catch(e) {
+    console.log("Error ", e);
+    res.status(500).json({ error: e });
   }
 });
 
 // takes hexadecimal format of channelId
 router.delete("/mutualCloseChannel/:id", async (req, res) => {
-  const channel_id = req.params.id;
-  const closeChannelReq = getLDKClient().mutualCloseChannel(channel_id);
-  if (closeChannelReq) {
-    res.status(200).json({ status: 200, message: "Success" });
-  } else {
-    res.status(500).json({ error: "Failed to mutual close channel" });
+  try {
+    const channel_id = req.params.id;
+    const closeChannelReq = getLDKClient().mutualCloseChannel(channel_id);
+    if (closeChannelReq) {
+      res.status(200).json({ status: 200, message: "Success" });
+    } else {
+      res.status(500).json({ error: "Failed to mutual close channel" });
+    }
+  } catch(e) {
+    console.log("Error ", e);
+    res.status(500).json({ error: e });
   }
 });
 
