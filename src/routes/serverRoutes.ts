@@ -1,10 +1,6 @@
 import express from "express";
 const router = express.Router();
-import {
-  closeConnections,
-  createInvoice,
-  validateInvoiceBody,
-} from "../LDK/utils/ldk-utils";
+import { closeConnections, validateInvoiceBody } from "../LDK/utils/ldk-utils";
 import { getLDKClient } from "../LDK/init/getLDK";
 
 router.get("/closeConnections", async function (req, res) {

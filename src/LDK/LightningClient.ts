@@ -25,7 +25,6 @@ import {
   Invoice,
   Router,
   UtilMethods,
-  Currency,
   Option_u64Z,
   Option_u16Z,
   Result_InvoiceSignOrCreationErrorZ_OK,
@@ -44,7 +43,6 @@ import {
   saveNewPeerToDB,
   saveNewChannelToDB,
   saveTxDataToDB,
-  createInvoice,
 } from "./utils/ldk-utils.js";
 import MercuryEventHandler from "./structs/MercuryEventHandler.js";
 
