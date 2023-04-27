@@ -75,15 +75,19 @@ class TorClient {
     }
   }
 
-  async getTxIdData(txid: string) {
+  async getUtxoSpentData(txid: string, vout: number) {
     try {
-      const res = (await TorClient.get(`${TOR_ENDPOINT}/tx/${txid}`)).data;
-      if (res) {
-        const { vin, blockheight, hex } = res.data;
-        const { sequence, vout } = vin[0];
-        return { sequence, vout, blockheight, hex };
+      const res = (
+        await TorClient.get(
+          `${TOR_ENDPOINT}${GET_ROUTE.UTXO_SPENT}`
+            .replace(":txid", txid)
+            .replace(":vout", String(vout))
+        )
+      ).data;
+      if (res && res.status === "success" && res.data) {
+        return res.data;
       }
-      throw new Error("No res.data found");
+      throw new Error("Error fetching UTXO spent data");
     } catch (e: any) {
       throw new Error(e);
     }
@@ -142,6 +146,7 @@ export const GET_ROUTE = {
   UTXO: "utxo",
   //getFeeEstimates
   FEE_ESTIMATES: "/electrs/fee-estimates",
+  UTXO_SPENT: "/electrs/tx/:txid/outspend/:vout",
 };
 Object.freeze(GET_ROUTE);
 
