@@ -22,10 +22,7 @@ router.get("/liveChainMonitors", async (req, res) => {
 router.get("/livePeers", async (req, res) => {
   let peerManager: PeerManager = await getLDKClient().getPeerManager();
   if (peerManager) {
-    console.log("************************************");
-    console.log("************************************");
-    console.log("************************************");
-    let peer_node_ids: TwoTuple_PublicKeyCOption_NetAddressZZ[] =
+    let peer_node_ids: TwoTuple_PublicKeyCOption_NetAddressZZ[] | any =
       peerManager.get_peer_node_ids();
 
     let peer_ids = [];
@@ -33,19 +30,18 @@ router.get("/livePeers", async (req, res) => {
     console.log(peer_node_ids.length);
 
     for (var i = 0; i < peer_node_ids.length; i++) {
-      console.log("get a ->", uint8ArrayToHexString(peer_node_ids[i]?.get_a()));
+      console.log(
+        "[peerRoutes.ts/livePeers]: get a ->",
+        uint8ArrayToHexString(peer_node_ids[i]?.get_a())
+      );
       peer_ids.push({
         id: i + 1,
         pubkey: uint8ArrayToHexString(peer_node_ids[i]?.get_a()),
       });
     }
-    console.log("************************************");
-    console.log("************************************");
-    console.log("************************************");
-
     res.status(200).json(peer_ids);
   } else {
-    res.status(500).json("Failed to get peermanager");
+    res.status(500).json({ status: 500, message: "Failed to get peermanager" });
   }
 });
 
@@ -64,44 +60,39 @@ router.post("/connectToPeer", async (req, res) => {
   console.log("//////////////////////////////////////////////////////");
 
   if (pubkey === undefined || host === undefined || port === undefined) {
-    res.status(500)
-      .json({
-        status: 500,
-        message: "Missing required parameters",
-      });
+    res.status(500).json({
+      status: 500,
+      message: "Missing required parameters",
+    });
   } else {
     // try and connect to a peer, return success if it can, fail if it can't
     try {
       const connection = await getLDKClient().connectToPeer(pubkey, host, port);
       if (connection) {
-        res.status(200)
-          .json({
-            status: 200,
-            message: "Connected to peer",
-          });
+        res.status(200).json({
+          status: 200,
+          message: "Connected to peer",
+        });
       } else {
-        res.status(500)
-          .json({
-            status: 500,
-            message: "Failed to connect to peer",
-          });
+        res.status(500).json({
+          status: 500,
+          message: "Failed to connect to peer",
+        });
       }
     } catch (e) {
       if (
         e instanceof Error &&
         e.message.includes("already tried to connect to this peer")
       ) {
-        res.status(500)
-          .json({
-            status: 500,
-            message: "You're already connected to this peer!",
-          });
+        res.status(500).json({
+          status: 500,
+          message: "You're already connected to this peer!",
+        });
       } else {
-        res.status(500)
-          .json({
-            status: 500,
-            message: "Error connecting to peer",
-          });
+        res.status(500).json({
+          status: 500,
+          message: "Error connecting to peer",
+        });
       }
     }
   }
@@ -180,33 +171,32 @@ router.post("/savePeerAndChannelToDb", async (req, res) => {
   }
 });
 
-router.post('/setTxData', async (req, res) => {
+router.post("/setTxData", async (req, res) => {
   const { txid } = req.body;
 
-  console.log('[peerRoutes.ts]->setTxData' + txid);
+  console.log("[peerRoutes.ts]->setTxData" + txid);
 
   if (txid === undefined) {
-    console.log('No TXID was found.');
+    console.log("No TXID was found.");
     res.status(500).json({
       status: 500,
-      message: "No txid specified"
-    })
+      message: "No txid specified",
+    });
   } else {
     try {
       await getLDKClient().setEventTXData(txid);
       res.status(200).json({
         status: 200,
-        message: "Txid was set correctly."
-      })
+        message: "Txid was set correctly.",
+      });
     } catch (e) {
       res.status(500).json({
         status: 500,
-        message: "Error occured during setting the txid"
-      })
+        message: "Error occured during setting the txid",
+      });
     }
-
   }
-})
+});
 
 router.post("/saveChannelPaymentInfoToDb", async (req, res) => {
   const { amount, paid, txid, vout, address } = req.body;

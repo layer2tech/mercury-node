@@ -1,6 +1,6 @@
 import initialiseWasm from "./LDK/init/initialiseWasm.js";
 import { getLDKClient, createLDK } from "./LDK/init/getLDK.js";
-import { hexToUint8Array } from "./LDK/utils/utils.ts";
+import { hexToUint8Array } from "./LDK/utils/utils";
 import crypto from "crypto";
 import express from "express";
 import cors from "cors";

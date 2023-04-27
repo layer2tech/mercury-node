@@ -37,17 +37,17 @@ import {
 import fs from "fs";
 import crypto from "crypto";
 
-import MercuryFeeEstimator from "../structs/MercuryFeeEstimator.mts";
-import MercuryLogger from "../structs/MercuryLogger.ts";
+import MercuryFeeEstimator from "../structs/MercuryFeeEstimator.mjs";
+import MercuryLogger from "../structs/MercuryLogger";
 // @ts-ignore
-import MercuryEventHandler from "../structs/MercuryEventHandler.ts";
-import MercuryFilter from "../structs/MercuryFilter.ts";
-import LightningClientInterface from "../types/LightningClientInterface.ts";
-import ElectrumClient from "../bitcoin_clients/ElectrumClient.mts";
-import LightningClient from "../LightningClient.ts";
-import TorClient from "../bitcoin_clients/TorClient.mts";
-import MercuryPersist from "../structs/MercuryPersist.ts";
-import MercuryPersister from "../structs/MercuryPersister.ts";
+import MercuryEventHandler from "../structs/MercuryEventHandler";
+import MercuryFilter from "../structs/MercuryFilter";
+import LightningClientInterface from "../types/LightningClientInterface";
+import ElectrumClient from "../bitcoin_clients/ElectrumClient.mjs";
+import LightningClient from "../LightningClient";
+import TorClient from "../bitcoin_clients/TorClient.mjs";
+import MercuryPersist from "../structs/MercuryPersist";
+import MercuryPersister from "../structs/MercuryPersister";
 
 export default async function initLDK(electrum: string = "prod") {
   const initLDK = await setUpLDK(electrum);
@@ -162,7 +162,7 @@ async function setUpLDK(electrum: string = "prod") {
   const filter = Filter.new_impl(new MercuryFilter());
 
   const chainMonitor: ChainMonitor = ChainMonitor.constructor_new(
-    Option_FilterZ.constructor_none(),
+    Option_FilterZ.constructor_some(filter),
     txBroadcaster,
     logger,
     feeEstimator,
@@ -253,7 +253,7 @@ async function setUpLDK(electrum: string = "prod") {
   );
 
   const channel_monitor_mut_references: ChannelMonitor[] = [];
-  let channelManager: ChannelManager;
+  let channelManager: ChannelManager | undefined;
   console.log("[initialiseLDK.ts]: ChannelManager create/restore");
   if (fs.existsSync("channel_manager_data.bin")) {
     console.log("[initialiseLDK.ts]: Loading the channel manager from disk...");
@@ -317,6 +317,10 @@ async function setUpLDK(electrum: string = "prod") {
       config,
       params
     );
+  }
+
+  if (channelManager === undefined) {
+    throw new Error("Channel Manager is still undefined");
   }
 
   const channelHandshakeConfig = ChannelHandshakeConfig.constructor_default();

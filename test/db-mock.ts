@@ -103,7 +103,7 @@ const db = new sqlite3.Database("lightning-mock.db", (err) => {
 
     if (isDev) {
       // Insert some sample data into the 'channels' table if there's no data
-      db.get("SELECT count(*) as count FROM channels", (err, row) => {
+      db.get("SELECT count(*) as count FROM channels", (err, row: any) => {
         if (err) {
           console.error(err.message);
         }

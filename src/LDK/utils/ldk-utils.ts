@@ -1,5 +1,5 @@
-import { getLDKClient } from "../init/getLDK.ts";
-import db from "../../db/db.ts";
+import { getLDKClient } from "../init/getLDK";
+import db from "../../db/db";
 
 export const closeConnections = () => {
   console.log("[ldk-utils.ts]: Closing all the connections");
@@ -41,8 +41,13 @@ export const saveNewPeerToDB = (
   port: number,
   pubkey: string
 ): Promise<{
-  channel_id: { status: number; message?: string; error?: string; peer_id?: number; };
-  status: number;
+  channel_id?: {
+    status: number;
+    message?: string;
+    error?: string;
+    peer_id?: number;
+  };
+  status?: number;
   message?: string;
   error?: string;
   peer_id?: number;
@@ -71,7 +76,7 @@ export const saveNewPeerToDB = (
           db.run(
             `INSERT INTO peers (host, port, pubkey) VALUES (?,?,?)`,
             [host, port, pubkey],
-            function (err: any) {
+            function (this: any, err: any, row: any) {
               console.log(
                 `[ldk-utils.ts->saveNewPeerToDB] - inserting into peers: host:${host}, port:${port}, pubkey:${pubkey}`
               );
@@ -143,8 +148,8 @@ export const saveNewChannelToDB = (
         } else if (row) {
           resolve({
             status: 409,
-            message: "Channel already exists with this peer"
-          }); 
+            message: "Channel already exists with this peer",
+          });
         } else {
           const insertData = `INSERT INTO channels (name, amount, push_msat, public, wallet_name, peer_id, privkey, paid, payment_address) VALUES (?,?,?,?,?,?,?,?,?)`;
           db.run(
