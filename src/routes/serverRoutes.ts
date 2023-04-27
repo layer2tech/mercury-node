@@ -1,7 +1,7 @@
 import express from "express";
 const router = express.Router();
 import { closeConnections, validateInvoiceBody } from "../LDK/utils/ldk-utils";
-import { getLDKClient } from "../LDK/init/getLDK";
+import LDKClientFactory from "../LDK/init/LDKClientFactory";
 
 router.get("/closeConnections", async function (req, res) {
   // Closing all connections
@@ -15,7 +15,7 @@ router.post("/generateInvoice", async function (req, res) {
     // make sure we have valid object
     validateInvoiceBody(amount_in_sats, invoice_expiry_secs, description);
 
-    let invoice = await getLDKClient().createInvoiceUtil(
+    let invoice = await LDKClientFactory.getLDKClient().createInvoiceUtil(
       BigInt(amount_in_sats),
       invoice_expiry_secs,
       description
@@ -31,7 +31,9 @@ router.post("/sendPayment", async function (req, res) {
   // send a payment with values posted into this route ->
   const invoice_str = req.body.invoice;
   try {
-    const payment_res = await getLDKClient().sendPayment(invoice_str);
+    const payment_res = await LDKClientFactory.getLDKClient().sendPayment(
+      invoice_str
+    );
     if (payment_res) {
       res.status(200).json({ payment_res });
     } else {

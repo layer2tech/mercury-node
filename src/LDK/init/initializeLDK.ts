@@ -38,24 +38,16 @@ import fs from "fs";
 import crypto from "crypto";
 
 import MercuryFeeEstimator from "../structs/MercuryFeeEstimator.mjs";
-import MercuryLogger from "../structs/MercuryLogger";
+import MercuryLogger from "../structs/MercuryLogger.js";
 // @ts-ignore
-import MercuryEventHandler from "../structs/MercuryEventHandler";
-import MercuryFilter from "../structs/MercuryFilter";
-import LightningClientInterface from "../types/LightningClientInterface";
+import MercuryEventHandler from "../structs/MercuryEventHandler.js";
+import MercuryFilter from "../structs/MercuryFilter.js";
+import LightningClientInterface from "../types/LightningClientInterface.js";
 import ElectrumClient from "../bitcoin_clients/ElectrumClient.mjs";
-import LightningClient from "../LightningClient";
+import LightningClient from "../LightningClient.js";
 import TorClient from "../bitcoin_clients/TorClient.mjs";
-import MercuryPersist from "../structs/MercuryPersist";
-import MercuryPersister from "../structs/MercuryPersister";
-
-export default async function initLDK(electrum: string = "prod") {
-  const initLDK = await setUpLDK(electrum);
-  if (initLDK) {
-    return new LightningClient(initLDK);
-  }
-  throw Error("Couldn't initialize LDK");
-}
+import MercuryPersist from "../structs/MercuryPersist.js";
+import MercuryPersister from "../structs/MercuryPersister.js";
 
 function readChannelsFromDictionary(file: string): ChannelMonitorRead[] {
   let channels: ChannelMonitorRead[] = [];
@@ -107,8 +99,8 @@ class ChannelMonitorRead {
   }
 }
 
-async function setUpLDK(electrum: string = "prod") {
-  console.log("[initializeLDK.ts]: setupLdk ran");
+export async function initializeLDK(electrum: string = "prod") {
+  console.log("[initializeLDK.ts/setupLDK]: setupLdk ran");
 
   // Initialize the LDK data directory if necessary.
   const ldk_data_dir = "./.ldk/";
