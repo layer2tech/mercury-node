@@ -56,7 +56,7 @@ router.get("/liveChannels", async function (req, res) {
   }
 });
 
-router.post("/connectToChannel", async (req, res) => {
+router.post("/createChannel", async (req, res) => {
   // connect to a channel without db changes
   const { pubkey, amount, push_msat, channelId, channelType } = req.body;
   if (
@@ -79,13 +79,13 @@ router.post("/connectToChannel", async (req, res) => {
           channelType
         );
         if (connection) {
-          res.status(200).send("Connected to Channel");
+          res.status(200).send("Created Channel on LDK");
         } else {
-          res.status(500).send("Failed to connect to Channel");
+          res.status(500).send("Failed to create Channel");
         }
       }
     } catch (e) {
-      res.status(500).send("Error connecting to channel");
+      res.status(500).send("Error creating channel on LDK");
     }
   }
 });
