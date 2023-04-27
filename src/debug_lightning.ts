@@ -9,6 +9,7 @@ import serverRoutes from "./routes/serverRoutes";
 import peerRoutes from "./routes/peerRoutes";
 import channelRoutes from "./routes/channelRoutes";
 import { closeConnections } from "./LDK/utils/ldk-utils";
+import { ChannelDetails } from "lightningdevkit";
 
 export async function debug_lightning() {
   console.log("[debug_lightning.ts]: running");
@@ -35,6 +36,8 @@ export async function debug_lightning() {
 
   // 03534237af8affcf708cfe553b59fafa3a8420a4aaf1b2861d6e52df967976b53b@127.0.0.1:9735
 
+  // 03534237af8affcf708cfe553b59fafa3a8420a4aaf1b2861d6e52df967976b53b@127.0.0.1:9735
+
   // Polar node details
   let pubkeyHex =
     "03534237af8affcf708cfe553b59fafa3a8420a4aaf1b2861d6e52df967976b53b";
@@ -53,14 +56,24 @@ export async function debug_lightning() {
     "6cf30a3fc3a32774494a9b04d06459f1ffd05382cf9e4e943675bea74c99a64c"
   );
 
-  let privateKey = crypto.randomBytes(32);
+  const invoiceString = LightningClient.createInvoiceUtil(
+    BigInt(100),
+    "coffee",
+    36000
+  );
+  console.log("[debug_lightning.ts]: Invoice string returned:", invoiceString);
 
-  LightningClient.createInvoice(50000, 5000, "Test Invoice", privateKey);
+  // get channel balance
+  const balance = LightningClient.getChannels();
+  balance.forEach((channel: ChannelDetails) => {
+    console.log("[debug_lightning.ts]: balances:", channel.get_balance_msat());
+  });
 
   // Connect to the channel
   let pubkey = hexToUint8Array(pubkeyHex);
-  //console.log("[debug_lightning.ts]: Connect to channel");
+
   if (pubkey) {
+    // MUST ONLY BE CALLED ONCE - doesn't currently have any checks to prevent it - can be prevented by checking db
     //await LightningClient.createChannel(pubkey, 100000, 0, 1, true);
   }
 

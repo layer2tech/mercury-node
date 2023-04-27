@@ -32,7 +32,7 @@ router.get("/nodeID", async function (req, res) {
 // This is live channels that the LDK adapter has open - different to channels persisted in database.
 router.get("/liveChannels", async function (req, res) {
   const channels: ChannelDetails[] = getLDKClient().getChannels();
-  let activeChannels = getLDKClient().getActiveChannels();
+  let activeChannels = getLDKClient().getUsableChannels();
   console.log("active channels:", activeChannels);
   console.log("channels: ", channels);
 
@@ -44,10 +44,15 @@ router.get("/liveChannels", async function (req, res) {
         channel_hexId: uint8ArrayToHexString(channel.get_channel_id()),
         usable: channel.get_is_usable(),
         ready: channel.get_is_channel_ready(),
-        counterparty_hexId: uint8ArrayToHexString(channel.get_counterparty().get_node_id()),
-        funding_txo: uint8ArrayToHexString(channel.get_funding_txo().get_txid()),
+        counterparty_hexId: uint8ArrayToHexString(
+          channel.get_counterparty().get_node_id()
+        ),
+        funding_txo: uint8ArrayToHexString(
+          channel.get_funding_txo().get_txid()
+        ),
         amount_in_satoshis: channel.get_channel_value_satoshis().toString(),
         public: channel.get_is_public(),
+        confirmations: channel.get_confirmations().some,
       });
     }
     res.json(jsonChannels);
@@ -56,8 +61,8 @@ router.get("/liveChannels", async function (req, res) {
   }
 });
 
+
 router.post("/createChannel", async (req, res) => {
-  // connect to a channel without db changes
   const { pubkey, amount, push_msat, channelId, channelType } = req.body;
   if (
     pubkey === undefined ||
@@ -88,6 +93,25 @@ router.post("/createChannel", async (req, res) => {
       res.status(500).send("Error creating channel on LDK");
     }
   }
+});
+
+router.get("/usableChannels", async function (req, res) {
+  const activeChannels: ChannelDetails[] = getLDKClient().getUsableChannels();
+
+  let jsonChannels = [];
+  activeChannels.forEach((channel: ChannelDetails) => {
+    jsonChannels.push({
+      channel_hexId: uint8ArrayToHexString(channel.get_channel_id()),
+      balance_msat: channel.get_balance_msat(),
+      counterparty_hexId: uint8ArrayToHexString(
+        channel.get_counterparty().get_node_id()
+      ),
+      funding_txo: uint8ArrayToHexString(channel.get_funding_txo().get_txid()),
+      amount_in_satoshis: channel.get_channel_value_satoshis().toString(),
+      public: channel.get_is_public(),
+      confirmations: channel.get_confirmations().some,
+    });
+  });
 });
 
 // This gets all the channels from the database of all wallets
