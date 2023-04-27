@@ -9,6 +9,7 @@ import serverRoutes from "./routes/serverRoutes";
 import peerRoutes from "./routes/peerRoutes";
 import channelRoutes from "./routes/channelRoutes";
 import { closeConnections } from "./LDK/utils/ldk-utils";
+import { ChannelDetails } from "lightningdevkit";
 
 export async function debug_lightning() {
   console.log("[debug_lightning.ts]: running");
@@ -35,6 +36,8 @@ export async function debug_lightning() {
 
   // 03534237af8affcf708cfe553b59fafa3a8420a4aaf1b2861d6e52df967976b53b@127.0.0.1:9735
 
+  // 03534237af8affcf708cfe553b59fafa3a8420a4aaf1b2861d6e52df967976b53b@127.0.0.1:9735
+
   // Polar node details
   let pubkeyHex =
     "03534237af8affcf708cfe553b59fafa3a8420a4aaf1b2861d6e52df967976b53b";
@@ -55,7 +58,20 @@ export async function debug_lightning() {
 
   let privateKey = crypto.randomBytes(32);
 
-  LightningClient.createInvoice(50000, 5000, "Test Invoice", privateKey);
+  const invoiceString = LightningClient.createInvoiceUtil(
+    BigInt(100),
+    "coffee",
+    36000
+  );
+
+  console.log("Invoice string returned:", invoiceString);
+
+  // get channel balance
+  const balance = LightningClient.getChannels();
+
+  balance.forEach((channel: ChannelDetails) => {
+    console.log("balances:", channel.get_balance_msat());
+  });
 
   // Connect to the channel
   let pubkey = hexToUint8Array(pubkeyHex);
