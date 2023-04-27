@@ -109,14 +109,14 @@ export async function initializeLDK(electrum: string = "prod") {
   }
 
   // Initialize our bitcoind client.
-  let bitcointd_client;
+  let bitcoind_client;
   console.log("[initialiseLDK.ts]: INIT CLIENT: ", electrum);
   if (electrum === "prod") {
     console.log("[initialiseLDK.ts]: Init TorClient");
-    bitcointd_client = new TorClient("");
+    bitcoind_client = new TorClient("");
   } else {
     console.log("[initialiseLDK.ts]: Init ElectrumClient");
-    bitcointd_client = new ElectrumClient("");
+    bitcoind_client = new ElectrumClient("");
   }
 
   // Check that the bitcoind we've connected to is running the network we expect
@@ -234,9 +234,9 @@ export async function initializeLDK(electrum: string = "prod") {
   const config = UserConfig.constructor_default();
 
   console.log("[initialiseLDK.ts]: block_height, block_hash, block_header");
-  let block_height: number = await bitcointd_client.getBlockHeight();
-  let block_hash: string = await bitcointd_client.getBestBlockHash();
-  let block_header = await bitcointd_client.getLatestBlockHeader(block_height);
+  let block_height: number = await bitcoind_client.getBlockHeight();
+  let block_hash: string = await bitcoind_client.getBestBlockHash();
+  let block_header = await bitcoind_client.getLatestBlockHeader(block_height);
 
   console.log("[initialiseLDK.ts]: chain parameters");
   const params = ChainParameters.constructor_new(
@@ -413,7 +413,7 @@ export async function initializeLDK(electrum: string = "prod") {
   // Step 17: Connect and Disconnect Blocks
   let channel_manager_listener = channelManager;
   let chain_monitor_listener = chainMonitor;
-  let bitcoind_block_source = bitcointd_client;
+  let bitcoind_block_source = bitcoind_client;
 
   /*
   const chain_poller = new ChainPoller(bitcoind_block_source, network);
@@ -462,7 +462,7 @@ export async function initializeLDK(electrum: string = "prod") {
   if (chainMonitor && channelManager && peerManager && eventHandler) {
     const LDKInit: LightningClientInterface = {
       feeEstimator: feeEstimator,
-      bitcointd_client: bitcointd_client,
+      bitcoind_client: bitcoind_client,
       logger: logger,
       txBroadcasted: txBroadcasted,
       txBroadcaster: txBroadcaster,
