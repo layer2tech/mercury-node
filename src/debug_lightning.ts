@@ -56,27 +56,24 @@ export async function debug_lightning() {
     "6cf30a3fc3a32774494a9b04d06459f1ffd05382cf9e4e943675bea74c99a64c"
   );
 
-  let privateKey = crypto.randomBytes(32);
-
   const invoiceString = LightningClient.createInvoiceUtil(
     BigInt(100),
     "coffee",
     36000
   );
-
-  console.log("Invoice string returned:", invoiceString);
+  console.log("[debug_lightning.ts]: Invoice string returned:", invoiceString);
 
   // get channel balance
   const balance = LightningClient.getChannels();
-
   balance.forEach((channel: ChannelDetails) => {
-    console.log("balances:", channel.get_balance_msat());
+    console.log("[debug_lightning.ts]: balances:", channel.get_balance_msat());
   });
 
   // Connect to the channel
   let pubkey = hexToUint8Array(pubkeyHex);
-  //console.log("[debug_lightning.ts]: Connect to channel");
+
   if (pubkey) {
+    // MUST ONLY BE CALLED ONCE - doesn't currently have any checks to prevent it - can be prevented by checking db
     //await LightningClient.createChannel(pubkey, 100000, 0, 1, true);
   }
 

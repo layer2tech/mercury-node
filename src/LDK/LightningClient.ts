@@ -182,8 +182,6 @@ export default class LightningClient implements LightningClientInterface {
       );
     }
 
-    //console.log("Error?", invoice.err.to_str());
-
     let successful_invoice: Result_InvoiceSignOrCreationErrorZ_OK =
       Result_InvoiceSignOrCreationErrorZ_OK.constructor_ok(invoice.res);
     console.log(
@@ -196,28 +194,8 @@ export default class LightningClient implements LightningClientInterface {
       "[LightningClient.ts][createInvoiceUtil]: Encoded_invoice:",
       encoded_invoice.to_str()
     );
-  }
 
-  async createInvoice(
-    amt_in_sats: any,
-    invoice_expiry_secs: any,
-    description: any,
-    privkey_hex: any
-  ) {
-    try {
-      let res = createInvoice(
-        amt_in_sats,
-        invoice_expiry_secs,
-        description,
-        privkey_hex
-      );
-
-      console.log("[LightningClient.ts]: Invoice created:", res);
-
-      return res.paymentRequest;
-    } catch (e) {
-      throw new Error("Error occured during create invoice." + e);
-    }
+    return encoded_invoice.to_str();
   }
 
   async setEventTXData(txid: any) {

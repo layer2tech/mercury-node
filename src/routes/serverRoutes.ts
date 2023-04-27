@@ -1,6 +1,10 @@
 import express from "express";
 const router = express.Router();
-import { closeConnections, createInvoice } from "../LDK/utils/ldk-utils";
+import {
+  closeConnections,
+  createInvoice,
+  validateInvoiceBody,
+} from "../LDK/utils/ldk-utils";
 import { getLDKClient } from "../LDK/init/getLDK";
 
 router.get("/closeConnections", async function (req, res) {
@@ -9,28 +13,25 @@ router.get("/closeConnections", async function (req, res) {
   res.status(200).json({ message: "Connections closed" });
 });
 
-router.post("/generate_invoice", async function (req, res) {
+router.post("/generateInvoice", async function (req, res) {
   try {
-    const { amt_in_sats, invoice_expiry_secs, description, privkey_hex } =
-      req.body;
+    const { amount_in_sats, invoice_expiry_secs, description } = req.body;
+    // make sure we have valid object
+    validateInvoiceBody(amount_in_sats, invoice_expiry_secs, description);
 
-    let invoice = getLDKClient().createInvoice(
-      amt_in_sats,
+    let invoice = await getLDKClient().createInvoiceUtil(
+      BigInt(amount_in_sats),
       invoice_expiry_secs,
-      description,
-      privkey_hex
+      description
     );
-
-    let response = invoice;
-    console.log(response);
-    res.status(200).json({ status: 200, response });
+    res.status(201).json({ status: 200, invoice });
   } catch (err) {
     const err_msg = `Bad request: ${err}`;
     console.log(err_msg);
   }
 });
 
-router.post("/send-payment", async function (req, res) {
+router.post("/sendPayment", async function (req, res) {
   // send a payment with values posted into this route ->
   const invoice_str = req.body.invoice;
   try {
