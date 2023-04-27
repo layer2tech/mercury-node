@@ -61,27 +61,8 @@ router.get("/liveChannels", async function (req, res) {
   }
 });
 
-router.get("/usableChannels", async function (req, res) {
-  const activeChannels: ChannelDetails[] = getLDKClient().getUsableChannels();
 
-  let jsonChannels = [];
-  activeChannels.forEach((channel: ChannelDetails) => {
-    jsonChannels.push({
-      channel_hexId: uint8ArrayToHexString(channel.get_channel_id()),
-      balance_msat: channel.get_balance_msat(),
-      counterparty_hexId: uint8ArrayToHexString(
-        channel.get_counterparty().get_node_id()
-      ),
-      funding_txo: uint8ArrayToHexString(channel.get_funding_txo().get_txid()),
-      amount_in_satoshis: channel.get_channel_value_satoshis().toString(),
-      public: channel.get_is_public(),
-      confirmations: channel.get_confirmations().some,
-    });
-  });
-});
-
-router.post("/connectToChannel", async (req, res) => {
-  // connect to a channel without db changes
+router.post("/createChannel", async (req, res) => {
   const { pubkey, amount, push_msat, channelId, channelType } = req.body;
   if (
     pubkey === undefined ||
@@ -103,15 +84,34 @@ router.post("/connectToChannel", async (req, res) => {
           channelType
         );
         if (connection) {
-          res.status(200).send("Connected to Channel");
+          res.status(200).send("Created Channel on LDK");
         } else {
-          res.status(500).send("Failed to connect to Channel");
+          res.status(500).send("Failed to create Channel");
         }
       }
     } catch (e) {
-      res.status(500).send("Error connecting to channel");
+      res.status(500).send("Error creating channel on LDK");
     }
   }
+});
+
+router.get("/usableChannels", async function (req, res) {
+  const activeChannels: ChannelDetails[] = getLDKClient().getUsableChannels();
+
+  let jsonChannels = [];
+  activeChannels.forEach((channel: ChannelDetails) => {
+    jsonChannels.push({
+      channel_hexId: uint8ArrayToHexString(channel.get_channel_id()),
+      balance_msat: channel.get_balance_msat(),
+      counterparty_hexId: uint8ArrayToHexString(
+        channel.get_counterparty().get_node_id()
+      ),
+      funding_txo: uint8ArrayToHexString(channel.get_funding_txo().get_txid()),
+      amount_in_satoshis: channel.get_channel_value_satoshis().toString(),
+      public: channel.get_is_public(),
+      confirmations: channel.get_confirmations().some,
+    });
+  });
 });
 
 // This gets all the channels from the database of all wallets
@@ -260,12 +260,33 @@ router.get("/removeDuplicateChannels", (req, res) => {
 
 // takes hexadecimal format of channelId
 router.delete("/forceCloseChannel/:id", async (req, res) => {
-  const channel_id = req.params.id;
-  const closeChannelReq = getLDKClient().forceCloseChannel(channel_id);
-  if (closeChannelReq) {
-    res.status(200).json({ status: 200, message: "Success" });
-  } else {
-    res.status(500).json({ error: "Failed to force close channel" });
+  try {
+    const channel_id = req.params.id;
+    const closeChannelReq = getLDKClient().forceCloseChannel(channel_id);
+    if (closeChannelReq) {
+      res.status(200).json({ status: 200, message: "Success" });
+    } else {
+      res.status(500).json({ error: "Failed to force close channel" });
+    }
+  } catch(e) {
+    console.log("Error ", e);
+    res.status(500).json({ error: e });
+  }
+});
+
+// takes hexadecimal format of channelId
+router.delete("/mutualCloseChannel/:id", async (req, res) => {
+  try {
+    const channel_id = req.params.id;
+    const closeChannelReq = getLDKClient().mutualCloseChannel(channel_id);
+    if (closeChannelReq) {
+      res.status(200).json({ status: 200, message: "Success" });
+    } else {
+      res.status(500).json({ error: "Failed to mutual close channel" });
+    }
+  } catch(e) {
+    console.log("Error ", e);
+    res.status(500).json({ error: e });
   }
 });
 

@@ -459,6 +459,28 @@ export default class LightningClient implements LightningClientInterface {
     throw new Error("Trying to close a channel that doen't exist on LDK");
   }
 
+  // Mutual close a channel
+  mutualCloseChannel(pubkey: string): boolean {
+    const channels: ChannelDetails[] = this.getChannels();
+
+    console.log('[LightningClient.ts]: channels found->', channels);
+
+    channels.forEach(chn => {
+      const hexId = uint8ArrayToHexString(chn.get_channel_id());
+      console.log('channelId found->', hexId);
+      if (hexId === pubkey) {
+        const result: Result_NoneAPIErrorZ = this.channelManager.close_channel(chn.get_channel_id(), chn.get_counterparty().get_node_id());
+
+        if (result.is_ok()) {
+          return true;
+        }
+        return false;
+      }
+    })
+
+    throw new Error("Trying to close a channel that doen't exist on LDK");
+  }
+
   /**
    * Create Socket for Outbound channel creation
    * @param peerDetails
