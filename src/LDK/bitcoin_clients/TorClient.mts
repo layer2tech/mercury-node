@@ -58,7 +58,6 @@ class TorClient {
       console.log("[TorClient.mts]: Error Getting Current Block Hash");
     }
 
-    // return currentBlockHash
     console.log("[TorClient.mts]: Get Latest Block Header...");
     let res;
     try {
@@ -72,20 +71,17 @@ class TorClient {
     }
 
     if (res) {
-      // console.log('BLOCK JEADER::: ',res)
-      // console.log(res);
-      // const blockArray = new Uint8Array(Buffer.from(JSON.stringify(res.tx)))
       return res;
     }
   }
 
   async getTxIdData(txid: string) {
-    let res;
     try {
-      res = await TorClient.get(`${TOR_ENDPOINT}/tx/${txid}`);
-      if (res && (res.data as { blockheight: number; hex: string })) {
-        const result = res.data;
-        return [result.blockheight, result.hex];
+      const res = (await TorClient.get(`${TOR_ENDPOINT}/tx/${txid}`)).data;
+      if (res) {
+        const { vin, blockheight, hex } = res.data;
+        const { sequence, vout } = vin[0];
+        return { sequence, vout, blockheight, hex };
       }
       throw new Error("No res.data found");
     } catch (e: any) {
@@ -104,9 +100,7 @@ class TorClient {
       timeout: timeout_ms,
     };
 
-    return await axios(config).catch((error) => {
-      console.log("[TorClient.mts]: ERROR: ", error);
-    });
+    return await axios(config);
   }
 
   static async post(endpoint: string, timeout_ms = TIMEOUT) {
