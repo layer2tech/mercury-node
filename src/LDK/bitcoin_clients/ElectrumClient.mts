@@ -1,11 +1,10 @@
 const TIMEOUT = 20000;
 
 // CHANGE THESE TO MATCH POLAR
-const POLAR_HOST = "http://127.0.0.1";
-const POLAR_PORT = "18443";
-const POLAR_USER = "polaruser";
-const POLAR_PASS = "polarpass";
-
+const HOST = "http://127.0.0.1";
+const PORT = "18443";
+const USER = "polaruser";
+const PASS = "polarpass";
 
 class ElectrumClient {
   endpoint;
@@ -17,9 +16,7 @@ class ElectrumClient {
     console.log("[ElectrumClient.mts]: getBestBlockHash...");
     let res;
     try {
-      res = (
-        await ElectrumClient.get("rest/chaininfo.json")
-      ).data;
+      res = (await ElectrumClient.get("rest/chaininfo.json")).data;
     } catch (e) {
       console.log("[ElectrumClient.mts]: Error Getting Block Height");
     }
@@ -32,9 +29,7 @@ class ElectrumClient {
     console.log("[ElectrumClient.mts]: getBlockHeight...");
     let res;
     try {
-      res = (
-        await ElectrumClient.get("rest/chaininfo.json")
-      ).data;
+      res = (await ElectrumClient.get("rest/chaininfo.json")).data;
       return res.blocks;
     } catch (e) {
       console.log("[ElectrumClient.mts]: Error Getting Block Height");
@@ -44,11 +39,12 @@ class ElectrumClient {
   async getLatestBlockHeader(height: number) {
     let currentBlockHash;
     try {
-      console.log("[ElectrumClient.mts]: getLatestBlockHeader, block_height:", height);
+      console.log(
+        "[ElectrumClient.mts]: getLatestBlockHeader, block_height:",
+        height
+      );
       currentBlockHash = (
-        await ElectrumClient.get(
-          `rest/blockhashbyheight/${height}.json`
-        )
+        await ElectrumClient.get(`rest/blockhashbyheight/${height}.json`)
       ).data.blockhash;
     } catch (e) {
       console.log("[ElectrumClient.mts]: Error Getting Current Block Hash");
@@ -58,11 +54,8 @@ class ElectrumClient {
     console.log("[ElectrumClient.mts]: Get Latest Block Header...");
     let res;
     try {
-      res = (
-        await ElectrumClient.get(
-          `rest/headers/1/${currentBlockHash}.hex`
-        )
-      ).data;
+      res = (await ElectrumClient.get(`rest/headers/1/${currentBlockHash}.hex`))
+        .data;
     } catch (e) {
       console.log("[ElectrumClient.mts]: Error in getting header: ", e);
     }
@@ -73,18 +66,19 @@ class ElectrumClient {
   }
 
   async getTxIdData(txid: string) {
+    let res = (await ElectrumClient.get(`rest/tx/${txid}.json`)).data;
 
-    let res = (
-      await ElectrumClient.get(`rest/tx/${txid}.json`)
-    ).data;
-
-    return { txid: res.txid, vout: res.vin[0].vout, sequence: res.vin[0].sequence };
+    return {
+      txid: res.txid,
+      vout: res.vin[0].vout,
+      sequence: res.vin[0].sequence,
+    };
   }
 
   static async get(endpoint: string, timeout_ms = TIMEOUT) {
     const axios = (await import("axios")).default;
 
-    const url = POLAR_HOST + ":" + POLAR_PORT + "/" + endpoint;
+    const url = HOST + ":" + PORT + "/" + endpoint;
     const config = {
       method: "get",
       url: url,
@@ -109,7 +103,10 @@ class ElectrumClient {
     };
 
     axios
-      .post("http://" + POLAR_USER + ":" + POLAR_PASS + "@" + POLAR_HOST + ":" + POLAR_PORT + "/", options)
+      .post(
+        "http://" + USER + ":" + PASS + "@" + HOST + ":" + PORT + "/",
+        options
+      )
       .then((response) => {
         console.log("[ElectrumClient.mts]: RESPONSE: ", response.data);
         return response.data;
