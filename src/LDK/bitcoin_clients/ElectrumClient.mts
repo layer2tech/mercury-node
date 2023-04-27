@@ -75,6 +75,10 @@ class ElectrumClient {
     };
   }
 
+  async getUtxoSpentData(txid: string, vout: number) {
+    throw new Error("Not yet implemented");
+  }
+
   static async get(endpoint: string, timeout_ms = TIMEOUT) {
     const axios = (await import("axios")).default;
 
