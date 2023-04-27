@@ -61,31 +61,34 @@ function readChannelsFromDictionary(file: string): ChannelMonitorRead[] {
   let channels: ChannelMonitorRead[] = [];
   try {
     if (!fs.existsSync(file)) {
-      throw Error('File not found');
+      throw Error("File not found");
     }
-    const dict = JSON.parse(fs.readFileSync(file, 'utf-8'));
+    const dict = JSON.parse(fs.readFileSync(file, "utf-8"));
 
     if (!Array.isArray(dict)) {
-      throw Error('Invalid dictionary format');
+      throw Error("Invalid dictionary format");
     }
 
     for (const obj of dict) {
       if (!obj.monitor_file_name || !obj.id_file_name) {
-        throw Error('Invalid object in dictionary');
+        throw Error("Invalid object in dictionary");
       }
 
       if (!fs.existsSync(obj.monitor_file_name)) {
-        throw Error('File not found: ' + obj.monitor_file_name);
+        throw Error("File not found: " + obj.monitor_file_name);
       }
 
       if (!fs.existsSync(obj.id_file_name)) {
-        throw Error('File not found: ' + obj.id_file_name);
+        throw Error("File not found: " + obj.id_file_name);
       }
 
       const channelmonitorbytes_read = fs.readFileSync(obj.monitor_file_name);
       const outpointbytes_read = fs.readFileSync(obj.id_file_name);
 
-      const channelmonitor_object: ChannelMonitorRead = new ChannelMonitorRead(outpointbytes_read, channelmonitorbytes_read);
+      const channelmonitor_object: ChannelMonitorRead = new ChannelMonitorRead(
+        outpointbytes_read,
+        channelmonitorbytes_read
+      );
       channels.push(channelmonitor_object);
     }
   } catch (e) {
@@ -105,7 +108,7 @@ class ChannelMonitorRead {
 }
 
 async function setUpLDK(electrum: string = "prod") {
-  console.log('[initializeLDK.ts]: setupLdk ran')
+  console.log("[initializeLDK.ts]: setupLdk ran");
 
   // Initialize the LDK data directory if necessary.
   const ldk_data_dir = "./.ldk/";
@@ -158,7 +161,7 @@ async function setUpLDK(electrum: string = "prod") {
   // Step 5: Initialize the ChainMonitor
   const filter = Filter.new_impl(new MercuryFilter());
 
-  const chainMonitor:ChainMonitor = ChainMonitor.constructor_new(
+  const chainMonitor: ChainMonitor = ChainMonitor.constructor_new(
     Option_FilterZ.constructor_none(),
     txBroadcaster,
     logger,
@@ -238,12 +241,12 @@ async function setUpLDK(electrum: string = "prod") {
   // Step 11: Initialize the ChannelManager
   const config = UserConfig.constructor_default();
 
-  console.log('[initialiseLDK.ts]: block_height, block_hash, block_header');
+  console.log("[initialiseLDK.ts]: block_height, block_hash, block_header");
   let block_height: number = await bitcointd_client.getBlockHeight();
   let block_hash: string = await bitcointd_client.getBestBlockHash();
   let block_header = await bitcointd_client.getLatestBlockHeader(block_height);
 
-  console.log('[initialiseLDK.ts]: chain parameters');
+  console.log("[initialiseLDK.ts]: chain parameters");
   const params = ChainParameters.constructor_new(
     Network.LDKNetwork_Regtest,
     BestBlock.constructor_new(Buffer.from(block_hash, "hex"), block_height)
@@ -251,7 +254,7 @@ async function setUpLDK(electrum: string = "prod") {
 
   const channel_monitor_mut_references: ChannelMonitor[] = [];
   let channelManager: ChannelManager;
-  console.log('[initialiseLDK.ts]: ChannelManager create/restore');
+  console.log("[initialiseLDK.ts]: ChannelManager create/restore");
   if (fs.existsSync("channel_manager_data.bin")) {
     console.log("[initialiseLDK.ts]: Loading the channel manager from disk...");
     const f = fs.readFileSync(`channel_manager_data.bin`);
@@ -300,7 +303,7 @@ async function setUpLDK(electrum: string = "prod") {
       console.log("[initialiseLDK.ts]: error:", e);
     }
   } else {
-    console.log('[initialiseLDK.ts]: Create fresh channel manager');
+    console.log("[initialiseLDK.ts]: Create fresh channel manager");
     // fresh manager
     channelManager = ChannelManager.constructor_new(
       feeEstimator,
@@ -346,7 +349,6 @@ async function setUpLDK(electrum: string = "prod") {
   });
   channelManager.as_Confirm().best_block_updated(block_header, block_height);
   chainMonitor.as_Confirm().best_block_updated(block_header, block_height);*/
-  
 
   // Step 13: Give ChannelMonitors to ChainMonitor
   if (channel_monitor_mut_references.length > 0) {
@@ -434,7 +436,7 @@ async function setUpLDK(electrum: string = "prod") {
   // check on interval
 
   // Step 18: Handle LDK Events
-  console.log('[initialiseLDK.ts]: Create EventHandler');
+  console.log("[initialiseLDK.ts]: Create EventHandler");
   let eventHandler;
 
   if (channelManager) {
@@ -476,6 +478,7 @@ async function setUpLDK(electrum: string = "prod") {
       persist: persist,
       persister: persister,
       eventHandler: eventHandler,
+      router: router,
       chainMonitor: chainMonitor,
       chainWatch: chainWatch,
       keysManager: keysManager,

@@ -1,7 +1,5 @@
 import { getLDKClient } from "../init/getLDK.ts";
 import db from "../../db/db.ts";
-import * as lightningPayReq from "bolt11";
-import * as ldk from "lightningdevkit";
 
 export const closeConnections = () => {
   console.log("[ldk-utils.ts]: Closing all the connections");
@@ -9,45 +7,33 @@ export const closeConnections = () => {
   LDK.netHandler?.stop();
 };
 
-export const createInvoice = (
-  amtInSats: number,
-  invoiceExpirySecs: number,
-  description: string,
-  privkeyHex: string
+export const validateInvoiceBody = (
+  amount_in_sats: any,
+  invoice_expiry_secs: any,
+  description: any
 ) => {
-  let mSats = ldk.Option_u64Z.constructor_some(BigInt(amtInSats * 1000));
-  let min_final_cltv_expiry_delta = 36;
+  if (amount_in_sats === undefined) {
+    throw new Error("Undefined amount_in_sats given.");
+  } else if (typeof amount_in_sats !== "number" || isNaN(amount_in_sats)) {
+    throw new Error(
+      "Invalid amount_in_sats given. Must be a number that can be converted to a BigInt."
+    );
+  }
 
-  let invoice = getLDKClient().channelManager.create_inbound_payment(
-    mSats,
-    invoiceExpirySecs,
-    ldk.Option_u16Z.constructor_some(min_final_cltv_expiry_delta)
-  );
+  if (invoice_expiry_secs === undefined) {
+    throw new Error("Undefined invoice_expiry_secs given.");
+  } else if (
+    typeof invoice_expiry_secs !== "number" ||
+    isNaN(invoice_expiry_secs)
+  ) {
+    throw new Error("Invalid invoice_expiry_secs given. Must be a number.");
+  }
 
-  let payment_hash = invoice.res.get_a();
-  let payment_secret = invoice.res.get_b();
-
-  let encodedInvoice = lightningPayReq.encode({
-    satoshis: amtInSats,
-    timestamp: Date.now(),
-    tags: [
-      {
-        tagName: "payment_hash",
-        data: payment_hash,
-      },
-      {
-        tagName: "payment_secret",
-        data: payment_secret,
-      },
-      {
-        tagName: "description",
-        data: description,
-      },
-    ],
-  });
-
-  let signedInvoice = lightningPayReq.sign(encodedInvoice, privkeyHex);
-  return signedInvoice;
+  if (description === undefined) {
+    throw new Error("Undefined description given.");
+  } else if (typeof description !== "string") {
+    throw new Error("Invalid description given. Must be a string.");
+  }
 };
 
 export const saveNewPeerToDB = (

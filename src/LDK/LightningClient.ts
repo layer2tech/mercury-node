@@ -15,6 +15,21 @@ import {
   Persister,
   ChannelDetails,
   Result_NoneAPIErrorZ,
+  InFlightHtlcs,
+  Result_RouteLightningErrorZ_OK,
+  RouteParameters,
+  PaymentParameters,
+  Route,
+  Option_u64Z_Some,
+  Result_InvoiceParseOrSemanticErrorZ_OK,
+  Invoice,
+  Router,
+  UtilMethods,
+  Option_u64Z,
+  Option_u16Z,
+  Result_InvoiceSignOrCreationErrorZ_OK,
+  Result_InvoiceSignOrCreationErrorZ_Err,
+  Result_InvoiceSignOrCreationErrorZ,
 } from "lightningdevkit";
 import { NodeLDKNet } from "./structs/NodeLDKNet.mjs";
 import LightningClientInterface from "./types/LightningClientInterface.js";
@@ -28,7 +43,6 @@ import {
   saveNewPeerToDB,
   saveNewChannelToDB,
   saveTxDataToDB,
-  createInvoice,
 } from "./utils/ldk-utils.js";
 import MercuryEventHandler from "./structs/MercuryEventHandler.js";
 
@@ -60,6 +74,7 @@ export default class LightningClient implements LightningClientInterface {
   latestBlockHeader: Uint8Array | undefined;
   netHandler: NodeLDKNet;
   bestBlockHash: any;
+  router: Router;
 
   constructor(props: LightningClientInterface) {
     this.feeEstimator = props.feeEstimator;
@@ -83,6 +98,7 @@ export default class LightningClient implements LightningClientInterface {
     this.params = props.params;
     this.channelManager = props.channelManager;
     this.peerManager = props.peerManager;
+    this.router = props.router;
     this.netHandler = new NodeLDKNet(this.peerManager);
   }
 
@@ -115,26 +131,69 @@ export default class LightningClient implements LightningClientInterface {
     return this.latestBlockHeader;
   }
 
-  async createInvoice(
-    amt_in_sats: any,
-    invoice_expiry_secs: any,
-    description: any,
-    privkey_hex: any
+  async createInvoiceUtil(
+    amount_sats: bigint,
+    description: string,
+    expiry_time_secs: number
   ) {
-    try {
-      let res = createInvoice(
-        amt_in_sats,
-        invoice_expiry_secs,
+    let some_amount = Option_u64Z.constructor_some(amount_sats);
+
+    // Create a new Date object representing the desired timestamp
+    const timestamp = new Date();
+
+    // Get the number of seconds since the UNIX epoch at the timestamp
+    const secondsSinceEpoch = Math.floor(timestamp.getTime() / 1000);
+
+    // Convert the number of seconds to a BigInt value
+    const durationSinceEpoch = BigInt(secondsSinceEpoch);
+
+    let min_final_cltv_expiry_delta = 36;
+    let min_final_cltv_expiry = Option_u16Z.constructor_some(
+      min_final_cltv_expiry_delta
+    );
+
+    let invoice:
+      | Result_InvoiceSignOrCreationErrorZ_OK
+      | Result_InvoiceSignOrCreationErrorZ_Err
+      | Result_InvoiceSignOrCreationErrorZ =
+      UtilMethods.constructor_create_invoice_from_channelmanager_and_duration_since_epoch(
+        this.channelManager,
+        this.keysManager.as_NodeSigner(),
+        this.logger,
+        this.network,
+        some_amount,
         description,
-        privkey_hex
+        durationSinceEpoch,
+        expiry_time_secs,
+        min_final_cltv_expiry
       );
 
-      console.log("[LightningClient.ts]: Invoice created:", res);
+    console.log(
+      "[LightningClient.ts][createInvoiceUtil]: Invoice before encoded:",
+      invoice
+    );
 
-      return res;
-    } catch (e) {
-      throw new Error("Error occured during create invoice." + e);
+    if (invoice.err) {
+      console.log(
+        "[LightningClient.ts][createInvoiceUtil]: ",
+        invoice.err.to_str()
+      );
     }
+
+    let successful_invoice: Result_InvoiceSignOrCreationErrorZ_OK =
+      Result_InvoiceSignOrCreationErrorZ_OK.constructor_ok(invoice.res);
+    console.log(
+      "[LightningClient.ts][createInvoiceUtil]: Invoice generated with UTIL METHODS:",
+      successful_invoice.res
+    );
+
+    let encoded_invoice: Invoice = successful_invoice.res;
+    console.log(
+      "[LightningClient.ts][createInvoiceUtil]: Encoded_invoice:",
+      encoded_invoice.to_str()
+    );
+
+    return encoded_invoice.to_str();
   }
 
   async setEventTXData(txid: any) {
@@ -214,6 +273,61 @@ export default class LightningClient implements LightningClientInterface {
     );
 
     return channel_id;
+  }
+
+  async sendPayment(invoiceStr: string) {
+    const parsed_invoice = Invoice.constructor_from_str(invoiceStr);
+
+    if (parsed_invoice instanceof Result_InvoiceParseOrSemanticErrorZ_OK) {
+      const invoice = parsed_invoice.res;
+      console.log(invoice); // this will log the Invoice object
+
+      let amt_msat = 0;
+
+      if (invoice.amount_milli_satoshis() instanceof Option_u64Z_Some) {
+        amt_msat = invoice.amount_milli_satoshis().some;
+        console.log(amt_msat);
+      }
+
+      if (amt_msat == 0) {
+        throw Error("[LightningClient.ts]: Invalid or zero value invoice");
+      }
+
+      let route: Route;
+
+      let payment_params = PaymentParameters.constructor_from_node_id(
+        invoice.recover_payee_pub_key(),
+        Number(invoice.min_final_cltv_expiry_delta())
+      );
+      let route_params = RouteParameters.constructor_new(
+        payment_params,
+        BigInt(amt_msat)
+      );
+
+      console.log("USABLE CHANNELS");
+      console.log(this.channelManager.list_usable_channels());
+      const route_res = this.router.find_route(
+        this.channelManager.get_our_node_id(),
+        route_params,
+        this.channelManager.list_usable_channels(),
+        InFlightHtlcs.constructor_new()
+      );
+
+      let payment_id = new Uint8Array(Math.random() * 1000);
+
+      if (route_res instanceof Result_RouteLightningErrorZ_OK) {
+        route = route_res.res;
+        console.log(route);
+        const payment_res = this.channelManager.send_payment(
+          route,
+          invoice.payment_hash(),
+          invoice.payment_secret(),
+          payment_id
+        );
+        console.log(payment_res);
+        return payment_res;
+      }
+    }
   }
 
   async saveChannelFundingToDatabase(
@@ -384,7 +498,7 @@ export default class LightningClient implements LightningClientInterface {
     return this.channelManager.list_channels();
   }
 
-  getActiveChannels() {
+  getUsableChannels() {
     return this.channelManager.list_usable_channels();
   }
 
