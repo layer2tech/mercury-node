@@ -30,7 +30,7 @@ import MercuryEventHandler from "../structs/MercuryEventHandler";
 
 export default interface LightningClientInterface {
   feeEstimator: FeeEstimator;
-  bitcointd_client: TorClient | ElectrumClient; // Electrum for dev, Tor for prod
+  bitcoind_client: TorClient | ElectrumClient; // Electrum for dev, Tor for prod
   logger: Logger;
   txBroadcasted: any;
   txBroadcaster: BroadcasterInterface;

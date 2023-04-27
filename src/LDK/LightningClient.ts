@@ -48,10 +48,12 @@ import {
   saveTxDataToDB,
 } from "./utils/ldk-utils.js";
 import MercuryEventHandler from "./structs/MercuryEventHandler.js";
+import ElectrumClient from "./bitcoin_clients/ElectrumClient.mjs";
+import TorClient from "./bitcoin_clients/TorClient.mjs";
 
 export default class LightningClient implements LightningClientInterface {
   feeEstimator: FeeEstimator;
-  bitcointd_client: any;
+  bitcoind_client: TorClient | ElectrumClient;
   logger: Logger;
   txBroadcasted: any;
   txBroadcaster: BroadcasterInterface;
@@ -81,7 +83,7 @@ export default class LightningClient implements LightningClientInterface {
 
   constructor(props: LightningClientInterface) {
     this.feeEstimator = props.feeEstimator;
-    this.bitcointd_client = props.bitcointd_client;
+    this.bitcoind_client = props.bitcoind_client;
     this.logger = props.logger;
     this.txBroadcasted = props.txBroadcasted;
     this.txBroadcaster = props.txBroadcaster;
@@ -108,22 +110,22 @@ export default class LightningClient implements LightningClientInterface {
   txdata: any;
 
   /*
-    Electrum Client Functions
+    bitcoind Client Functions
   */
 
   async getBlockHeight() {
-    this.blockHeight = await this.bitcointd_client.getBlockHeight();
+    this.blockHeight = await this.bitcoind_client.getBlockHeight();
     return this.blockHeight;
   }
 
   async getBestBlockHash() {
-    this.bestBlockHash = await this.bitcointd_client.getBestBlockHash();
+    this.bestBlockHash = await this.bitcoind_client.getBestBlockHash();
     return this.bestBlockHash;
   }
 
   async getLatestBlockHeader(height: number | undefined) {
     if (height) {
-      let latestBlockHeader = await this.bitcointd_client.getLatestBlockHeader(
+      let latestBlockHeader = await this.bitcoind_client.getLatestBlockHeader(
         height
       );
 
@@ -211,7 +213,7 @@ export default class LightningClient implements LightningClientInterface {
   }
 
   async getTxData(txid: any) {
-    let txData = await this.bitcointd_client.getTxIdData(txid);
+    let txData = await this.bitcoind_client.getTxIdData(txid);
     console.log("[LightningClient.ts]-> getTxData ->", txData);
     return txData;
   }
