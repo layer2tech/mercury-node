@@ -9,13 +9,11 @@ class TorClient {
     this.endpoint = endpoint;
   }
 
-  async getBlockHeight() {
-    console.log("[TorClient.mts]: getBlockHeight...");
+  async getBestBlockHash() {
+    console.log("[TorClient.mts]: getBestBlockHash...");
     let res;
     try {
-      res = await TorClient.get(
-        `${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HEIGHT}`
-      );
+      res = await TorClient.get(`${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HASH}`);
 
       res = res && res.data;
     } catch (e) {
@@ -26,11 +24,13 @@ class TorClient {
     }
   }
 
-  async getBestBlockHash() {
-    console.log("[TorClient.mts]: getBestBlockHash...");
+  async getBlockHeight() {
+    console.log("[TorClient.mts]: getBlockHeight...");
     let res;
     try {
-      res = await TorClient.get(`${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HASH}`);
+      res = await TorClient.get(
+        `${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HEIGHT}`
+      );
 
       res = res && res.data;
     } catch (e) {
