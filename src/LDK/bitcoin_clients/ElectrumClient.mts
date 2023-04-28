@@ -1,3 +1,5 @@
+import axios from "axios";
+
 const TIMEOUT = 20000;
 
 // CHANGE THESE TO MATCH POLAR
@@ -80,8 +82,6 @@ class ElectrumClient {
   }
 
   static async get(endpoint: string, timeout_ms = TIMEOUT) {
-    const axios = (await import("axios")).default;
-
     const url = HOST + ":" + PORT + "/" + endpoint;
     const config = {
       method: "get",
@@ -94,7 +94,6 @@ class ElectrumClient {
   }
 
   static async post(endpoint: string, timeout_ms = TIMEOUT) {
-    const axios = (await import("axios")).default;
     const options = {
       headers: {
         "Content-Type": "text/plain",
@@ -135,6 +134,7 @@ export const GET_ROUTE = {
   UTXO: "utxo",
   //getFeeEstimates
   FEE_ESTIMATES: "/electrs/fee-estimates",
+  UTXO_SPENT: "/electrs/tx/:txid/outspend/:vout",
 };
 Object.freeze(GET_ROUTE);
 
