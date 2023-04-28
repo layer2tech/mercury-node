@@ -1,5 +1,3 @@
-
-
 // describe("Check tables data in newly created DB", () => {
 
 //   test("Check if all tables present", (done) => {

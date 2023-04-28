@@ -1,3 +1,4 @@
+import axios from "axios";
 import { RawAxiosRequestConfig } from "axios";
 
 const TIMEOUT = 20000;
@@ -75,6 +76,17 @@ class TorClient {
     }
   }
 
+  async getTxIdData(txid: string) {
+    let res = (await TorClient.get(`${TOR_ENDPOINT}${GET_ROUTE.TX}/${txid}`))
+      .data;
+
+    return {
+      txid: res.txid,
+      vout: res.vin[0].vout,
+      sequence: res.vin[0].sequence,
+    };
+  }
+
   async getUtxoSpentData(txid: string, vout: number) {
     try {
       const res = (
@@ -94,8 +106,6 @@ class TorClient {
   }
 
   static async get(endpoint: string, timeout_ms = TIMEOUT) {
-    const axios = (await import("axios")).default;
-
     const url = endpoint;
     const config: RawAxiosRequestConfig = {
       method: "get",
@@ -108,7 +118,6 @@ class TorClient {
   }
 
   static async post(endpoint: string, timeout_ms = TIMEOUT) {
-    const axios = (await import("axios")).default;
     const options = {
       headers: {
         "Content-Type": "text/plain",
