@@ -69,13 +69,14 @@ router.get("/liveChannels", async function (req, res) {
 });
 
 router.post("/createChannel", async (req, res) => {
-  const { pubkey, amount, push_msat, channelId, channelType } = req.body;
+  const { pubkey, amount, push_msat, channelId, channelType, address } = req.body;
   if (
     pubkey === undefined ||
     amount === undefined ||
     push_msat === undefined ||
     channelId === undefined ||
-    channelType === undefined
+    channelType === undefined ||
+    address === undefined
   ) {
     res.status(500).send("Missing required parameters");
   } else {
@@ -87,7 +88,8 @@ router.post("/createChannel", async (req, res) => {
           amount,
           push_msat,
           channelId,
-          channelType
+          channelType,
+          address
         );
         if (connection) {
           res.status(200).send("Created Channel on LDK");

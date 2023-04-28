@@ -32,6 +32,7 @@ import {
   Result_InvoiceSignOrCreationErrorZ_Err,
   Result_InvoiceSignOrCreationErrorZ,
   Result_InvoiceParseOrSemanticErrorZ,
+  Result__u832APIErrorZ_OK,
   EventHandler,
 } from "lightningdevkit";
 import { NodeLDKNet } from "./structs/NodeLDKNet.mjs";
@@ -46,10 +47,12 @@ import {
   saveNewPeerToDB,
   saveNewChannelToDB,
   saveTxDataToDB,
+  saveChannelIdToDb
 } from "./utils/ldk-utils.js";
 import MercuryEventHandler from "./structs/MercuryEventHandler.js";
 import ElectrumClient from "./bitcoin_clients/ElectrumClient.mjs";
 import TorClient from "./bitcoin_clients/TorClient.mjs";
+import LDKClientFactory from "./init/LDKClientFactory.js";
 
 export default class LightningClient implements LightningClientInterface {
   feeEstimator: FeeEstimator;
@@ -401,7 +404,8 @@ export default class LightningClient implements LightningClientInterface {
     amount: number,
     push_msat: number,
     channelId: number,
-    channelType: boolean
+    channelType: boolean,
+    address: string
   ) {
     // To stop this from calling twice - check the database if a channel has already been created.
 
@@ -432,6 +436,9 @@ export default class LightningClient implements LightningClientInterface {
         userChannelId,
         override_config
       );
+      const result = channelCreateResponse as Result__u832APIErrorZ_OK;
+      const channelId = uint8ArrayToHexString(result.res);
+      saveChannelIdToDb(channelId, address);
     } catch (e) {
       if (pubkey.length !== 33) {
         console.log("[LightningClient.ts]: Entered incorrect pubkey - ", e);
