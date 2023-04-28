@@ -92,6 +92,7 @@ const db = new sqlite3.Database("lightning-mock.db", (err) => {
     vout INTEGER,
     paid BOOL NOT NULL,
     payment_address TEXT,
+    channel_id TEXT,
     FOREIGN KEY (peer_id) REFERENCES peer(id)
   )`;
 

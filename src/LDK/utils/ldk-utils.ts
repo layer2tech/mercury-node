@@ -261,6 +261,27 @@ export const saveTxDataToDB = (
   });
 };
 
+export const saveChannelIdToDb = (
+  channelId: string,
+  address: string
+) => {
+  console.log("[ldk-utils.ts] - saveChannelIdToDB");
+  console.log(
+    `[ldk-utils.ts] - values: channelId:${channelId}, addr:${address}`
+  );
+  const updateData =
+      "UPDATE channels SET channel_id=? WHERE payment_address=?";
+  db.run(
+    updateData,
+    [channelId, address],
+    function (err: any, result: any) {
+      if (err) {
+        console.log("Error in saving channelId to db: " + err);
+      }
+    }
+  );
+};
+
 export const deleteChannelById = (
   channelId: number
 ): Promise<{
