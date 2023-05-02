@@ -436,9 +436,6 @@ export default class LightningClient implements LightningClientInterface {
         userChannelId,
         override_config
       );
-      const result = channelCreateResponse as Result__u832APIErrorZ_OK;
-      const channelId = uint8ArrayToHexString(result.res);
-      saveChannelIdToDb(channelId, address);
     } catch (e) {
       if (pubkey.length !== 33) {
         console.log("[LightningClient.ts]: Entered incorrect pubkey - ", e);

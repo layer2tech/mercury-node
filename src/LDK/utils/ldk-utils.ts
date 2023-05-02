@@ -263,17 +263,17 @@ export const saveTxDataToDB = (
 
 export const saveChannelIdToDb = (
   channelId: string,
-  address: string
+  pubkey: string
 ) => {
   console.log("[ldk-utils.ts] - saveChannelIdToDB");
   console.log(
-    `[ldk-utils.ts] - values: channelId:${channelId}, addr:${address}`
+    `[ldk-utils.ts] - values: channelId:${channelId}, pubkey:${pubkey}`
   );
   const updateData =
-      "UPDATE channels SET channel_id=? WHERE payment_address=?";
+      "UPDATE channels SET channel_id = ? WHERE peer_id = ( SELECT id FROM peers WHERE pubkey = ?)";
   db.run(
     updateData,
-    [channelId, address],
+    [channelId, pubkey],
     function (err: any, result: any) {
       if (err) {
         console.log("Error in saving channelId to db: " + err);
