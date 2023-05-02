@@ -48,6 +48,8 @@ import LightningClient from "../LightningClient.js";
 import TorClient from "../bitcoin_clients/TorClient.mjs";
 import MercuryPersist from "../structs/MercuryPersist.js";
 import MercuryPersister from "../structs/MercuryPersister.js";
+import SyncClient from "../SyncClient.js";
+import { uint8ArrayToHexString } from "../utils/utils.js";
 
 function readChannelsFromDictionary(file: string): ChannelMonitorRead[] {
   let channels: ChannelMonitorRead[] = [];
@@ -109,7 +111,7 @@ export async function initializeLDK(electrum: string = "prod") {
   }
 
   // Initialize our bitcoind client.
-  let bitcoind_client;
+  let bitcoind_client: TorClient | ElectrumClient;
   console.log("[initialiseLDK.ts]: INIT CLIENT: ", electrum);
   if (electrum === "prod") {
     console.log("[initialiseLDK.ts]: Init TorClient");
@@ -150,8 +152,10 @@ export async function initializeLDK(electrum: string = "prod") {
   const persist = Persist.new_impl(new MercuryPersist());
   const persister = Persister.new_impl(new MercuryPersister());
 
+  // Our sync client
+  const syncClient = new SyncClient();
   // Step 5: Initialize the ChainMonitor
-  const filter = Filter.new_impl(new MercuryFilter());
+  const filter = Filter.new_impl(new MercuryFilter(syncClient));
 
   const chainMonitor: ChainMonitor = ChainMonitor.constructor_new(
     Option_FilterZ.constructor_some(filter),
@@ -236,7 +240,7 @@ export async function initializeLDK(electrum: string = "prod") {
   console.log("[initialiseLDK.ts]: block_height, block_hash, block_header");
   let block_height: number = await bitcoind_client.getBlockHeight();
   let block_hash: string = await bitcoind_client.getBestBlockHash();
-  let block_header = await bitcoind_client.getLatestBlockHeader(block_height);
+  let block_header = await bitcoind_client.getBlockHeader(block_height);
 
   console.log("[initialiseLDK.ts]: chain parameters");
   const params = ChainParameters.constructor_new(
@@ -245,14 +249,12 @@ export async function initializeLDK(electrum: string = "prod") {
   );
 
   const channel_monitor_mut_references: ChannelMonitor[] = [];
-  let channelManager: ChannelManager | undefined;
+  let channelManager: ChannelManager;
   console.log("[initialiseLDK.ts]: ChannelManager create/restore");
   if (fs.existsSync("channel_manager_data.bin")) {
     console.log("[initialiseLDK.ts]: Loading the channel manager from disk...");
     const f = fs.readFileSync(`channel_manager_data.bin`);
-
     console.log("[initialiseLDK.ts]: create channel_monitor_references");
-
     channel_monitor_data.forEach((channel_monitor: ChannelMonitorRead) => {
       let val: any =
         UtilMethods.constructor_C2Tuple_BlockHashChannelMonitorZ_read(
@@ -266,33 +268,27 @@ export async function initializeLDK(electrum: string = "prod") {
         channel_monitor_mut_references.push(channel_monitor);
       }
     });
-
-    try {
-      console.log("[initialiseLDK.ts]: try and read the channel manager");
-      let readManager: any =
-        UtilMethods.constructor_C2Tuple_BlockHashChannelManagerZ_read(
-          f,
-          entropy_source,
-          node_signer,
-          signer_provider,
-          feeEstimator,
-          chainMonitor.as_Watch(),
-          txBroadcaster,
-          router,
-          logger,
-          config,
-          channel_monitor_mut_references
-        );
-
-      if (readManager.is_ok()) {
-        let read_channelManager: TwoTuple_BlockHashChannelManagerZ =
-          readManager.res;
-        channelManager = read_channelManager.get_b();
-      } else {
-        throw Error("Couldn't recreate channel manager from disk");
-      }
-    } catch (e) {
-      console.log("[initialiseLDK.ts]: error:", e);
+    console.log("[initialiseLDK.ts]: try and read the channel manager");
+    let readManager: any =
+      UtilMethods.constructor_C2Tuple_BlockHashChannelManagerZ_read(
+        f,
+        entropy_source,
+        node_signer,
+        signer_provider,
+        feeEstimator,
+        chainMonitor.as_Watch(),
+        txBroadcaster,
+        router,
+        logger,
+        config,
+        channel_monitor_mut_references
+      );
+    if (readManager.is_ok()) {
+      let read_channelManager: TwoTuple_BlockHashChannelManagerZ =
+        readManager.res;
+      channelManager = read_channelManager.get_b();
+    } else {
+      throw Error("Couldn't recreate channel manager from disk");
     }
   } else {
     console.log("[initialiseLDK.ts]: Create fresh channel manager");
@@ -319,32 +315,71 @@ export async function initializeLDK(electrum: string = "prod") {
 
   // Step 12: Sync ChannelMonitors and ChannelManager to chain tip - TODO
 
-  /*
   // Retrieve transaction IDs to check the chain for un-confirmation.
-  let relevent_txids_1: TwoTuple_TxidBlockHashZ[] = channelManager.as_Confirm().get_relevant_txids();
-  let relevent_txids_2: TwoTuple_TxidBlockHashZ[] = chainMonitor.as_Confirm().get_relevant_txids();
+  let relevant_txids_1: TwoTuple_TxidBlockHashZ[] = channelManager
+    .as_Confirm()
+    .get_relevant_txids();
+  let relevant_txids_2: TwoTuple_TxidBlockHashZ[] = chainMonitor
+    .as_Confirm()
+    .get_relevant_txids();
 
   // merge into one array
-  let relevant_txids: TwoTuple_TxidBlockHashZ[] = [];
-  if (relevent_txids_1 && Symbol.iterator in Object(relevent_txids_1)) {
-    relevant_txids.push(...relevent_txids_1);
-  }
-  if (relevent_txids_2 && Symbol.iterator in Object(relevent_txids_2)) {
-    relevant_txids.push(...relevent_txids_2);
-  }
+  let relevant_txids: TwoTuple_TxidBlockHashZ[] | any = [
+    ...relevant_txids_1,
+    ...relevant_txids_2,
+  ];
 
   let unconfirmed_txids: TwoTuple_TxidBlockHashZ[] = [];
 
-  // TODO: <insert code to find out from your chain source
-  //  if any of relevant_txids have been reorged out
-  //  of the chain>
+  // Check if any of the relevant transaction IDs have been reorged out of the chain
+  for (let i = 0; i < relevant_txids.length; i++) {
+    const txid = relevant_txids[i].get_a();
+    const tx_block_hash = relevant_txids[i].get_b();
 
-  unconfirmed_txids.forEach((txid) => {
+    // Query the Electrum client to check if the transaction is still part of the chain
+    const tx_block_height = (await bitcoind_client.getTxIdData(txid)).height;
+    const current_block_height = await bitcoind_client.getBlockHeight();
+
+    if (tx_block_height > current_block_height) {
+      // The transaction is no longer part of the chain (due to reorg)
+      continue;
+    }
+    // The transaction is still part of the chain
+    unconfirmed_txids.push(relevant_txids[i]);
+  }
+
+  unconfirmed_txids.forEach((txid: TwoTuple_TxidBlockHashZ) => {
     channelManager.as_Confirm().transaction_unconfirmed(txid.get_a());
     chainMonitor.as_Confirm().transaction_unconfirmed(txid.get_a());
   });
+
+  let filtered_tx = syncClient.watchedTransactions; // Set<txids>
+  let outputs = syncClient.watchedOutputs; // Map<outpoint,watchedoutput> <--- doing nothing with this
+
+  // If any of these txs/outputs were confirmed on-chain, then:
+  const confirmed_txids: object[] = [];
+  for (const txid of filtered_tx) {
+    let txid_hex = uint8ArrayToHexString(txid);
+    const tx_data = await bitcoind_client.getTxIdData(txid_hex);
+    if (tx_data.height !== undefined) {
+      // The transaction is confirmed on-chain.
+      confirmed_txids.push(tx_data);
+    }
+  }
+
+  confirmed_txids.forEach(async (element: any) => {
+    const block_data = await bitcoind_client.getBlockHeader(element.height);
+    const header = block_data.header;
+    const height = block_data.height;
+
+    const tx_list: any = undefined; // TODO
+
+    channelManager.as_Confirm().transactions_confirmed(header, tx_list, height);
+    chainMonitor.as_Confirm().transactions_confirmed(header, tx_list, height);
+  });
+
   channelManager.as_Confirm().best_block_updated(block_header, block_height);
-  chainMonitor.as_Confirm().best_block_updated(block_header, block_height);*/
+  chainMonitor.as_Confirm().best_block_updated(block_header, block_height);
 
   // Step 13: Give ChannelMonitors to ChainMonitor
   if (channel_monitor_mut_references.length > 0) {

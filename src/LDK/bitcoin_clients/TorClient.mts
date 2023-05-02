@@ -42,7 +42,7 @@ class TorClient {
     }
   }
 
-  async getLatestBlockHeader(height: number) {
+  async getBlockHeader(height: number) {
     let currentBlockHash;
     try {
       console.log("[TorClient.mts]: Get latest block header...............");
@@ -84,6 +84,7 @@ class TorClient {
       txid: res.txid,
       vout: res.vin[0].vout,
       sequence: res.vin[0].sequence,
+      height: res.height,
     };
   }
 

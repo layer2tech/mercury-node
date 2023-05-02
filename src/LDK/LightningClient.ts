@@ -125,9 +125,7 @@ export default class LightningClient implements LightningClientInterface {
 
   async getLatestBlockHeader(height: number | undefined) {
     if (height) {
-      let latestBlockHeader = await this.bitcoind_client.getLatestBlockHeader(
-        height
-      );
+      let latestBlockHeader = await this.bitcoind_client.getBlockHeader(height);
 
       this.latestBlockHeader = hexToBytes(latestBlockHeader);
     } else {

@@ -38,7 +38,7 @@ class ElectrumClient {
     }
   }
 
-  async getLatestBlockHeader(height: number) {
+  async getBlockHeader(height: number) {
     let currentBlockHash;
     try {
       console.log(
@@ -74,6 +74,8 @@ class ElectrumClient {
       txid: res.txid,
       vout: res.vin[0].vout,
       sequence: res.vin[0].sequence,
+      height: res.height,
+      confirmations: res.confirmations,
     };
   }
 
