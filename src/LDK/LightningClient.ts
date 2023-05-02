@@ -33,6 +33,7 @@ import {
   Result_InvoiceSignOrCreationErrorZ,
   Result_InvoiceParseOrSemanticErrorZ,
   EventHandler,
+  RecipientOnionFields
 } from "lightningdevkit";
 import { NodeLDKNet } from "./structs/NodeLDKNet.mjs";
 import LightningClientInterface from "./types/LightningClientInterface.js";
@@ -312,6 +313,8 @@ export default class LightningClient implements LightningClientInterface {
         );
       }
 
+      const recipient_onion = RecipientOnionFields.constructor_new(invoice.payment_secret(), invoice.payment_metadata())
+
       let route: Route;
 
       let payment_params = PaymentParameters.constructor_from_node_id(
@@ -339,10 +342,10 @@ export default class LightningClient implements LightningClientInterface {
       if (route_res instanceof Result_RouteLightningErrorZ_OK) {
         route = route_res.res;
         console.log(route);
-        const payment_res = this.channelManager.send_payment(
+        const payment_res = this.channelManager.send_payment_with_route(
           route,
           invoice.payment_hash(),
-          invoice.payment_secret(),
+          recipient_onion,
           payment_id
         );
         console.log(payment_res);
