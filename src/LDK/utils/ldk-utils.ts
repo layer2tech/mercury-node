@@ -1,5 +1,6 @@
 import LDKClientFactory from "../init/LDKClientFactory";
 import db from "../../db/db";
+import fs from "fs";
 
 export const closeConnections = () => {
   console.log("[ldk-utils.ts]: Closing all the connections");
@@ -316,8 +317,6 @@ export const deleteChannelByPaymentAddr = (
     );
   });
 };
-
-import fs from "fs";
 
 export class ChannelMonitorRead {
   outpoint: Uint8Array;
