@@ -263,6 +263,7 @@ export async function initializeLDK(electrum: string = "prod") {
   const channelHandshakeConfig = ChannelHandshakeConfig.constructor_default();
 
   // Step 12: Sync ChannelMonitors and ChannelManager to chain tip - TODO
+  syncClient.sync([channelManager.as_Confirm(), chainMonitor.as_Confirm()]);
 
   /*
   // Retrieve transaction IDs to check the chain for un-confirmation.
