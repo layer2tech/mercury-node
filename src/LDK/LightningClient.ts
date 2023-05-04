@@ -47,6 +47,7 @@ import {
   saveNewPeerToDB,
   saveNewChannelToDB,
   saveTxDataToDB,
+  checkIfChannelExists
 } from "./utils/ldk-utils.js";
 import MercuryEventHandler from "./structs/MercuryEventHandler.js";
 import ElectrumClient from "./bitcoin_clients/ElectrumClient.mjs";
@@ -416,6 +417,7 @@ export default class LightningClient implements LightningClientInterface {
     let channelValSatoshis = BigInt(amount);
     let pushMsat = BigInt(push_msat);
     let userChannelId = BigInt(channelId);
+    let pubkeyHex = uint8ArrayToHexString(pubkey);
 
     // create the override_config
     let override_config: UserConfig = UserConfig.constructor_default();
@@ -428,18 +430,20 @@ export default class LightningClient implements LightningClientInterface {
       "[LightningClient.ts]: Reached here ready to create channel..."
     );
     try {
-      channelCreateResponse = this.channelManager.create_channel(
-        pubkey,
-        channelValSatoshis,
-        pushMsat,
-        userChannelId,
-        override_config
-      );
+      const channelExists = await checkIfChannelExists(pubkeyHex);
+      if (!channelExists) {
+        channelCreateResponse = this.channelManager.create_channel(
+          pubkey,
+          channelValSatoshis,
+          pushMsat,
+          userChannelId,
+          override_config
+        );
+      }
     } catch (e) {
       if (pubkey.length !== 33) {
         console.log("[LightningClient.ts]: Entered incorrect pubkey - ", e);
       } else {
-        var pubkeyHex = uint8ArrayToHexString(pubkey);
         console.log(
           `[LightningClient.ts]: Lightning node with pubkey ${pubkeyHex} unreachable - `,
           e

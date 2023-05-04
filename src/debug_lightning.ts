@@ -1,6 +1,6 @@
 import initialiseWasm from "./LDK/init/initializeWasm.js";
 import LDKClientFactory from "./LDK/init/LDKClientFactory.js";
-import { hexToUint8Array } from "./LDK/utils/utils";
+import { hexToUint8Array, uint8ArrayToHexString } from "./LDK/utils/utils";
 import crypto from "crypto";
 import express from "express";
 import cors from "cors";
@@ -71,6 +71,11 @@ export async function debug_lightning() {
 
   // Connect to the channel
   let pubkey = hexToUint8Array(pubkeyHex);
+
+  LightningClient.savePeerAndChannelToDatabase(1, pubkeyHex, hostname, port, "",
+    "Testnet Wallet 3", true, "cRrhJwXVBPHdbSRsZo31SU24zoFmy4Jsr8H1aMwRTDn3qb67zG1r", 
+    false, "tb1q60myaz6078nfggywsjlv6pphpjj2d9x7nas29c"
+  );
 
   if (pubkey) {
     // MUST ONLY BE CALLED ONCE - doesn't currently have any checks to prevent it - can be prevented by checking db

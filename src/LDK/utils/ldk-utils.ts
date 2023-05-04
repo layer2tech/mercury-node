@@ -282,6 +282,26 @@ export const saveChannelIdToDb = (
   );
 };
 
+export const checkIfChannelExists = (pubkey: string): Promise<boolean> => {
+  return new Promise((resolve, reject) => {
+    db.get(
+      `SELECT channel_id FROM channels WHERE peer_id = (SELECT id FROM peers WHERE pubkey = ?)`,
+      [pubkey],
+      (err: any, row: any) => {
+        if (err) {
+          reject(err);
+        } else {
+          if (row && row.channel_id) {
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        }
+      }
+    );
+  });
+};
+
 export const deleteChannelById = (
   channelId: number
 ): Promise<{
