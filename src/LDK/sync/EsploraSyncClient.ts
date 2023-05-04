@@ -1,6 +1,7 @@
 import {
   Confirm,
   FilterInterface,
+  OutPoint,
   TwoTuple_TxidBlockHashZ,
   TwoTuple_usizeTransactionZ,
   WatchedOutput,
@@ -8,11 +9,11 @@ import {
 import ElectrumClient from "../bitcoin_clients/ElectrumClient.mjs";
 import TorClient from "../bitcoin_clients/TorClient.mjs";
 import { FilterQueue, SyncState, newSyncState } from "./FilterQueue.js";
-// import { BlockHash } from "./FilterQueue.js";
 import { Mutex } from "async-mutex";
 import { hexToUint8Array, uint8ArrayToHexString } from "../utils/utils.js";
 import { Transaction } from "bitcoinjs-lib";
 import { BitcoinDaemonClientInterface } from "../bitcoin_clients/BitcoinD.mjs";
+import { InternalError, TxSyncError } from "./Error.js";
 
 interface ConfirmedTx {
   tx: Transaction; // What library is this 'Transaction' from for typescript?
@@ -193,9 +194,11 @@ export default class EsploraSyncClient implements FilterInterface {
 
       sync_state.watched_transactions.delete(ctx.txid);
 
-      // No input value here ?
-      for (const input of ctx.tx.input) {
-        sync_state.watched_outputs.delete(input.previous_output);
+      // No input value here ? // Check me
+      for (const input of ctx.tx.ins) {
+        sync_state.watched_outputs.delete(
+          OutPoint.constructor_new(input.hash, input.index) // Check me
+        );
       }
     }
   }
