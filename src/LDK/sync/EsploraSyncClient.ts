@@ -62,63 +62,6 @@ export default class EsploraSyncClient implements FilterInterface {
       let pending_registrations = this.filter_queue.processQueues(sync_state);
       let tip_is_new = tip_hash !== sync_state.last_sync_hash;
 
-      // We loop until any registered transactions have been processed at least once, or the
-      // tip hasn't been updated during the last iteration.
-      if (!sync_state.pending_sync && !pending_registrations && !tip_is_new) {
-        // Nothing to do.
-        break;
-      } else {
-        // Update the known tip to the newest one.
-        if (tip_is_new) {
-          // First check for any unconfirmed transactions and act on it immediately.
-          let unconfirmed_txs = await this.get_unconfirmed_transactions(
-            confirmables
-          );
-          // Check this type doesn't exist
-          if (unconfirmed_txs instanceof TxSyncError) {
-            // (Semi-)permanent failure, retry later.
-            console.error(
-              "Failed during transaction sync, aborting.",
-              unconfirmed_txs
-            );
-            sync_state.pending_sync = true;
-            throw unconfirmed_txs;
-          }
-
-          // Double-check the tip hash. If it changed, a reorg happened since
-          // we started syncing and we need to restart last-minute.
-          let check_tip_hash = await this.bitcoind_client.getBestBlockHash();
-          if (check_tip_hash !== tip_hash) {
-            tip_hash = check_tip_hash;
-            continue;
-          }
-
-          this.sync_unconfirmed_transactions(
-            sync_state,
-            confirmables,
-            unconfirmed_txs
-          );
-          let sync_best_block_updated_err: any =
-            await this.sync_best_block_updated(confirmables, tip_hash);
-          if (sync_best_block_updated_err instanceof TxSyncError) {
-            sync_state.pending_sync = true;
-            throw sync_best_block_updated_err;
-          } else if (sync_best_block_updated_err instanceof InternalError) {
-            // Immediately restart syncing when we encounter any inconsistencies.
-            console.debug(
-              "Encountered inconsistency during transaction sync, restarting."
-            );
-            sync_state.pending_sync = true;
-            continue;
-          }
-        }
-      }
-    }
-
-    while (true) {
-      let pending_registrations = this.filter_queue.processQueues(sync_state);
-      let tip_is_new = tip_hash !== sync_state.last_sync_hash;
-
       if (!sync_state.pending_sync && !pending_registrations && !tip_is_new) {
         // Nothing to do.
         break;
@@ -144,15 +87,15 @@ export default class EsploraSyncClient implements FilterInterface {
             // (Semi-)permanent failure, retry later.
             console.log("Failed during transaction sync, aborting.");
             sync_state.pending_sync = true;
-            return Err(TxSyncError.from(err));
+            return Error(TxSyncError.from(err)); // Check me
           }
 
           try {
             await this.sync_best_block_updated(confirmables, tip_hash);
           } catch (err) {
             if (
-              err instanceof InternalError &&
-              err === InternalError.Inconsistency
+              err instanceof InternalError && // Check me
+              err === InternalError.Inconsistency // Check me
             ) {
               // Immediately restart syncing when we encounter any inconsistencies.
               console.log(
@@ -163,7 +106,7 @@ export default class EsploraSyncClient implements FilterInterface {
             } else {
               // (Semi-)permanent failure, retry later.
               sync_state.pending_sync = true;
-              return Error(TxSyncError.from(err));
+              return Error(TxSyncError.from(err)); // Check me
             }
           }
         }
