@@ -2,7 +2,6 @@ import {
   Confirm,
   FilterInterface,
   OutPoint,
-  TwoTuple_TxidBlockHashZ,
   TwoTuple_usizeTransactionZ,
   WatchedOutput,
 } from "lightningdevkit";
@@ -16,8 +15,7 @@ import { BitcoinDaemonClientInterface } from "../bitcoin_clients/BitcoinD.mjs";
 import { InternalError, TxSyncError } from "./Error.js";
 
 interface ConfirmedTx {
-  tx: Transaction; // What library is this 'Transaction' from for typescript?
-  txid: string; // added instead of tx
+  tx: Transaction;
   block_header: any;
   block_height: any;
   pos: number;
@@ -181,8 +179,8 @@ export default class EsploraSyncClient implements FilterInterface {
         const txdata = [
           TwoTuple_usizeTransactionZ.constructor_new(
             ctx.pos,
-            hexToUint8Array(ctx.txid)
-          ), // Check this
+            ctx.tx.toBuffer()
+          ),
         ];
 
         c.transactions_confirmed(
@@ -192,12 +190,12 @@ export default class EsploraSyncClient implements FilterInterface {
         );
       }
 
-      sync_state.watched_transactions.delete(ctx.txid);
+      sync_state.watched_transactions.delete(ctx.tx.toHex());
 
       // No input value here ? // Check me
       for (const input of ctx.tx.ins) {
         sync_state.watched_outputs.delete(
-          OutPoint.constructor_new(input.hash, input.index) // Check me
+          OutPoint.constructor_new(input.hash, input.index)
         );
       }
     }
