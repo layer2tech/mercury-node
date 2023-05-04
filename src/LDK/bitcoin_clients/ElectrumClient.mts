@@ -4,8 +4,8 @@ import { BitcoinDaemonClientInterface } from "./BitcoinD.mjs";
 const TIMEOUT = 20000;
 
 // CHANGE THESE TO MATCH POLAR
-const HOST = "http://127.0.0.1";
-const PORT = "18443";
+const HOST = "http://136.244.108.27";
+const PORT = "3002";
 const USER = "polaruser";
 const PASS = "polarpass";
 
@@ -14,6 +14,16 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
   constructor(endpoint: string) {
     this.endpoint = endpoint;
   }
+  getTxOut(txid: string, vout: number): any {
+    throw new Error("Method not implemented.");
+  }
+  getRawTransaction(txid: string): any {
+    throw new Error("Method not implemented.");
+  }
+  getOutputStatus(txid: Uint8Array, height: number): any {
+    throw new Error("Method not implemented.");
+  }
+
   getHeaderByHash(hash: String) {
     throw new Error("Method not implemented.");
   }
@@ -45,7 +55,7 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
     }
   }
 
-  async getBlockHeader(height: number) {
+  async getBlockHeader(height: number | string) {
     let currentBlockHash;
     try {
       console.log(

@@ -10,6 +10,15 @@ class TorClient implements BitcoinDaemonClientInterface {
   constructor(endpoint: string) {
     this.endpoint = endpoint;
   }
+  getTxOut(txid: string, vout: number): any {
+    throw new Error("Method not implemented.");
+  }
+  getRawTransaction(txid: string): any {
+    throw new Error("Method not implemented.");
+  }
+  getOutputStatus(txid: Uint8Array, height: number): any {
+    throw new Error("Method not implemented.");
+  }
   getHeaderByHash(hash: string): any {
     throw new Error("Method not implemented.");
   }
@@ -49,7 +58,7 @@ class TorClient implements BitcoinDaemonClientInterface {
     }
   }
 
-  async getBlockHeader(height: number) {
+  async getBlockHeader(height: number | string) {
     let currentBlockHash;
     try {
       console.log("[TorClient.mts]: Get latest block header...............");
