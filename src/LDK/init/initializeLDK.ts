@@ -262,72 +262,8 @@ export async function initializeLDK(electrum: string = "prod") {
 
   const channelHandshakeConfig = ChannelHandshakeConfig.constructor_default();
 
-  // Step 12: Sync ChannelMonitors and ChannelManager to chain tip - TODO
+  // Step 12: Sync ChannelMonitors and ChannelManager to chain tip - TEST ME
   syncClient.sync([channelManager.as_Confirm(), chainMonitor.as_Confirm()]);
-
-  /*
-  // Retrieve transaction IDs to check the chain for un-confirmation.
-  let relevant_txids_1: TwoTuple_TxidBlockHashZ[] = channelManager
-    .as_Confirm()
-    .get_relevant_txids();
-  let relevant_txids_2: TwoTuple_TxidBlockHashZ[] = chainMonitor
-    .as_Confirm()
-    .get_relevant_txids();
-
-  // merge into one array
-  let relevant_txids: TwoTuple_TxidBlockHashZ[] | any = [
-    ...relevant_txids_1,
-    ...relevant_txids_2,
-  ];
-
-  let unconfirmed_txids: TwoTuple_TxidBlockHashZ[] = [];
-
-  // Check if any of the relevant transaction IDs have been reorged out of the chain
-  for (let i = 0; i < relevant_txids.length; i++) {
-    const txid = relevant_txids[i].get_a();
-    const tx_block_hash = relevant_txids[i].get_b();
-
-    // Query the Electrum client to check if the transaction is still part of the chain
-    const tx_block_height = (await bitcoind_client.getTxIdData(txid)).height;
-    const current_block_height = await bitcoind_client.getBlockHeight();
-
-    if (tx_block_height > current_block_height) {
-      // The transaction is no longer part of the chain (due to reorg)
-      continue;
-    }
-    // The transaction is still part of the chain
-    unconfirmed_txids.push(relevant_txids[i]);
-  }
-
-  unconfirmed_txids.forEach((txid: TwoTuple_TxidBlockHashZ) => {
-    channelManager.as_Confirm().transaction_unconfirmed(txid.get_a());
-    chainMonitor.as_Confirm().transaction_unconfirmed(txid.get_a());
-  });
-
-  // If any of these txs/outputs were confirmed on-chain, then:
-  const confirmed_txids: object[] = [];
-  for (const txid of filtered_tx) {
-    let txid_hex = uint8ArrayToHexString(txid);
-    const tx_data = await bitcoind_client.getTxIdData(txid_hex);
-    if (tx_data.height !== undefined) {
-      // The transaction is confirmed on-chain.
-      confirmed_txids.push(tx_data);
-    }
-  }
-
-  const tx_list: TwoTuple_usizeTransactionZ[] = []; // TODO
-
-  confirmed_txids.forEach(async (element: any) => {
-    const block_data = await bitcoind_client.getBlockHeader(element.height);
-    const header = block_data.header;
-    const height = block_data.height;
-
-    channelManager.as_Confirm().transactions_confirmed(header, tx_list, height);
-    chainMonitor.as_Confirm().transactions_confirmed(header, tx_list, height);
-  });
-
-  channelManager.as_Confirm().best_block_updated(block_header, block_height);
-  chainMonitor.as_Confirm().best_block_updated(block_header, block_height);*/
 
   // Step 13: Give ChannelMonitors to ChainMonitor
   if (channel_monitor_mut_references.length > 0) {
