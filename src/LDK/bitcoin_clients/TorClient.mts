@@ -1,13 +1,20 @@
 import axios from "axios";
 import { RawAxiosRequestConfig } from "axios";
+import { BitcoinDaemonClientInterface } from "./BitcoinD.mjs";
 
 const TIMEOUT = 20000;
 const TOR_ENDPOINT = "http://localhost:3001";
 
-class TorClient {
+class TorClient implements BitcoinDaemonClientInterface {
   endpoint;
   constructor(endpoint: string) {
     this.endpoint = endpoint;
+  }
+  getHeaderByHash(hash: string): any {
+    throw new Error("Method not implemented.");
+  }
+  getBlockStatus(hash: string): any {
+    throw new Error("Method not implemented.");
   }
 
   async getBestBlockHash() {

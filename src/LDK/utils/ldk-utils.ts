@@ -316,3 +316,54 @@ export const deleteChannelByPaymentAddr = (
     );
   });
 };
+
+import fs from "fs";
+
+export class ChannelMonitorRead {
+  outpoint: Uint8Array;
+  bytes: Uint8Array;
+
+  constructor(outpoint: Uint8Array, bytes: Uint8Array) {
+    this.outpoint = outpoint;
+    this.bytes = bytes;
+  }
+}
+export function readChannelsFromDictionary(file: string): ChannelMonitorRead[] {
+  let channels: ChannelMonitorRead[] = [];
+  try {
+    if (!fs.existsSync(file)) {
+      throw Error("File not found");
+    }
+    const dict = JSON.parse(fs.readFileSync(file, "utf-8"));
+
+    if (!Array.isArray(dict)) {
+      throw Error("Invalid dictionary format");
+    }
+
+    for (const obj of dict) {
+      if (!obj.monitor_file_name || !obj.id_file_name) {
+        throw Error("Invalid object in dictionary");
+      }
+
+      if (!fs.existsSync(obj.monitor_file_name)) {
+        throw Error("File not found: " + obj.monitor_file_name);
+      }
+
+      if (!fs.existsSync(obj.id_file_name)) {
+        throw Error("File not found: " + obj.id_file_name);
+      }
+
+      const channelmonitorbytes_read = fs.readFileSync(obj.monitor_file_name);
+      const outpointbytes_read = fs.readFileSync(obj.id_file_name);
+
+      const channelmonitor_object: ChannelMonitorRead = new ChannelMonitorRead(
+        outpointbytes_read,
+        channelmonitorbytes_read
+      );
+      channels.push(channelmonitor_object);
+    }
+  } catch (e) {
+    throw e;
+  }
+  return channels;
+}

@@ -19,13 +19,10 @@ import {
   Option_FilterZ,
   ProbabilisticScorer,
   ProbabilisticScoringParameters,
-  Router,
   ChannelMonitor,
   DefaultRouter,
   LockableScore,
-  TwoTuple_TxidBlockHashZ,
   Persister,
-  ChannelManagerReadArgs,
   UtilMethods,
   TwoTuple_BlockHashChannelManagerZ,
   TwoTuple_BlockHashChannelMonitorZ,
@@ -41,65 +38,17 @@ import MercuryFeeEstimator from "../structs/MercuryFeeEstimator.mjs";
 import MercuryLogger from "../structs/MercuryLogger.js";
 // @ts-ignore
 import MercuryEventHandler from "../structs/MercuryEventHandler.js";
-import MercuryFilter from "../structs/MercuryFilter.js";
+// import MercuryFilter from "../structs/MercuryFilter.js"; - removed
 import LightningClientInterface from "../types/LightningClientInterface.js";
 import ElectrumClient from "../bitcoin_clients/ElectrumClient.mjs";
-import LightningClient from "../LightningClient.js";
 import TorClient from "../bitcoin_clients/TorClient.mjs";
 import MercuryPersist from "../structs/MercuryPersist.js";
 import MercuryPersister from "../structs/MercuryPersister.js";
-import SyncClient from "../SyncClient.js";
-import { uint8ArrayToHexString } from "../utils/utils.js";
-
-function readChannelsFromDictionary(file: string): ChannelMonitorRead[] {
-  let channels: ChannelMonitorRead[] = [];
-  try {
-    if (!fs.existsSync(file)) {
-      throw Error("File not found");
-    }
-    const dict = JSON.parse(fs.readFileSync(file, "utf-8"));
-
-    if (!Array.isArray(dict)) {
-      throw Error("Invalid dictionary format");
-    }
-
-    for (const obj of dict) {
-      if (!obj.monitor_file_name || !obj.id_file_name) {
-        throw Error("Invalid object in dictionary");
-      }
-
-      if (!fs.existsSync(obj.monitor_file_name)) {
-        throw Error("File not found: " + obj.monitor_file_name);
-      }
-
-      if (!fs.existsSync(obj.id_file_name)) {
-        throw Error("File not found: " + obj.id_file_name);
-      }
-
-      const channelmonitorbytes_read = fs.readFileSync(obj.monitor_file_name);
-      const outpointbytes_read = fs.readFileSync(obj.id_file_name);
-
-      const channelmonitor_object: ChannelMonitorRead = new ChannelMonitorRead(
-        outpointbytes_read,
-        channelmonitorbytes_read
-      );
-      channels.push(channelmonitor_object);
-    }
-  } catch (e) {
-    throw e;
-  }
-  return channels;
-}
-
-class ChannelMonitorRead {
-  outpoint: Uint8Array;
-  bytes: Uint8Array;
-
-  constructor(outpoint: Uint8Array, bytes: Uint8Array) {
-    this.outpoint = outpoint;
-    this.bytes = bytes;
-  }
-}
+import EsploraSyncClient from "../sync/EsploraSyncClient.js";
+import {
+  ChannelMonitorRead,
+  readChannelsFromDictionary,
+} from "../utils/ldk-utils.js";
 
 export async function initializeLDK(electrum: string = "prod") {
   console.log("[initializeLDK.ts/setupLDK]: setupLdk ran");
@@ -153,9 +102,9 @@ export async function initializeLDK(electrum: string = "prod") {
   const persister = Persister.new_impl(new MercuryPersister());
 
   // Our sync client
-  const syncClient = new SyncClient();
+  const syncClient = new EsploraSyncClient(bitcoind_client);
   // Step 5: Initialize the ChainMonitor
-  const filter = Filter.new_impl(new MercuryFilter(syncClient));
+  const filter = Filter.new_impl(syncClient);
 
   const chainMonitor: ChainMonitor = ChainMonitor.constructor_new(
     Option_FilterZ.constructor_some(filter),
@@ -315,6 +264,7 @@ export async function initializeLDK(electrum: string = "prod") {
 
   // Step 12: Sync ChannelMonitors and ChannelManager to chain tip - TODO
 
+  /*
   // Retrieve transaction IDs to check the chain for un-confirmation.
   let relevant_txids_1: TwoTuple_TxidBlockHashZ[] = channelManager
     .as_Confirm()
@@ -353,9 +303,6 @@ export async function initializeLDK(electrum: string = "prod") {
     chainMonitor.as_Confirm().transaction_unconfirmed(txid.get_a());
   });
 
-  let filtered_tx = syncClient.watchedTransactions; // Set<txids>
-  let outputs = syncClient.watchedOutputs; // Map<outpoint,watchedoutput> <--- doing nothing with this
-
   // If any of these txs/outputs were confirmed on-chain, then:
   const confirmed_txids: object[] = [];
   for (const txid of filtered_tx) {
@@ -367,19 +314,19 @@ export async function initializeLDK(electrum: string = "prod") {
     }
   }
 
+  const tx_list: TwoTuple_usizeTransactionZ[] = []; // TODO
+
   confirmed_txids.forEach(async (element: any) => {
     const block_data = await bitcoind_client.getBlockHeader(element.height);
     const header = block_data.header;
     const height = block_data.height;
-
-    const tx_list: any = undefined; // TODO
 
     channelManager.as_Confirm().transactions_confirmed(header, tx_list, height);
     chainMonitor.as_Confirm().transactions_confirmed(header, tx_list, height);
   });
 
   channelManager.as_Confirm().best_block_updated(block_header, block_height);
-  chainMonitor.as_Confirm().best_block_updated(block_header, block_height);
+  chainMonitor.as_Confirm().best_block_updated(block_header, block_height);*/
 
   // Step 13: Give ChannelMonitors to ChainMonitor
   if (channel_monitor_mut_references.length > 0) {

@@ -1,5 +1,5 @@
 import { FilterInterface, WatchedOutput } from "lightningdevkit";
-import SyncClient from "../SyncClient";
+import SyncClient from "../sync/EsploraSyncClient";
 
 class MercuryFilter implements FilterInterface {
   syncClient: SyncClient;
@@ -15,7 +15,7 @@ class MercuryFilter implements FilterInterface {
       script_pubkey
     );
 
-    this.syncClient.watchedTransactions.add(txid);
+    //this.syncClient.watchedTransactions.add(txid);
   }
 
   register_output(output: WatchedOutput): void {
@@ -23,7 +23,7 @@ class MercuryFilter implements FilterInterface {
     //  output on-chain>
     console.log("[MercuryFilter.ts/register_output]: output found:", output);
 
-    this.syncClient.watchedOutputs.set(output.get_outpoint(), output);
+    //this.syncClient.watchedOutputs.set(output.get_outpoint(), output);
   }
 }
 

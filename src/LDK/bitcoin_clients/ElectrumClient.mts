@@ -1,4 +1,5 @@
 import axios from "axios";
+import { BitcoinDaemonClientInterface } from "./BitcoinD.mjs";
 
 const TIMEOUT = 20000;
 
@@ -8,10 +9,16 @@ const PORT = "18443";
 const USER = "polaruser";
 const PASS = "polarpass";
 
-class ElectrumClient {
+class ElectrumClient implements BitcoinDaemonClientInterface {
   endpoint;
   constructor(endpoint: string) {
     this.endpoint = endpoint;
+  }
+  getHeaderByHash(hash: String) {
+    throw new Error("Method not implemented.");
+  }
+  getBlockStatus(hash: String) {
+    throw new Error("Method not implemented.");
   }
 
   async getBestBlockHash() {
