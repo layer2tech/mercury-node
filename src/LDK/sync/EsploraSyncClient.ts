@@ -192,7 +192,6 @@ export default class EsploraSyncClient implements FilterInterface {
 
       sync_state.watched_transactions.delete(ctx.tx.toHex());
 
-      // No input value here ? // Check me
       for (const input of ctx.tx.ins) {
         sync_state.watched_outputs.delete(
           OutPoint.constructor_new(input.hash, input.index)

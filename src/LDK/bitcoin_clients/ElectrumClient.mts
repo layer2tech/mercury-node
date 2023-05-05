@@ -17,8 +17,15 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
   getTxOut(txid: string, vout: number): any {
     throw new Error("Method not implemented.");
   }
-  getRawTransaction(txid: string): any {
-    throw new Error("Method not implemented.");
+  async getRawTransaction(txid: string): Promise<any> {
+    console.log("[ElectrumClient.mts]: getRawTransaction...");
+    let res;
+    try {
+      res = (await ElectrumClient.get(`tx/${txid}/hex`)).data;
+    } catch (e) {
+      console.log("[ElectrumClient.mts]: Error Getting raw transaction");
+    }
+    return res;
   }
   getOutputStatus(txid: Uint8Array, height: number): any {
     throw new Error("Method not implemented.");
@@ -31,57 +38,65 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
     throw new Error("Method not implemented.");
   }
 
+  async getUtxoSpentData(txid: string, vout: number) {
+    throw new Error("Not yet implemented");
+  }
+
   async getBestBlockHash() {
     console.log("[ElectrumClient.mts]: getBestBlockHash...");
     let res;
     try {
-      res = (await ElectrumClient.get("rest/chaininfo.json")).data;
+      res = (await ElectrumClient.get("blocks/tip/hash")).data;
     } catch (e) {
       console.log("[ElectrumClient.mts]: Error Getting Block Height");
     }
-    if (res) {
-      return res.bestblockhash;
-    }
+    return res;
   }
 
   async getBlockHeight() {
     console.log("[ElectrumClient.mts]: getBlockHeight...");
     let res;
     try {
-      res = (await ElectrumClient.get("rest/chaininfo.json")).data;
-      return res.blocks;
+      res = (await ElectrumClient.get("blocks/tip/height")).data;
     } catch (e) {
       console.log("[ElectrumClient.mts]: Error Getting Block Height");
     }
+    return res;
   }
 
-  async getBlockHeader(height: number | string) {
-    let currentBlockHash;
+  async getHashByHeight(height: number | string) {
+    // First get the hash of the block height
+    let block_hash;
     try {
       console.log(
-        "[ElectrumClient.mts]: getLatestBlockHeader, block_height:",
+        "[ElectrumClient.mts/getHashByHeight]: height entered:",
         height
       );
-      currentBlockHash = (
-        await ElectrumClient.get(`rest/blockhashbyheight/${height}.json`)
-      ).data.blockhash;
+      block_hash = (await ElectrumClient.get(`block-height/${height}`)).data;
     } catch (e) {
       console.log("[ElectrumClient.mts]: Error Getting Current Block Hash");
     }
+    return block_hash;
+  }
 
-    // return currentBlockHash
+  /*
+    Example output:
+    { "id":"6308b34593df109d39b2c9dfd12ee181a57ce0b8d277c09ef423db6f644e37a3",
+    "height":320,"version":805306368,"timestamp":1683214228,"tx_count":1,"size":250,"weight":892,
+    "merkle_root":"5b261b4b9808135b47cc97b305a4aa7d5064c71a219dc5c443ea71c079be24aa",
+    "previousblockhash":"65f9455cbecb2a9a700dcdd6877e5b1d7423e0a49860731f100cd9819b3856e8",
+    "mediantime":1683214227,"nonce":0,"bits":545259519,"difficulty":0 }
+  */
+  async getBlockHeader(height: number | string) {
+    let currentBlockHash = await this.getHashByHeight(height);
     console.log("[ElectrumClient.mts]: Get Latest Block Header...");
     let res;
     try {
-      res = (await ElectrumClient.get(`rest/headers/1/${currentBlockHash}.hex`))
-        .data;
+      res = (await ElectrumClient.get(`block/${currentBlockHash}`)).data;
     } catch (e) {
       console.log("[ElectrumClient.mts]: Error in getting header: ", e);
     }
-
-    if (res) {
-      return res;
-    }
+    return res;
   }
 
   async getTxIdData(txid: string) {
@@ -94,10 +109,6 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
       height: res.height,
       confirmations: res.confirmations,
     };
-  }
-
-  async getUtxoSpentData(txid: string, vout: number) {
-    throw new Error("Not yet implemented");
   }
 
   static async get(endpoint: string, timeout_ms = TIMEOUT) {
