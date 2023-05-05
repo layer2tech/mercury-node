@@ -3,20 +3,32 @@ import { BitcoinDaemonClientInterface } from "./BitcoinD.mjs";
 
 const TIMEOUT = 20000;
 
-// CHANGE THESE TO MATCH POLAR
+// CHANGE THESE TO THE ESPLORA HOST
 const HOST = "http://136.244.108.27";
 const PORT = "3002";
-const USER = "polaruser";
-const PASS = "polarpass";
+const USER = "";
+const PASS = "";
 
 class ElectrumClient implements BitcoinDaemonClientInterface {
-  endpoint;
-  constructor(endpoint: string) {
-    this.endpoint = endpoint;
+  /* 
+    Example output:
+    {"spent":false}
+  */
+  async getTxOut(txid: string, vout: number): Promise<any> {
+    console.log("[ElectrumClient.mts]: getTxOut...");
+    let res;
+    try {
+      res = (await ElectrumClient.get(`tx/${txid}/outspend/${vout}`)).data;
+      return res;
+    } catch (e) {
+      console.log("[ElectrumClient.mts]: Error getTxOut", e);
+    }
   }
-  getTxOut(txid: string, vout: number): any {
-    throw new Error("Method not implemented.");
-  }
+
+  /*
+    Example output:
+    020000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff0402360100ffffffff02807c814a000000001600143d27b06f0539ca6a16e4d521ec2ee7b9ab720fcd0000000000000000266a24aa21a9ede2f61c3f71d1defd3fa999dfa36953755c690689799962b48bebd836974e8cf90120000000000000000000000000000000000000000000000000000000000000000000000000
+  */
   async getRawTransaction(txid: string): Promise<any> {
     console.log("[ElectrumClient.mts]: getRawTransaction...");
     let res;
@@ -26,9 +38,6 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
       console.log("[ElectrumClient.mts]: Error Getting raw transaction", e);
     }
     return res;
-  }
-  getOutputStatus(txid: Uint8Array, height: number): any {
-    throw new Error("Method not implemented.");
   }
 
   /* 
@@ -45,12 +54,20 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
       console.log("[ElectrumClient.mts]: Error getHeaderByHash", e);
     }
   }
-  getBlockStatus(hash: String) {
-    throw new Error("Method not implemented.");
-  }
 
-  async getUtxoSpentData(txid: string, vout: number) {
-    throw new Error("Not yet implemented");
+  /*
+    Example output:
+    {"in_best_chain":true,"height":320,"next_best":null}
+  */
+  async getBlockStatus(hash: String) {
+    console.log("[ElectrumClient.mts]: getBlockStatus...");
+    let res;
+    try {
+      res = (await ElectrumClient.get(`block/${hash}/status`)).data;
+      return res;
+    } catch (e) {
+      console.log("[ElectrumClient.mts]: Error getBlockStatus", e);
+    }
   }
 
   async getBestBlockHash() {

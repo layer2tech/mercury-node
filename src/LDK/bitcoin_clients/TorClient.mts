@@ -16,7 +16,7 @@ class TorClient implements BitcoinDaemonClientInterface {
   getRawTransaction(txid: string): any {
     throw new Error("Method not implemented.");
   }
-  getOutputStatus(txid: Uint8Array, height: number): any {
+  getOutputStatus(txid: string, height: number): any {
     throw new Error("Method not implemented.");
   }
   getHeaderByHash(hash: string): any {

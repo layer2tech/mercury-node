@@ -217,8 +217,11 @@ export default class EsploraSyncClient implements FilterInterface {
     }
 
     for (const [, output] of sync_state.watched_outputs) {
-      const output_status = await this.bitcoind_client.getOutputStatus(
-        output.get_outpoint().get_txid(),
+      let hex_tx = uint8ArrayToHexString(output.get_outpoint().get_txid());
+
+      // check me
+      const output_status = await this.bitcoind_client.getTxOut(
+        hex_tx,
         output.get_outpoint().get_index()
       );
 
