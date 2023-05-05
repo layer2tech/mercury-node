@@ -113,17 +113,17 @@ export default class LightningClient implements LightningClientInterface {
     bitcoind Client Functions
   */
 
-  async getBlockHeight() {
-    this.blockHeight = await this.bitcoind_client.getBlockHeight();
+  async updateBestBlockHeight() {
+    this.blockHeight = await this.bitcoind_client.getBestBlockHeight();
     return this.blockHeight;
   }
 
-  async getBestBlockHash() {
+  async updateBestBlockHash() {
     this.bestBlockHash = await this.bitcoind_client.getBestBlockHash();
     return this.bestBlockHash;
   }
 
-  async getLatestBlockHeader(height: number | undefined) {
+  async updateLatestBlockHeader(height: number | undefined) {
     if (height) {
       let latestBlockHeader = await this.bitcoind_client.getBlockHeader(height);
 
@@ -405,8 +405,8 @@ export default class LightningClient implements LightningClientInterface {
 
     console.log("[LightningClient.ts]: pubkey found:", pubkey);
 
-    await this.getBlockHeight();
-    await this.getLatestBlockHeader(this.blockHeight);
+    await this.updateBestBlockHeight();
+    await this.updateLatestBlockHeader(this.blockHeight);
 
     let channelValSatoshis = BigInt(amount);
     let pushMsat = BigInt(push_msat);
@@ -443,7 +443,7 @@ export default class LightningClient implements LightningClientInterface {
     }
     if (this.blockHeight && this.latestBlockHeader) {
       for (let i = 0; i++; i <= this.blockHeight) {
-        await this.getLatestBlockHeader(i + 1);
+        await this.updateLatestBlockHeader(i + 1);
         this.channelManager
           .as_Listen()
           .block_connected(this.latestBlockHeader, this.blockHeight);

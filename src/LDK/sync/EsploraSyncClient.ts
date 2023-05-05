@@ -147,6 +147,8 @@ export default class EsploraSyncClient implements FilterInterface {
         sync_state.pending_sync = false;
       }
     }
+
+    return false;
   }
 
   async sync_best_block_updated(

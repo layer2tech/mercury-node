@@ -81,7 +81,7 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
     return res;
   }
 
-  async getBlockHeight() {
+  async getBestBlockHeight() {
     console.log("[ElectrumClient.mts]: getBlockHeight...");
     let res;
     try {

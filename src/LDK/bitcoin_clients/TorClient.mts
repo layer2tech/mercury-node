@@ -6,10 +6,6 @@ const TIMEOUT = 20000;
 const TOR_ENDPOINT = "http://localhost:3001";
 
 class TorClient implements BitcoinDaemonClientInterface {
-  endpoint;
-  constructor(endpoint: string) {
-    this.endpoint = endpoint;
-  }
   getTxOut(txid: string, vout: number): any {
     throw new Error("Method not implemented.");
   }
@@ -41,7 +37,7 @@ class TorClient implements BitcoinDaemonClientInterface {
     }
   }
 
-  async getBlockHeight() {
+  async getBestBlockHeight() {
     console.log("[TorClient.mts]: getBlockHeight...");
     let res;
     try {

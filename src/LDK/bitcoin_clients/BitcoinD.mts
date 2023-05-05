@@ -1,6 +1,6 @@
 export interface BitcoinDaemonClientInterface {
   getBestBlockHash(): any;
-  getBlockHeight(): any;
+  getBestBlockHeight(): any;
   getBlockHeader(height: number): any;
   getBlockHeader(hash: string): any;
   getTxIdData(txid: string): any;

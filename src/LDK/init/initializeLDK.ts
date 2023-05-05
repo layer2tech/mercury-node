@@ -64,10 +64,10 @@ export async function initializeLDK(electrum: string = "prod") {
   console.log("[initialiseLDK.ts]: INIT CLIENT: ", electrum);
   if (electrum === "prod") {
     console.log("[initialiseLDK.ts]: Init TorClient");
-    bitcoind_client = new TorClient("");
+    bitcoind_client = new TorClient();
   } else {
     console.log("[initialiseLDK.ts]: Init ElectrumClient");
-    bitcoind_client = new ElectrumClient("");
+    bitcoind_client = new ElectrumClient();
   }
 
   // Check that the bitcoind we've connected to is running the network we expect
@@ -187,7 +187,7 @@ export async function initializeLDK(electrum: string = "prod") {
   const config = UserConfig.constructor_default();
 
   console.log("[initialiseLDK.ts]: block_height, block_hash, block_header");
-  let block_height: number = await bitcoind_client.getBlockHeight();
+  let block_height: number = await bitcoind_client.getBestBlockHeight();
   let block_hash: string = await bitcoind_client.getBestBlockHash();
   let block_header = await bitcoind_client.getBlockHeader(block_height);
 
