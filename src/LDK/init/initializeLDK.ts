@@ -49,6 +49,7 @@ import {
   ChannelMonitorRead,
   readChannelsFromDictionary,
 } from "../utils/ldk-utils.js";
+import chalk from "chalk";
 
 export async function initializeLDK(electrum: string = "prod") {
   console.log("[initializeLDK.ts/setupLDK]: setupLdk ran");
@@ -117,7 +118,7 @@ export async function initializeLDK(electrum: string = "prod") {
 
   // Step 6: Initialize the KeysManager
   const keys_seed_path = ldk_data_dir + "keys_seed";
-  var seed = null;
+  var seed: any;
   if (!fs.existsSync(keys_seed_path)) {
     seed = crypto.randomBytes(32);
     fs.writeFileSync(keys_seed_path, seed);
@@ -262,10 +263,23 @@ export async function initializeLDK(electrum: string = "prod") {
 
   const channelHandshakeConfig = ChannelHandshakeConfig.constructor_default();
 
-  // Step 12: Sync ChannelMonitors and ChannelManager to chain tip - TEST ME
-  syncClient.sync([channelManager.as_Confirm(), chainMonitor.as_Confirm()]);
+  // Step 12: Sync ChainMonitor and ChannelManager to chain tip
+  console.log(
+    chalk.blueBright(
+      "[initializeLDK.ts]: Step 12: Sync ChainMonitor and ChannelManager to chain tip"
+    )
+  );
+  await syncClient.sync([
+    channelManager.as_Confirm(),
+    chainMonitor.as_Confirm(),
+  ]);
 
   // Step 13: Give ChannelMonitors to ChainMonitor
+  console.log(
+    chalk.blueBright(
+      "[initializeLDK.ts]: Step 13: Give ChannelMonitors to ChainMonitor"
+    )
+  );
   if (channel_monitor_mut_references.length > 0) {
     let outpoints_mut: OutPoint[] = [];
 
@@ -297,8 +311,16 @@ export async function initializeLDK(electrum: string = "prod") {
   }
 
   // Step 14: Optional: Initialize the P2PGossipSync
+  console.log(
+    chalk.blueBright(
+      "[initializeLDK.ts]: Step 14: Optional: Initialize the P2PGossipSync - TODO"
+    )
+  );
 
   // Step 15: Initialize the PeerManager
+  console.log(
+    chalk.blueBright("[initializeLDK.ts]: Step 15: Initialize the PeerManager")
+  );
   const routingMessageHandler =
     IgnoringMessageHandler.constructor_new().as_RoutingMessageHandler();
   let channelMessageHandler;

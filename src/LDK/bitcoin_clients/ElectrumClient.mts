@@ -9,19 +9,23 @@ const PORT = "3002";
 const USER = "";
 const PASS = "";
 
+// Custom Logger
+import { ChalkColor, Logger } from "../utils/Logger.js";
+const DEBUG = new Logger(ChalkColor.Yellow, "ElectrumClient.ts");
+
 class ElectrumClient implements BitcoinDaemonClientInterface {
   /* 
     Example output:
     {"spent":false}
   */
   async getTxOut(txid: string, vout: number): Promise<any> {
-    console.log("[ElectrumClient.mts]: getTxOut...");
+    DEBUG.log("getTxOut...", "getTxOut");
     let res;
     try {
       res = (await ElectrumClient.get(`tx/${txid}/outspend/${vout}`)).data;
       return res;
     } catch (e) {
-      console.log("[ElectrumClient.mts]: Error getTxOut", e);
+      DEBUG.err("[ElectrumClient.mts]: Error getTxOut", e);
     }
   }
 
@@ -30,12 +34,12 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
     020000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff0402360100ffffffff02807c814a000000001600143d27b06f0539ca6a16e4d521ec2ee7b9ab720fcd0000000000000000266a24aa21a9ede2f61c3f71d1defd3fa999dfa36953755c690689799962b48bebd836974e8cf90120000000000000000000000000000000000000000000000000000000000000000000000000
   */
   async getRawTransaction(txid: string): Promise<any> {
-    console.log("[ElectrumClient.mts]: getRawTransaction...");
+    DEBUG.log("getRawTransaction...", "getRawTransaction");
     let res;
     try {
       res = (await ElectrumClient.get(`tx/${txid}/hex`)).data;
     } catch (e) {
-      console.log("[ElectrumClient.mts]: Error Getting raw transaction", e);
+      DEBUG.err("[ElectrumClient.mts]: Error Getting raw transaction", e);
     }
     return res;
   }
@@ -45,13 +49,14 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
     00000030e856389b81d90c101f736098a4e023741d5b7e87d6cd0d709a2acbbe5c45f965aa24be79c071ea43c4c59d211ac764507daaa405b397cc475b1308984b1b265b94cf5364ffff7f2000000000
   */
   async getHeaderByHash(hash: String) {
-    console.log("[ElectrumClient.mts]: getHeaderByHash...");
+    DEBUG.log("getHeaderByHash...", "getHeaderByHash");
     let res;
     try {
       res = (await ElectrumClient.get(`block/${hash}/header`)).data;
+      DEBUG.log("returning res... ->", "getHeaderByHash", res);
       return res;
     } catch (e) {
-      console.log("[ElectrumClient.mts]: Error getHeaderByHash", e);
+      DEBUG.err("[ElectrumClient.mts]: Error getHeaderByHash", e);
     }
   }
 
@@ -60,51 +65,53 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
     {"in_best_chain":true,"height":320,"next_best":null}
   */
   async getBlockStatus(hash: String) {
-    console.log("[ElectrumClient.mts]: getBlockStatus...");
+    DEBUG.log("getBlockStatus...", "getBlockStatus");
     let res;
     try {
       res = (await ElectrumClient.get(`block/${hash}/status`)).data;
+      DEBUG.log("returning block status ->", "getBlockStatus", res);
       return res;
     } catch (e) {
-      console.log("[ElectrumClient.mts]: Error getBlockStatus", e);
+      DEBUG.err("[ElectrumClient.mts]: Error getBlockStatus", e);
     }
   }
 
   async getBestBlockHash() {
-    console.log("[ElectrumClient.mts]: getBestBlockHash...");
+    DEBUG.log("getBestBlockHash...", "getBestBlockHash");
     let res;
     try {
       res = (await ElectrumClient.get("blocks/tip/hash")).data;
+      DEBUG.log("returning block hash ->", "getBestBlockHash", res);
+      return res;
     } catch (e) {
-      console.log("[ElectrumClient.mts]: Error Getting Block Height");
+      DEBUG.err("[ElectrumClient.mts]: Error Getting Block Height");
     }
-    return res;
   }
 
   async getBestBlockHeight() {
-    console.log("[ElectrumClient.mts]: getBlockHeight...");
+    DEBUG.log("getBestBlockHeight...", "getBestBlockHeight");
     let res;
     try {
       res = (await ElectrumClient.get("blocks/tip/height")).data;
+      DEBUG.log("returning blockheight ->", "getBestBlockHeight", res);
+      return res;
     } catch (e) {
-      console.log("[ElectrumClient.mts]: Error Getting Block Height");
+      DEBUG.err("[ElectrumClient.mts]: Error Getting Block Height");
     }
-    return res;
   }
 
   async getHashByHeight(height: number | string) {
+    DEBUG.log("height entered ->", "getHashByHeight", height);
+
     // First get the hash of the block height
-    let block_hash;
     try {
-      console.log(
-        "[ElectrumClient.mts/getHashByHeight]: height entered:",
-        height
-      );
-      block_hash = (await ElectrumClient.get(`block-height/${height}`)).data;
+      let block_hash = (await ElectrumClient.get(`block-height/${height}`))
+        .data;
+      DEBUG.log("returning hash ->", "getHashByHeight", block_hash);
+      return block_hash;
     } catch (e) {
-      console.log("[ElectrumClient.mts]: Error Getting Current Block Hash");
+      DEBUG.err("[ElectrumClient.mts]: Error Getting Current Block Hash");
     }
-    return block_hash;
   }
 
   /*
@@ -117,14 +124,16 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
   */
   async getBlockHeader(height: number | string) {
     let currentBlockHash = await this.getHashByHeight(height);
-    console.log("[ElectrumClient.mts]: Get Latest Block Header...");
-    let res;
+    DEBUG.log("Get Latest Block Header", "getBlockHeader", height);
+
     try {
-      res = (await ElectrumClient.get(`block/${currentBlockHash}`)).data;
+      let block_header = (await ElectrumClient.get(`block/${currentBlockHash}`))
+        .data;
+      DEBUG.log("returning block header ->", "getBlockHeader", block_header);
+      return block_header;
     } catch (e) {
-      console.log("[ElectrumClient.mts]: Error in getting header: ", e);
+      DEBUG.err("[ElectrumClient.mts]: Error in getting header: ", e);
     }
-    return res;
   }
 
   /*
@@ -132,8 +141,10 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
     {"id":"6308b34593df109d39b2c9dfd12ee181a57ce0b8d277c09ef423db6f644e37a3","height":320,"version":805306368,"timestamp":1683214228,"tx_count":1,"size":250,"weight":892,"merkle_root":"5b261b4b9808135b47cc97b305a4aa7d5064c71a219dc5c443ea71c079be24aa","previousblockhash":"65f9455cbecb2a9a700dcdd6877e5b1d7423e0a49860731f100cd9819b3856e8","mediantime":1683214227,"nonce":0,"bits":545259519,"difficulty":0}
   */
   async getTxIdData(txid: string) {
+    DEBUG.log("Get txid data", "getTxIdData");
     try {
       const res = (await ElectrumClient.get(`tx/${txid}`)).data;
+      console.table(res);
 
       return {
         txid: res?.txid ?? "",
@@ -143,7 +154,7 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
         confirmations: res?.status?.confirmed ?? false,
       };
     } catch (e) {
-      console.log("[ElectrumClient.mts]: Error in getTxIdData", e);
+      DEBUG.err("[ElectrumClient.mts]: Error in getTxIdData", e);
       return null;
     }
   }
@@ -178,11 +189,11 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
         options
       )
       .then((response) => {
-        console.log("[ElectrumClient.mts]: RESPONSE: ", response.data);
+        DEBUG.log("RESPONSE:", "post", response.data);
         return response.data;
       })
       .catch((error) => {
-        console.log("[ElectrumClient.mts]: ERROR: ", error);
+        DEBUG.err("[ElectrumClient.mts]: ERROR: ", error);
       });
   }
 }

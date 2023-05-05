@@ -14,6 +14,10 @@ import { Transaction } from "bitcoinjs-lib";
 import { BitcoinDaemonClientInterface } from "../bitcoin_clients/BitcoinD.mjs";
 import { InternalError, TxSyncError } from "./Error.js";
 
+// Custom Logging
+import { ChalkColor, Logger } from "../utils/Logger.js";
+const DEBUG = new Logger(ChalkColor.Magenta, "EsploraSyncClient.ts");
+
 interface ConfirmedTx {
   tx: Transaction;
   block_header: any;
@@ -53,7 +57,7 @@ export default class EsploraSyncClient implements FilterInterface {
   }
 
   async sync(confirmables: Confirm[]) {
-    console.log("Starting transaction sync.");
+    DEBUG.log("Starting transaction sync.", "sync");
     let tip_hash = await this.bitcoind_client.getBestBlockHash();
     let sync_state = this.sync_state; // Check this, no lock?
 
@@ -62,10 +66,11 @@ export default class EsploraSyncClient implements FilterInterface {
       let tip_is_new = tip_hash !== sync_state.last_sync_hash;
 
       if (!sync_state.pending_sync && !pending_registrations && !tip_is_new) {
-        // Nothing to do.
+        DEBUG.log("Nothing to do. Exiting sync loop.", "sync");
         break;
       } else {
         if (tip_is_new) {
+          DEBUG.log("if tip_is_new", "sync");
           try {
             let unconfirmed_txs = await this.get_unconfirmed_transactions(
               confirmables
@@ -73,6 +78,7 @@ export default class EsploraSyncClient implements FilterInterface {
             let check_tip_hash = await this.bitcoind_client.getBestBlockHash();
 
             if (check_tip_hash !== tip_hash) {
+              DEBUG.log("if check_tip_hash !== tip_hash -> continue", "sync");
               tip_hash = check_tip_hash;
               continue;
             }
@@ -84,7 +90,7 @@ export default class EsploraSyncClient implements FilterInterface {
             );
           } catch (err) {
             // (Semi-)permanent failure, retry later.
-            console.log("Failed during transaction sync, aborting.");
+            DEBUG.log("Failed during transaction sync, aborting.", "sync");
             sync_state.pending_sync = true;
             return Error(TxSyncError.from(err)); // Check me
           }
@@ -97,8 +103,9 @@ export default class EsploraSyncClient implements FilterInterface {
               err === InternalError.Inconsistency // Check me
             ) {
               // Immediately restart syncing when we encounter any inconsistencies.
-              console.log(
-                "Encountered inconsistency during transaction sync, restarting."
+              DEBUG.log(
+                "Encountered inconsistency during transaction sync, restarting.",
+                "sync"
               );
               sync_state.pending_sync = true;
               continue;
@@ -110,6 +117,7 @@ export default class EsploraSyncClient implements FilterInterface {
           }
         }
 
+        DEBUG.log("Continue", "sync");
         try {
           let confirmed_txs = await this.get_confirmed_transactions(sync_state);
           let check_tip_hash = await this.bitcoind_client.getBestBlockHash();
@@ -130,14 +138,15 @@ export default class EsploraSyncClient implements FilterInterface {
             err === InternalError.Inconsistency
           ) {
             // Immediately restart syncing when we encounter any inconsistencies.
-            console.log(
-              "Encountered inconsistency during transaction sync, restarting."
+            DEBUG.log(
+              "Encountered inconsistency during transaction sync, restarting.",
+              "sync"
             );
             sync_state.pending_sync = true;
             continue;
           } else {
             // (Semi-)permanent failure, retry later.
-            console.log("Failed during transaction sync, aborting.");
+            DEBUG.log("Failed during transaction sync, aborting.", "sync");
             sync_state.pending_sync = true;
             return Error(TxSyncError.from(err));
           }
@@ -148,25 +157,42 @@ export default class EsploraSyncClient implements FilterInterface {
       }
     }
 
-    return false;
+    DEBUG.log("***** sync complete *****", "sync");
+    return true;
   }
 
   async sync_best_block_updated(
     confirmables: Confirm[], // chainMonitor.asConfirm(), channelManager.asConfirm()
     tipHash: string //BlockHash
   ): Promise<void> {
+    DEBUG.log("confirmables, tipHash", "sync_best_block_updated");
+    console.table({ confirmables, tipHash });
+
     // Inform the interface of the new block.
     const tipHeader = await this.bitcoind_client.getHeaderByHash(tipHash);
     const tipStatus = await this.bitcoind_client.getBlockStatus(tipHash);
 
+    DEBUG.log("tipHeader->", "sync_best_block_updated", tipHeader);
+    DEBUG.log("tipStatus->", "sync_best_block_updated", tipStatus);
+    console.table(tipStatus);
+
     if (tipStatus.in_best_chain) {
-      if (tipStatus.height != null) {
-        for (const c of confirmables) {
-          c.best_block_updated(tipHeader, tipStatus.height);
-        }
+      DEBUG.log("tipStatus.in_best_chain -> true", "sync_best_block_updated");
+      if (tipStatus.height !== undefined) {
+        DEBUG.log(
+          "tipStatus.in_best_chain -> tipStatus.height !== undefined",
+          "sync_best_block_updated"
+        );
+        confirmables.forEach((c) => {
+          DEBUG.log(
+            "c.best_block_updated(confirmables)",
+            "sync_best_block_updated"
+          );
+          c.best_block_updated(hexToUint8Array(tipHeader), tipStatus.height);
+        });
       }
     } else {
-      throw new Error("InternalError.Inconsistency");
+      DEBUG.err("InternalError.Inconsistency");
     }
     return;
   }
@@ -299,6 +325,7 @@ export default class EsploraSyncClient implements FilterInterface {
   async get_unconfirmed_transactions(confirmables: Confirm[]) {
     // Query the interface for relevant txids and check whether the relevant blocks are still
     // in the best chain, mark them unconfirmed otherwise
+    DEBUG.log("Get relevantTxids", "get_unconfirmed_transactions");
 
     const relevantTxids = new Set(
       confirmables
@@ -309,6 +336,8 @@ export default class EsploraSyncClient implements FilterInterface {
           uint8ArrayToHexString(tuple.get_b()),
         ])
     );
+
+    DEBUG.log("relevantTxids->", "get_unconfirmed_transactions", relevantTxids);
 
     const unconfirmedTxs: string[] | any = []; //txid[]
 
@@ -325,6 +354,12 @@ export default class EsploraSyncClient implements FilterInterface {
         unconfirmedTxs.push(txid);
       }
     }
+
+    DEBUG.log(
+      "returning unconfirmedTxs ->",
+      "get_unconfirmed_transactions",
+      unconfirmedTxs
+    );
     return unconfirmedTxs;
   }
 
@@ -333,6 +368,11 @@ export default class EsploraSyncClient implements FilterInterface {
     confirmables: Confirm[],
     unconfirmed_txs: string[]
   ): void {
+    DEBUG.log(
+      "unconfirmed_txs passed in:",
+      "sync_unconfirmed_transactions",
+      unconfirmed_txs
+    );
     for (const txid of unconfirmed_txs) {
       for (const c of confirmables) {
         c.transaction_unconfirmed(hexToUint8Array(txid)); //convert back to uint8array
