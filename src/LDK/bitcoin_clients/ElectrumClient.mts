@@ -23,7 +23,7 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
     try {
       res = (await ElectrumClient.get(`tx/${txid}/hex`)).data;
     } catch (e) {
-      console.log("[ElectrumClient.mts]: Error Getting raw transaction");
+      console.log("[ElectrumClient.mts]: Error Getting raw transaction", e);
     }
     return res;
   }
@@ -31,8 +31,19 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
     throw new Error("Method not implemented.");
   }
 
-  getHeaderByHash(hash: String) {
-    throw new Error("Method not implemented.");
+  /* 
+    Example output:
+    00000030e856389b81d90c101f736098a4e023741d5b7e87d6cd0d709a2acbbe5c45f965aa24be79c071ea43c4c59d211ac764507daaa405b397cc475b1308984b1b265b94cf5364ffff7f2000000000
+  */
+  async getHeaderByHash(hash: String) {
+    console.log("[ElectrumClient.mts]: getHeaderByHash...");
+    let res;
+    try {
+      res = (await ElectrumClient.get(`block/${hash}/header`)).data;
+      return res;
+    } catch (e) {
+      console.log("[ElectrumClient.mts]: Error getHeaderByHash", e);
+    }
   }
   getBlockStatus(hash: String) {
     throw new Error("Method not implemented.");
