@@ -96,10 +96,12 @@ class TorClient implements BitcoinDaemonClientInterface {
       .data;
 
     return {
-      txid: res.txid,
-      vout: res.vin[0].vout,
-      sequence: res.vin[0].sequence,
-      height: res.height,
+      txid: res?.txid ?? "",
+      vout: res?.vin[0]?.vout ?? -1,
+      sequence: res?.vin[0]?.sequence ?? -1,
+      height: res?.status?.block_height ?? -1,
+      confirmed: res?.status?.confirmed ?? false,
+      hash: res?.status?.block_hash ?? -1,
     };
   }
 

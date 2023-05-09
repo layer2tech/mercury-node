@@ -202,6 +202,11 @@ export default class EsploraSyncClient implements FilterInterface {
     confirmables: Confirm[],
     confirmed_txs: ConfirmedTx[]
   ): void {
+    DEBUG.log("*********", "sync_confirmed_transactions");
+    console.log("sync state:", sync_state);
+    console.log("confirmables:", confirmables);
+    console.log("confirmed_txs", confirmed_txs);
+
     for (const ctx of confirmed_txs) {
       for (const c of confirmables) {
         const txdata = [
@@ -234,10 +239,30 @@ export default class EsploraSyncClient implements FilterInterface {
     let confirmed_txs: ConfirmedTx[] = [];
 
     for (const txid of sync_state.watched_transactions) {
+      DEBUG.log("******", "get_confirmed_transactions");
+      DEBUG.log(
+        "txid get confirmed,txid:@",
+        "get_confirmed_transactions",
+        txid
+      );
+
+      let txid_data = await this.bitcoind_client.getTxIdData(txid);
+
+      DEBUG.log(
+        "block_hash found->",
+        "get_confirmed_transactions",
+        txid_data?.hash
+      );
+      DEBUG.log(
+        "block_height found->",
+        "get_confirmed_transactions",
+        txid_data?.height
+      );
+
       const confirmed_tx = await this.get_confirmed_tx(
         txid,
-        undefined,
-        undefined
+        txid_data?.hash,
+        txid_data?.height
       );
       if (confirmed_tx) {
         confirmed_txs.push(confirmed_tx);

@@ -149,7 +149,7 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
     {"id":"6308b34593df109d39b2c9dfd12ee181a57ce0b8d277c09ef423db6f644e37a3","height":320,"version":805306368,"timestamp":1683214228,"tx_count":1,"size":250,"weight":892,"merkle_root":"5b261b4b9808135b47cc97b305a4aa7d5064c71a219dc5c443ea71c079be24aa","previousblockhash":"65f9455cbecb2a9a700dcdd6877e5b1d7423e0a49860731f100cd9819b3856e8","mediantime":1683214227,"nonce":0,"bits":545259519,"difficulty":0}
   */
   async getTxIdData(txid: string) {
-    DEBUG.log("Get txid data", "getTxIdData");
+    DEBUG.log("txid->", "getTxIdData", txid);
     try {
       const res = (await ElectrumClient.get(`tx/${txid}`)).data;
       console.table(res);
@@ -159,7 +159,8 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
         vout: res?.vin[0]?.vout ?? -1,
         sequence: res?.vin[0]?.sequence ?? -1,
         height: res?.status?.block_height ?? -1,
-        confirmations: res?.status?.confirmed ?? false,
+        confirmed: res?.status?.confirmed ?? false,
+        hash: res?.status?.block_hash ?? -1,
       };
     } catch (e) {
       DEBUG.err("[ElectrumClient.mts]: Error in getTxIdData", e);
