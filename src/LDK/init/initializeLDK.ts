@@ -84,16 +84,18 @@ export async function initializeLDK(electrum: string = "prod") {
   // Step 3: Initialize the BroadcasterInterface
   const txBroadcaster = BroadcasterInterface.new_impl({
     // Need to call the sendrawtransaction call for the RPC service, loggin this for now to determined when to implement
-    broadcast_transaction(tx: any) {
+    async broadcast_transaction(tx: any) {
       console.log("[initialiseLDK.ts]: Tx Broadcast: " + tx);
+      await bitcoind_client.setTx(tx);
     },
   });
 
   // Step 3: broadcast interface
   const txBroadcasted = new Promise((resolve, reject) => {
-    txBroadcaster.broadcast_transaction = (tx: any) => {
+    txBroadcaster.broadcast_transaction = async (tx: any) => {
       // Need to call the sendrawtransaction call for the RPC service, loggin this for now to determined when to implement
       console.log("[initialiseLDK.ts]: Tx Broadcast: " + tx);
+      await bitcoind_client.setTx(tx);
       resolve(tx);
     };
   });

@@ -6,6 +6,9 @@ const TIMEOUT = 20000;
 const TOR_ENDPOINT = "http://localhost:3001";
 
 class TorClient implements BitcoinDaemonClientInterface {
+  setTx(txid: string): Promise<any> {
+    throw new Error("Method not implemented.");
+  }
   getTxOut(txid: string, vout: number): any {
     throw new Error("Method not implemented.");
   }

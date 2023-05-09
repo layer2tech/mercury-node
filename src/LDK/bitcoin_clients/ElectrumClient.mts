@@ -14,15 +14,24 @@ import { ChalkColor, Logger } from "../utils/Logger.js";
 const DEBUG = new Logger(ChalkColor.Yellow, "ElectrumClient.ts");
 
 class ElectrumClient implements BitcoinDaemonClientInterface {
+  // POST / tx;
+  async setTx(txid: string): Promise<any> {
+    DEBUG.log("setTx...", "setTx");
+    try {
+      let res = ElectrumClient.post("/TX", txid);
+      return res;
+    } catch (e) {
+      DEBUG.err("[ElectrumClient.ts]: Error setTx", e);
+    }
+  }
   /* 
     Example output:
     {"spent":false}
   */
   async getTxOut(txid: string, vout: number): Promise<any> {
     DEBUG.log("getTxOut...", "getTxOut");
-    let res;
     try {
-      res = (await ElectrumClient.get(`tx/${txid}/outspend/${vout}`)).data;
+      let res = (await ElectrumClient.get(`tx/${txid}/outspend/${vout}`)).data;
       return res;
     } catch (e) {
       DEBUG.err("[ElectrumClient.mts]: Error getTxOut", e);
@@ -35,13 +44,12 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
   */
   async getRawTransaction(txid: string): Promise<any> {
     DEBUG.log("getRawTransaction...", "getRawTransaction");
-    let res;
     try {
-      res = (await ElectrumClient.get(`tx/${txid}/hex`)).data;
+      let res = (await ElectrumClient.get(`tx/${txid}/hex`)).data;
+      return res;
     } catch (e) {
       DEBUG.err("[ElectrumClient.mts]: Error Getting raw transaction", e);
     }
-    return res;
   }
 
   /* 
@@ -171,30 +179,17 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
     return await axios(config);
   }
 
-  static async post(endpoint: string, timeout_ms = TIMEOUT) {
-    const options = {
-      headers: {
-        "Content-Type": "text/plain",
-      },
-      data: {
-        jsonrpc: "1.0",
-        id: "curltest",
-        method: "getblockchaininfo",
-      },
+  static async post(endpoint: string, body: string, timeout_ms = TIMEOUT) {
+    const url = HOST + ":" + PORT + "/" + endpoint;
+    const config = {
+      method: "post",
+      url: url,
+      headers: { "Content-Type": "application/json" },
+      timeout: timeout_ms,
+      data: { body },
     };
 
-    axios
-      .post(
-        "http://" + USER + ":" + PASS + "@" + HOST + ":" + PORT + "/",
-        options
-      )
-      .then((response) => {
-        DEBUG.log("RESPONSE:", "post", response.data);
-        return response.data;
-      })
-      .catch((error) => {
-        DEBUG.err("[ElectrumClient.mts]: ERROR: ", error);
-      });
+    return await axios(config);
   }
 }
 

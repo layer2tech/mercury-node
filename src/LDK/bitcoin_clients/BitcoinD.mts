@@ -8,4 +8,5 @@ export interface BitcoinDaemonClientInterface {
   getBlockStatus(hash: string): any;
   getRawTransaction(txid: string): any;
   getTxOut(txid: string, vout: number): any;
+  setTx(txid: string): any;
 }

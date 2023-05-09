@@ -36,12 +36,11 @@ export async function debug_lightning() {
   // 03ff520f98be326ec107f4a7bb0109feb8b2b5848f0cede7f5c0e0f01a9209c08b@136.244.108.27:9601
   // 0227e0e3a9198601964d77a5b2d9a2b21ffff59a85a85031d61c6bb27b2ece2075@136.244.108.27:9600
 
-  /*
   // Polar node details
   let pubkeyHex =
-    "03534237af8affcf708cfe553b59fafa3a8420a4aaf1b2861d6e52df967976b53b";
-  let hostname = "127.0.0.1";
-  let port = 9735;
+    "0227e0e3a9198601964d77a5b2d9a2b21ffff59a85a85031d61c6bb27b2ece2075";
+  let hostname = "136.244.108.27";
+  let port = 9600;
 
   // Connect to the peer node
   console.log("[debug_lightning.ts]: Connect to Peer");
@@ -52,9 +51,10 @@ export async function debug_lightning() {
   // txid: 6738dc075642815b67845be57a452e93909fe4c7e52e7397c2713d9b6c57387d
 
   LightningClient.setEventTXData(
-    "6cf30a3fc3a32774494a9b04d06459f1ffd05382cf9e4e943675bea74c99a64c"
+    "7773adf8c7dcd0a0e64bd801fc6a8c632f5889c52c9b83e25a85bb1f95db1f8d"
   );
 
+  /*
   const invoiceString = LightningClient.createInvoiceUtil(
     BigInt(100),
     "coffee",
@@ -66,7 +66,7 @@ export async function debug_lightning() {
   const balance = LightningClient.getChannels();
   balance.forEach((channel: ChannelDetails) => {
     console.log("[debug_lightning.ts]: balances:", channel.get_balance_msat());
-  });
+  });*/
 
   // Connect to the channel
   let pubkey = hexToUint8Array(pubkeyHex);
