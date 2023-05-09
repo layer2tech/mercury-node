@@ -50,6 +50,7 @@ import {
 import MercuryEventHandler from "./structs/MercuryEventHandler.js";
 import ElectrumClient from "./bitcoin_clients/ElectrumClient.mjs";
 import TorClient from "./bitcoin_clients/TorClient.mjs";
+import EsploraSyncClient from "./sync/EsploraSyncClient.js";
 
 export default class LightningClient implements LightningClientInterface {
   feeEstimator: FeeEstimator;
@@ -80,6 +81,7 @@ export default class LightningClient implements LightningClientInterface {
   netHandler: NodeLDKNet;
   bestBlockHash: any;
   router: Router;
+  syncClient: EsploraSyncClient;
 
   constructor(props: LightningClientInterface) {
     this.feeEstimator = props.feeEstimator;
@@ -104,6 +106,7 @@ export default class LightningClient implements LightningClientInterface {
     this.channelManager = props.channelManager;
     this.peerManager = props.peerManager;
     this.router = props.router;
+    this.syncClient = props.syncClient;
     this.netHandler = new NodeLDKNet(this.peerManager);
   }
 
@@ -589,6 +592,14 @@ export default class LightningClient implements LightningClientInterface {
     return this.peerManager.get_peer_node_ids();
   }
 
+  async sync() {
+    // sync the client
+    return await this.syncClient.sync([
+      this.channelManager.as_Confirm(),
+      this.chainMonitor.as_Confirm(),
+    ]);
+  }
+
   // starts the lightning LDK
   async start() {
     console.log(
@@ -601,6 +612,11 @@ export default class LightningClient implements LightningClientInterface {
       // processes events on ChannelManager and ChainMonitor
       await this.processPendingEvents();
     }, 2000);
+
+    // sync up LDK with chain every 10seconds
+    setInterval(async () => {
+      await this.sync();
+    }, 10000);
   }
 
   async processPendingEvents() {

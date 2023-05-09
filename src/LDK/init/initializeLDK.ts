@@ -431,6 +431,7 @@ export async function initializeLDK(electrum: string = "prod") {
       blockHeight: undefined,
       latestBlockHeader: undefined,
       netHandler: undefined,
+      syncClient: syncClient,
     };
     return LDKInit;
   }
