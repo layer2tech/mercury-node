@@ -14,6 +14,20 @@ import { ChalkColor, Logger } from "../utils/Logger.js";
 const DEBUG = new Logger(ChalkColor.Yellow, "ElectrumClient.ts");
 
 class ElectrumClient implements BitcoinDaemonClientInterface {
+  async getMerkleProofPosition(txid: string): Promise<any> {
+    DEBUG.log(
+      "getMerkleProofPosition... txid->",
+      "getMerkleProofPosition",
+      txid
+    );
+    try {
+      let res = (await ElectrumClient.get(`tx/${txid}/merkle-proof`)).data;
+      return res;
+    } catch (e) {
+      DEBUG.err("[ElectrumClient.mts]: Error getTxOut", e);
+    }
+  }
+
   // POST / tx;
   async setTx(txid: string): Promise<any> {
     DEBUG.log("setTx...", "setTx");

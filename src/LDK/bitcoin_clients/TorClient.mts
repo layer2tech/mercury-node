@@ -6,6 +6,9 @@ const TIMEOUT = 20000;
 const TOR_ENDPOINT = "http://localhost:3001";
 
 class TorClient implements BitcoinDaemonClientInterface {
+  getMerkleProofPosition(txid: string) {
+    throw new Error("Method not implemented.");
+  }
   setTx(txid: string): Promise<any> {
     throw new Error("Method not implemented.");
   }

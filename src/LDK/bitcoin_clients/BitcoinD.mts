@@ -9,4 +9,5 @@ export interface BitcoinDaemonClientInterface {
   getRawTransaction(txid: string): any;
   getTxOut(txid: string, vout: number): any;
   setTx(txid: string): any;
+  getMerkleProofPosition(txid: string): any;
 }

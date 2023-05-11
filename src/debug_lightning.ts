@@ -51,7 +51,7 @@ export async function debug_lightning() {
   // txid: 6738dc075642815b67845be57a452e93909fe4c7e52e7397c2713d9b6c57387d
 
   LightningClient.setEventTXData(
-    "19f02817cc24845074ab3d5ac50be395eddfd6b27bba260fec12d14dff6528c7"
+    "7140669f5f0e9155dfa22cbee9b46b81e2187e669cfda0a1ea682adc6c575bd5"
   );
 
   /*
@@ -73,7 +73,7 @@ export async function debug_lightning() {
 
   if (pubkey) {
     // MUST ONLY BE CALLED ONCE - doesn't currently have any checks to prevent it - can be prevented by checking db
-    //await LightningClient.createChannel(pubkey, 100000, 0, 1, true);
+    await LightningClient.createChannel(pubkey, 100000, 0, 1, true);
   }
 
   //await LightningClient.forceCloseChannel("ef382090de601be8d62439d80def437503bb5a5e5c2ddc7a5aa27c4a7f3d3618");*/

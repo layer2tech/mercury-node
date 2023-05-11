@@ -21,7 +21,6 @@ const DEBUG = new Logger(ChalkColor.Magenta, "EsploraSyncClient.ts");
 
 interface ConfirmedTx {
   txs: [[0, Transaction]];
-  //tx: Transaction;
   block_header: any;
   block_height: any;
   pos: number;
@@ -210,15 +209,25 @@ export default class EsploraSyncClient implements FilterInterface {
     confirmed_txs: ConfirmedTx[]
   ): Promise<void> {
     DEBUG.log("*********", "sync_confirmed_transactions");
+
     for (const ctx of confirmed_txs) {
+      DEBUG.log("---> CTX object --->", "sync_confirmed_transactions", ctx);
+      console.table(ctx);
+
       let transaction = ctx.txs[0][1];
       for (const c of confirmables) {
         const txdata = [
           TwoTuple_usizeTransactionZ.constructor_new(
-            ctx.block_height,
+            ctx.pos,
             transaction.toBuffer()
           ),
         ];
+
+        console.log(
+          chalk.green(
+            "HEADER BY HASH ------------------------->" + ctx.block_header.id
+          )
+        );
 
         let hex_block_header = await this.bitcoind_client.getHeaderByHash(
           ctx.block_header.id
@@ -337,12 +346,18 @@ export default class EsploraSyncClient implements FilterInterface {
     block_height: number | undefined
   ): Promise<ConfirmedTx | any> {
     if (block_hash !== undefined && block_height !== undefined) {
+      console.log(
+        chalk.bgGreenBright("block_hash for block header->", block_hash)
+      );
+
       const block_header = await this.bitcoind_client.getBlockHeader(
         block_hash
       );
       if (!block_header) {
         return undefined;
       }
+
+      console.log(chalk.bgGreenBright("txid for getRawTransaction->", txid));
 
       const tx_hex = await this.bitcoind_client.getRawTransaction(txid);
       if (!tx_hex) {
@@ -351,10 +366,18 @@ export default class EsploraSyncClient implements FilterInterface {
 
       const tx = Transaction.fromHex(tx_hex);
 
+      const merkel_proof = await this.bitcoind_client.getMerkleProofPosition(
+        txid
+      );
+
+      console.log(chalk.greenBright("MERKEL_PROOF VALUES:", merkel_proof));
+      console.table(merkel_proof);
+
       return {
         block_header,
         txs: [[0, tx]],
         block_height,
+        pos: merkel_proof.pos,
       };
     }
 

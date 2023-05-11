@@ -276,7 +276,7 @@ class MercuryEventHandler implements EventHandlerInterface {
 
     psbt.addInput({
       hash: MercuryEventHandler.txid,
-      index: 1,
+      index: 0,
       witnessUtxo: {
         script: bitcoin.address.toOutputScript(address, regtest),
         value: funding_input,
