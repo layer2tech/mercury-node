@@ -51,7 +51,7 @@ export async function debug_lightning() {
   // txid: 6738dc075642815b67845be57a452e93909fe4c7e52e7397c2713d9b6c57387d
 
   LightningClient.setEventTXData(
-    "7773adf8c7dcd0a0e64bd801fc6a8c632f5889c52c9b83e25a85bb1f95db1f8d"
+    "19f02817cc24845074ab3d5ac50be395eddfd6b27bba260fec12d14dff6528c7"
   );
 
   /*

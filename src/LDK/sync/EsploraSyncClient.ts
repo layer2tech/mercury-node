@@ -16,10 +16,12 @@ import { InternalError, TxSyncError } from "./Error.js";
 
 // Custom Logging
 import { ChalkColor, Logger } from "../utils/Logger.js";
+import chalk from "chalk";
 const DEBUG = new Logger(ChalkColor.Magenta, "EsploraSyncClient.ts");
 
 interface ConfirmedTx {
-  tx: Transaction;
+  txs: [[0, Transaction]];
+  //tx: Transaction;
   block_header: any;
   block_height: any;
   pos: number;
@@ -43,8 +45,11 @@ export default class EsploraSyncClient implements FilterInterface {
   }
 
   register_tx(txid: Uint8Array, script_pubkey: Uint8Array) {
+    let tx_string = uint8ArrayToHexString(txid);
+    let reversed_txid = this.reverse_txid(tx_string) ?? tx_string;
+
     this.lock.acquire().then((release) => {
-      this.filter_queue.transactions.add(uint8ArrayToHexString(txid)); // saved as hex string rather than uint8array
+      this.filter_queue.transactions.add(reversed_txid); // saved as hex string rather than uint8array
       release();
     });
   }
@@ -90,9 +95,9 @@ export default class EsploraSyncClient implements FilterInterface {
             );
           } catch (err) {
             // (Semi-)permanent failure, retry later.
-            DEBUG.log("Failed during transaction sync, aborting.", "sync");
+            DEBUG.log("Failed during transaction sync, aborting.", "sync", err);
             sync_state.pending_sync = true;
-            return Error(TxSyncError.from(err)); // Check me
+            return new Error("" + err); // Check me
           }
 
           try {
@@ -133,6 +138,7 @@ export default class EsploraSyncClient implements FilterInterface {
             confirmed_txs
           );
         } catch (err) {
+          /*
           if (
             err instanceof InternalError &&
             err === InternalError.Inconsistency
@@ -149,7 +155,8 @@ export default class EsploraSyncClient implements FilterInterface {
             DEBUG.log("Failed during transaction sync, aborting.", "sync");
             sync_state.pending_sync = true;
             return Error(TxSyncError.from(err));
-          }
+          }*/
+          DEBUG.log("Failed during transaction sync, aborting.", "sync", err);
         }
 
         sync_state.last_sync_hash = tip_hash;
@@ -197,35 +204,49 @@ export default class EsploraSyncClient implements FilterInterface {
     return;
   }
 
-  sync_confirmed_transactions(
+  async sync_confirmed_transactions(
     sync_state: SyncState,
     confirmables: Confirm[],
     confirmed_txs: ConfirmedTx[]
-  ): void {
+  ): Promise<void> {
     DEBUG.log("*********", "sync_confirmed_transactions");
-    console.log("sync state:", sync_state);
-    console.log("confirmables:", confirmables);
-    console.log("confirmed_txs", confirmed_txs);
-
     for (const ctx of confirmed_txs) {
+      let transaction = ctx.txs[0][1];
       for (const c of confirmables) {
         const txdata = [
           TwoTuple_usizeTransactionZ.constructor_new(
-            ctx.pos,
-            ctx.tx.toBuffer()
+            ctx.block_height,
+            transaction.toBuffer()
           ),
         ];
 
+        let hex_block_header = await this.bitcoind_client.getHeaderByHash(
+          ctx.block_header.id
+        );
+
         c.transactions_confirmed(
-          hexToUint8Array(ctx.block_header),
+          hexToUint8Array(hex_block_header),
           txdata,
           ctx.block_height
         );
       }
+      sync_state.watched_transactions.delete(transaction.toHex());
 
-      sync_state.watched_transactions.delete(ctx.tx.toHex());
+      /*
+      [
+        {
+          hash: <Buffer c3 1c 87 eb 2a 22 f5 00 88 7a e6 3b 87 c9 6f 8c 2c 3f 55 ad f9 5d 09 41 e2 64 78 fd df 9d a9 cd>,
+          index: 1,
+          script: <Buffer >,
+          sequence: 4294967295,
+          witness: [
+            <Buffer 30 45 02 21 00 c4 20 92 95 49 d8 bf d0 ac e9 01 c1 0d 85 e6 20 57 e6 d3 11 73 a5 50 02 e2 9b 0e d9 60 a2 3e 39 02 20 52 5a 37 b3 b4 16 2c 9d 68 9d 4f ... 22 more bytes>,
+            <Buffer 02 56 8b a8 7b e9 04 07 0f e0 50 20 25 79 9f 0a 34 a8 1c c5 d7 bd 5c 21 d5 c3 e3 e1 cd 60 8d 5e 27>
+          ]
+        }
+      ]*/
 
-      for (const input of ctx.tx.ins) {
+      for (const input of ctx.txs[0][1].ins) {
         sync_state.watched_outputs.delete(
           OutPoint.constructor_new(input.hash, input.index)
         );
@@ -246,6 +267,7 @@ export default class EsploraSyncClient implements FilterInterface {
         txid
       );
 
+      // reverse byte txid here
       let txid_data = await this.bitcoind_client.getTxIdData(txid);
 
       DEBUG.log(
@@ -299,6 +321,14 @@ export default class EsploraSyncClient implements FilterInterface {
     });
 
     return confirmed_txs;
+  }
+
+  reverse_txid(txid: string) {
+    let reverse_txid = txid
+      .match(/[a-fA-F0-9]{2}/g)
+      ?.reverse()
+      .join("");
+    return reverse_txid;
   }
 
   async get_confirmed_tx(

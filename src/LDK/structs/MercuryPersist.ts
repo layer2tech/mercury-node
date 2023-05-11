@@ -6,17 +6,13 @@ import {
   OutPoint,
   PersistInterface,
 } from "lightningdevkit";
-import fs from 'fs';
-import path from 'path';
-const CHANNELS_DIR = './channels';
-const CHANNELS_DICT_FILE = 'channel_lookup.json';
-
-interface ChannelsDict {
-  [id: string]: string;
-}
+import fs from "fs";
+import path from "path";
+const CHANNELS_DIR = "./channels";
+const CHANNELS_DICT_FILE = "channel_lookup.json";
 
 class MercuryPersist implements PersistInterface {
-  private channelsDict: ChannelsDict = {};
+  private channelsDict = [];
 
   constructor() {
     this.loadChannelsDict();
@@ -25,13 +21,13 @@ class MercuryPersist implements PersistInterface {
   private loadChannelsDict() {
     const dictPath = path.join(CHANNELS_DIR, CHANNELS_DICT_FILE);
     try {
-      const dictString = fs.readFileSync(dictPath, 'utf8');
+      const dictString = fs.readFileSync(dictPath, "utf8");
       this.channelsDict = JSON.parse(dictString);
     } catch (err) {
       if (!fs.existsSync(dictPath)) {
-        fs.writeFileSync(dictPath, '[]'); // Create an empty file if it doesn't exist
+        fs.writeFileSync(dictPath, "[]"); // Create an empty file if it doesn't exist
         console.log(`Created channels dictionary file: ${dictPath}`);
-        this.channelsDict = {};
+        this.channelsDict = [];
       } else {
         console.warn(`Failed to load channels dictionary: ${err}`);
       }
@@ -40,7 +36,7 @@ class MercuryPersist implements PersistInterface {
 
   private saveChannelsDict() {
     const dictPath = path.join(CHANNELS_DIR, CHANNELS_DICT_FILE);
-    fs.writeFileSync(dictPath, JSON.stringify(this.channelsDict), 'utf8');
+    fs.writeFileSync(dictPath, JSON.stringify(this.channelsDict), "utf8");
   }
 
   private getNextFileName(): string {
@@ -50,15 +46,22 @@ class MercuryPersist implements PersistInterface {
 
   private getChannelFileName(channelId: OutPoint): string | null {
     const channelIdStr = channelId.to_channel_id().toString();
-    return this.channelsDict[channelIdStr] || null;
+
+    // lookup inside channel_lookup.json file
+
+    // return monitor_file_name location
+    return "channels/channelMonitor_1.dat";
   }
 
   private getHighestFileCounter(lookup: Array<any>): number {
     let highestCounter = 0;
-    lookup.forEach(entry => {
-      const monitor_file_name_parts = entry.monitor_file_name.split('_');
-      const id_file_name_parts = entry.id_file_name.split('_');
-      if (monitor_file_name_parts[0] === 'channelMonitor' && id_file_name_parts[0] === 'channelId') {
+    lookup.forEach((entry) => {
+      const monitor_file_name_parts = entry.monitor_file_name.split("_");
+      const id_file_name_parts = entry.id_file_name.split("_");
+      if (
+        monitor_file_name_parts[0] === "channelMonitor" &&
+        id_file_name_parts[0] === "channelId"
+      ) {
         const fileCounter = parseInt(monitor_file_name_parts[1]);
         if (fileCounter > highestCounter) {
           highestCounter = fileCounter;
@@ -70,26 +73,38 @@ class MercuryPersist implements PersistInterface {
 
   private createLookupFile() {
     const lookup: Array<any> = [];
-    fs.writeFileSync('channels/channel_lookup.json', JSON.stringify(lookup));
+    fs.writeFileSync("channels/channel_lookup.json", JSON.stringify(lookup));
   }
 
-  persist_new_channel(channel_id: OutPoint, data: ChannelMonitor, update_id: MonitorUpdateId): ChannelMonitorUpdateStatus {
+  persist_new_channel(
+    channel_id: OutPoint,
+    data: ChannelMonitor,
+    update_id: MonitorUpdateId
+  ): ChannelMonitorUpdateStatus {
     try {
       const channel_monitor_bytes = data.write(); // serialize the channel monitor data
       const channel_id_bytes = channel_id.write(); // serialize the channel ID
 
       // check if lookup file exists, and create it if it doesn't
-      if (!fs.existsSync('channels/channel_lookup.json')) {
+      if (!fs.existsSync("channels/channel_lookup.json")) {
         this.createLookupFile();
       }
 
       // read existing lookup file
-      const lookup = JSON.parse(fs.readFileSync('channels/channel_lookup.json').toString());
+      const lookup = JSON.parse(
+        fs.readFileSync("channels/channel_lookup.json").toString()
+      );
 
       // check if channel ID already exists in lookup table
-      const existingEntryIndex = lookup.findIndex((entry: any) => entry.key === channel_id.to_channel_id().toString());
+      const existingEntryIndex = lookup.findIndex(
+        (entry: any) => entry.key === channel_id.to_channel_id().toString()
+      );
       if (existingEntryIndex >= 0) {
-        console.log(`Channel ID ${channel_id.to_channel_id().toString()} already exists in lookup table`);
+        console.log(
+          `Channel ID ${channel_id
+            .to_channel_id()
+            .toString()} already exists in lookup table`
+        );
 
         // Replace the existing channelmonitor bytes with the new one
         const existingEntry = lookup[existingEntryIndex];
@@ -102,9 +117,9 @@ class MercuryPersist implements PersistInterface {
       // generate file names based on the highest existing file counter in the lookup table
       let fileCounter = 0;
       lookup.forEach((entry: any) => {
-        const parts = entry.monitor_file_name.split('_');
-        if (parts.length === 2 && parts[0] === 'channels/channelMonitor') {
-          const counter = parseInt(parts[1].replace('.dat', ''), 10);
+        const parts = entry.monitor_file_name.split("_");
+        if (parts.length === 2 && parts[0] === "channels/channelMonitor") {
+          const counter = parseInt(parts[1].replace(".dat", ""), 10);
           if (!isNaN(counter) && counter > fileCounter) {
             fileCounter = counter;
           }
@@ -124,29 +139,41 @@ class MercuryPersist implements PersistInterface {
       // save the file names to the lookup file
       const newEntry = { key, monitor_file_name, id_file_name };
       lookup.push(newEntry); // add new entry to the lookup array
-      fs.writeFileSync('channels/channel_lookup.json', JSON.stringify(lookup)); // write updated lookup back to file
+      fs.writeFileSync("channels/channel_lookup.json", JSON.stringify(lookup)); // write updated lookup back to file
 
       return ChannelMonitorUpdateStatus.LDKChannelMonitorUpdateStatus_Completed;
     } catch (e) {
-      console.error('Error occurred in persist_new_channel', e);
+      console.error("Error occurred in persist_new_channel", e);
       return ChannelMonitorUpdateStatus.LDKChannelMonitorUpdateStatus_PermanentFailure;
     }
   }
 
-  update_persisted_channel(channel_id: OutPoint, update: ChannelMonitorUpdate, data: ChannelMonitor, update_id: MonitorUpdateId): ChannelMonitorUpdateStatus {
+  update_persisted_channel(
+    channel_id: OutPoint,
+    update: ChannelMonitorUpdate,
+    data: ChannelMonitor,
+    update_id: MonitorUpdateId
+  ): ChannelMonitorUpdateStatus {
+    console.log("update with->", update);
+    console.table(update);
+
+    console.log("update_id->", update_id);
+    console.table(update_id);
+
     try {
       const channelIdStr = channel_id.to_channel_id().toString();
       const file_name = this.getChannelFileName(channel_id);
       if (!file_name) {
         console.error(`Could not find file name for channel ${channelIdStr}`);
+        console.error(`couldn't find filename: ${file_name}`);
         return ChannelMonitorUpdateStatus.LDKChannelMonitorUpdateStatus_PermanentFailure;
       }
-      const file_path = path.join(CHANNELS_DIR, file_name);
+      //const file_path = path.join(CHANNELS_DIR, file_name);
       const channel_monitor_bytes = data.write();
-      fs.writeFileSync(file_path, channel_monitor_bytes);
+      fs.writeFileSync(file_name, channel_monitor_bytes);
       return ChannelMonitorUpdateStatus.LDKChannelMonitorUpdateStatus_Completed;
     } catch (e) {
-      console.error('Error occurred in update_persisted_channel', e);
+      console.error("Error occurred in update_persisted_channel", e);
       return ChannelMonitorUpdateStatus.LDKChannelMonitorUpdateStatus_PermanentFailure;
     }
   }

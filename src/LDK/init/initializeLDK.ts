@@ -50,6 +50,7 @@ import {
   readChannelsFromDictionary,
 } from "../utils/ldk-utils.js";
 import chalk from "chalk";
+import { uint8ArrayToHexString } from "../utils/utils.js";
 
 export async function initializeLDK(electrum: string = "prod") {
   console.log("[initializeLDK.ts/setupLDK]: setupLdk ran");
@@ -83,17 +84,21 @@ export async function initializeLDK(electrum: string = "prod") {
 
   // Step 3: Initialize the BroadcasterInterface
   const txBroadcaster = BroadcasterInterface.new_impl({
-    async broadcast_transaction(tx: any) {
-      console.log("[initialiseLDK.ts]: Tx Broadcast: " + tx);
-      await bitcoind_client.setTx(tx);
+    async broadcast_transaction(tx: Uint8Array) {
+      console.log(
+        "[initialiseLDK.ts]: Tx Broadcast: " + uint8ArrayToHexString(tx)
+      );
+      await bitcoind_client.setTx(uint8ArrayToHexString(tx));
     },
   });
 
   // Step 3: broadcast interface
   const txBroadcasted = new Promise((resolve, reject) => {
-    txBroadcaster.broadcast_transaction = async (tx: any) => {
-      console.log("[initialiseLDK.ts]: Tx Broadcast: " + tx);
-      await bitcoind_client.setTx(tx);
+    txBroadcaster.broadcast_transaction = async (tx: Uint8Array) => {
+      console.log(
+        "[initialiseLDK.ts]: Tx Broadcast: " + uint8ArrayToHexString(tx)
+      );
+      await bitcoind_client.setTx(uint8ArrayToHexString(tx));
       resolve(tx);
     };
   });

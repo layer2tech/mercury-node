@@ -1,6 +1,6 @@
 export class TxSyncError extends Error {
   static from(err: unknown): string | undefined {
-    throw new Error("Method not implemented.");
+    throw new Error("Error occured" + err);
   }
   constructor(message: string) {
     super(message);

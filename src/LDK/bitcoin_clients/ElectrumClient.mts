@@ -18,7 +18,7 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
   async setTx(txid: string): Promise<any> {
     DEBUG.log("setTx...", "setTx");
     try {
-      let res = ElectrumClient.post("/TX", txid);
+      let res = ElectrumClient.post("tx", txid);
       return res;
     } catch (e) {
       DEBUG.err("[ElectrumClient.ts]: Error setTx", e);
@@ -43,7 +43,7 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
     020000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff0402360100ffffffff02807c814a000000001600143d27b06f0539ca6a16e4d521ec2ee7b9ab720fcd0000000000000000266a24aa21a9ede2f61c3f71d1defd3fa999dfa36953755c690689799962b48bebd836974e8cf90120000000000000000000000000000000000000000000000000000000000000000000000000
   */
   async getRawTransaction(txid: string): Promise<any> {
-    DEBUG.log("getRawTransaction...", "getRawTransaction");
+    DEBUG.log("getRawTransaction...", "getRawTransaction", txid);
     try {
       let res = (await ElectrumClient.get(`tx/${txid}/hex`)).data;
       return res;
@@ -110,6 +110,9 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
 
   async getHashByHeight(height: number | string) {
     DEBUG.log("height entered ->", "getHashByHeight", height);
+    if (typeof height === "string") {
+      return height;
+    }
 
     // First get the hash of the block height
     try {
@@ -181,7 +184,8 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
   }
 
   static async post(endpoint: string, body: string, timeout_ms = TIMEOUT) {
-    const url = HOST + ":" + PORT + "/" + endpoint;
+    /*
+    
     const config = {
       method: "post",
       url: url,
@@ -189,8 +193,12 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
       timeout: timeout_ms,
       data: { body },
     };
+    return await axios(config);*/
 
-    return await axios(config);
+    console.log("body is equal to:");
+
+    const url = HOST + ":" + PORT + "/" + endpoint;
+    return await axios.post(url, body);
   }
 }
 
