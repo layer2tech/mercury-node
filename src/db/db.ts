@@ -1,9 +1,9 @@
 import database from "./database";
+import dbmock from "../../test/db-mock";
 
 let db: any;
 
 if (process.env["NODE_ENV"] === "test") {
-  const dbmock = require("../../test/db-mock");
   db = dbmock;
 } else {
   db = database;

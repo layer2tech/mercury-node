@@ -115,6 +115,10 @@ export default class LightningClient implements LightningClientInterface {
     bitcoind Client Functions
   */
 
+  getOurNodeId() {
+    return this.channelManager.get_our_node_id();
+  }
+
   async getBlockHeight() {
     this.blockHeight = await this.bitcoind_client.getBlockHeight();
     return this.blockHeight;

@@ -30,7 +30,7 @@ interface Channel {
 // Get the Node ID of our wallet
 router.get("/nodeID", async function (req, res) {
   const nodeId =
-    LDKClientFactory.getLDKClient().channelManager.get_our_node_id();
+    LDKClientFactory.getLDKClient().getOurNodeId();
   const hexNodeId = uint8ArrayToHexString(nodeId);
   res.json({ nodeID: hexNodeId });
 });
@@ -302,7 +302,7 @@ router.delete("/mutualCloseChannel/:id", async (req, res) => {
 });
 
 router.delete("/deleteChannelByPaymentAddr/:addr", (req, res) => {
-  // delete channel by id
+  // delete channel by payment address
   const deleteData = `DELETE FROM channels WHERE payment_address=?`;
   db.run(deleteData, [req.params.addr], function (err: any) {
     if (err) {
