@@ -10,6 +10,7 @@ import {
   Event_PaymentForwarded,
   Event_ChannelClosed,
   Event_OpenChannelRequest,
+  Event_ChannelPending,
   Result_NoneAPIErrorZ,
   Result_NoneAPIErrorZ_OK,
   EventHandlerInterface,
@@ -30,6 +31,7 @@ import chalk from "chalk";
 import { Transaction } from "bitcoinjs-lib";
 import fs from "fs";
 import { regtest } from "bitcoinjs-lib/src/networks.js";
+import { saveChannelIdToDb } from "../utils/ldk-utils.js";
 
 const ECPair = ECPairFactory(ecc);
 
@@ -70,6 +72,9 @@ class MercuryEventHandler implements EventHandlerInterface {
     switch (true) {
       case e instanceof Event_FundingGenerationReady:
         this.handleFundingGenerationReadyEvent_Auto(e);
+        break;
+      case e instanceof Event_ChannelPending:
+        this.handleChannelPendingEvent(e);
         break;
       case e instanceof Event_PaymentSent:
         this.handlePaymentSentEvent(e);
@@ -325,7 +330,8 @@ class MercuryEventHandler implements EventHandlerInterface {
       );
     }
   }
-
+  
+  
   handleChannelReadyEvent(e: Event_ChannelReady) {
     console.log(`[MercuryEventHandler.ts]: Channel ready ${e}`);
     console.log(
@@ -335,6 +341,23 @@ class MercuryEventHandler implements EventHandlerInterface {
         e.counterparty_node_id
       )} is ready to be used!`
     );
+  }
+  
+  handleChannelPendingEvent(event: Event_ChannelPending) {
+    const {
+      channel_id,
+      user_channel_id,
+      former_temporary_channel_id,
+      counterparty_node_id,
+      funding_txo
+    } = event;
+    const node_id = uint8ArrayToHexString(counterparty_node_id);
+    const pubkey = node_id.split("@")[0];
+
+    const channel_id_str = uint8ArrayToHexString(channel_id);
+    if (pubkey !== undefined && channel_id_str !== undefined) {
+      saveChannelIdToDb(channel_id_str, pubkey);
+    }
   }
 
   handlePaymentSentEvent(e: Event_PaymentSent) {

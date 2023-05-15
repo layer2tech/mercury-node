@@ -3,7 +3,7 @@ import { RawAxiosRequestConfig } from "axios";
 import { BitcoinDaemonClientInterface } from "./BitcoinD.mjs";
 
 const TIMEOUT = 20000;
-const TOR_ENDPOINT = "http://localhost:3001";
+export const TOR_ENDPOINT = "http://localhost:3001";
 
 class TorClient implements BitcoinDaemonClientInterface {
   setTx(txid: string): Promise<any> {
@@ -114,8 +114,8 @@ class TorClient implements BitcoinDaemonClientInterface {
             .replace(":vout", String(vout))
         )
       ).data;
-      if (res && res.status === "success" && res.data) {
-        return res.data;
+      if (res) {
+        return res;
       }
       throw new Error("Error fetching UTXO spent data");
     } catch (e: any) {

@@ -1,28 +1,8 @@
 import request from "supertest";
 import express from "express";
 import router from "../src/routes/peerRoutes.js";
-
-jest.mock("../src/LDK/init/initialiseLDK", () => {
-  return {
-    getLDKClient: jest.fn().mockImplementation(() => {
-      return {
-        createPeerAndChannel: jest.fn().mockImplementation(() => {}),
-        connectToPeer: jest.fn(() => {
-          return true;
-        }),
-        openChannel: jest.fn().mockImplementation(() => {}),
-      };
-    }),
-  };
-});
-
-jest.mock("../src/LDK/utils/ldk-utils", () => {
-  return {
-    createNewPeer: jest.fn(() => {
-      return Promise.resolve({ status: 200, message: "Peer created" });
-    }),
-  };
-});
+import LDKClientFactory from "../src/LDK/init/LDKClientFactory";
+import { MOCK_DATA } from "./mocks/MockLightningClient";
 
 describe("Peer Routes", () => {
   let app: any;
@@ -30,70 +10,87 @@ describe("Peer Routes", () => {
     app = express();
     app.use(express.json());
     app.use(router);
+    await LDKClientFactory.createLDKClient("test");
   });
 
-  it("POST peer/connectToPeer with valid parameters", async () => {
-    const res = await request(app).post("peer/connectToPeer").send({
-      pubkey:
-        "028a822f5b0e4400d4a230dc619d13cc10f75ec6c277b495124d5bcb3ccbdaac54",
-      host: "127.0.0.1",
-      port: "9735",
+  it("GET /liveChainMonitors", async () => {
+    const response = await request(app).get("/liveChainMonitors");
+
+    expect(response.statusCode).toBe(500);
+    expect(response.body).toEqual("Failed to get chain monitor");
+  });
+
+  it("GET /livePeers", async () => {
+    const response = await request(app).get("/livePeers");
+
+    expect(response.statusCode).toBe(500);
+    expect(response.body).toEqual({ status: 500, message: "Failed to get peermanager" });
+  });
+
+
+  it("POST /connectToPeer with valid parameters", async () => {
+    const res = await request(app).post("/connectToPeer").send({
+      pubkey: MOCK_DATA.PUBKEY,
+      host: MOCK_DATA.HOST,
+      port: MOCK_DATA.PORT,
     });
     expect(res.statusCode).toBe(200);
-    expect(res.text).toBe("Connected to peer");
+    expect(res.body).toEqual({ status: 200, message: "Connected to peer" });
   });
 
-  it("POST peer/connectToPeer with missing parameters", async () => {
-    const res = await request(app).post("peer/connectToPeer").send({});
+  it("POST /connectToPeer with missing parameters", async () => {
+    const res = await request(app).post("/connectToPeer").send({});
+
     expect(res.statusCode).toBe(500);
-    expect(res.text).toBe("Missing required parameters");
+    expect(res.body).toEqual({ status: 500, message: "Missing required parameters" });
   });
 
-  it("POST peer/create-channel", async () => {
-    const res = await request(app).post("peer/create-channel").send({
-      amount: 10000,
-      pubkey: "abc",
-      host: "127.0.0.1",
-      port: 9735,
-      channel_name: "test_channel",
-      wallet_name: "test_wallet",
-      channelType: "Public",
-      privkey: "xyz",
-      paid: true,
-      payment_address: "payment_address",
+  it("POST /savePeerAndChannelToDb", async () => {
+    const res = await request(app).post("/savePeerAndChannelToDb").send({
+      amount: MOCK_DATA.AMOUNT,
+      pubkey: MOCK_DATA.PUBKEY,
+      host: MOCK_DATA.HOST,
+      port: MOCK_DATA.PORT,
+      channel_name: MOCK_DATA.CHANNEL_NAME,
+      wallet_name: "Test Wallet",
+      channelType: MOCK_DATA.CHANNEL_TYPE,
+      privkey: MOCK_DATA.PRIVKEY,
+      paid: MOCK_DATA.PAID,
+      payment_address: MOCK_DATA.PAYMENT_ADDRESS,
     });
+
     expect(res.statusCode).toBe(200);
-    expect(res.body.message).toBe("Connected to peer, Channel created");
+    expect(res.body).toEqual({
+      status: 200,
+      message: "Saved peer and channel to database.",
+      channel_id: MOCK_DATA.CHANNEL_ID,
+    });
   });
 
-  it("POST peer/open-channel", async () => {
-    const response = await request(app).post("peer/open-channel").send({
-      amount: 10000,
-      paid: true,
-      txid: "txid",
-      vout: 0,
-      addr: "address",
-      pubkey: "pubkey",
+  it("POST /setTxData", async () => {
+    const res = await request(app).post("/setTxData").send({
+      txid: MOCK_DATA.TXID,
     });
 
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({ message: "Channel opened" });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ status: 200, message: "Txid was set correctly." });
   });
 
-  it("POST peer/newPeer", async () => {
-    const response = await request(app).post("peer/newPeer").send({
-      host: "127.0.0.1",
-      port: "9735",
-      pubkey:
-        "028a822f5b0e4400d4a230dc619d13cc10f75ec6c277b495124d5bcb3ccbdaac54",
+  it("POST /saveChannelPaymentInfoToDb", async () => {
+    const res = await request(app).post("/saveChannelPaymentInfoToDb").send({
+      amount: MOCK_DATA.AMOUNT,
+      paid: MOCK_DATA.PAID,
+      txid: MOCK_DATA.TXID,
+      vout: MOCK_DATA.VOUT,
+      address: MOCK_DATA.PAYMENT_ADDRESS,
     });
 
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ status: 200, message: "Peer created" });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ status: 200, message: "Channel funding saved to DB" });
   });
 
-  it("GET peer/getPeer returns a peer if found", async () => {
-    const response = await request(app).get("peer/getPeer/1");
+  it("GET /getPeer returns a peer if found", async () => {
+    const response = await request(app).get("/getPeer/1");
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toHaveProperty("node");
@@ -102,10 +99,24 @@ describe("Peer Routes", () => {
     expect(response.body).toHaveProperty("pubkey");
   });
 
-  it("GET peer/getPeer returns 404 if peer is not found", async () => {
-    const response = await request(app).get("peer/getPeer/not-found");
+  it("GET /getPeer returns 404 if peer is not found", async () => {
+    const response = await request(app).get("/getPeer/not-found");
 
     expect(response.statusCode).toBe(404);
     expect(response.body).toEqual({ error: "Peer not found" });
+  });
+
+  it("GET /default_peerlist", async () => {
+    const response = await request(app).get("/default_peerlist");
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual(expect.any(Array));
+  });
+
+  it("GET /peers", async () => {
+    const response = await request(app).get("/peers");
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual(expect.any(Array));
   });
 });
