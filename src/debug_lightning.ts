@@ -8,7 +8,7 @@ import bodyParser from "body-parser";
 import serverRoutes from "./routes/serverRoutes";
 import peerRoutes from "./routes/peerRoutes";
 import channelRoutes from "./routes/channelRoutes";
-import { closeConnections } from "./LDK/utils/ldk-utils";
+import { closeConnections, savePeerAndChannelToDatabase } from "./LDK/utils/ldk-utils";
 import { ChannelDetails } from "lightningdevkit";
 
 export async function debug_lightning() {
@@ -72,7 +72,7 @@ export async function debug_lightning() {
   // Connect to the channel
   let pubkey = hexToUint8Array(pubkeyHex);
 
-  LightningClient.savePeerAndChannelToDatabase(1, pubkeyHex, hostname, port, "",
+  await savePeerAndChannelToDatabase(1, pubkeyHex, hostname, port, "",
     "Testnet Wallet 3", true, "cRrhJwXVBPHdbSRsZo31SU24zoFmy4Jsr8H1aMwRTDn3qb67zG1r", 
     false, "tb1q60myaz6078nfggywsjlv6pphpjj2d9x7nas29c"
   );
