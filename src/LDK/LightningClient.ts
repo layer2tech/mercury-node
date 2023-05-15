@@ -204,7 +204,7 @@ export default class LightningClient implements LightningClientInterface {
     );
   }
 
-  async setEventTXData(txid: any) {
+  async setEventTxData(txid: any) {
     this.txdata = await this.getTxData(txid);
     MercuryEventHandler.setInputTx(this.txdata);
   }
@@ -213,10 +213,6 @@ export default class LightningClient implements LightningClientInterface {
     let txData = await this.bitcoind_client.getTxIdData(txid);
     console.log("[LightningClient.ts]-> getTxData ->", txData);
     return txData;
-  }
-
-  getOurNodeId() {
-    return this.channelManager.get_our_node_id();
   }
 
   async sendPayment(invoiceStr: string) {
@@ -482,6 +478,10 @@ export default class LightningClient implements LightningClientInterface {
     });
   }
 
+  getOurNodeId() {
+    return this.channelManager.get_our_node_id();
+  }
+
   getChainMonitor(): ChainMonitor {
     return this.chainMonitor;
   }
@@ -502,7 +502,7 @@ export default class LightningClient implements LightningClientInterface {
     return this.txBroadcasted;
   }
 
-  list_peers() {
+  listPeers() {
     return this.peerManager.get_peer_node_ids();
   }
 

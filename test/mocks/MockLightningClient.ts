@@ -42,7 +42,7 @@ export class MockLightningClient {
   connectToPeer() {
     return true;
   }
-  setEventTXData() {}
+  setEventTxData() {}
   createInvoiceUtil() {
     return MOCK_DATA.INVOICE;
   }

@@ -9,7 +9,10 @@ const router = express.Router();
 import db from "../db/db";
 import LDKClientFactory from "../LDK/init/LDKClientFactory";
 import { hexToUint8Array, uint8ArrayToHexString } from "../LDK/utils/utils";
-import { savePeerAndChannelToDatabase, saveChannelFundingToDatabase } from "../LDK/utils/ldk-utils";
+import {
+  savePeerAndChannelToDatabase,
+  saveChannelFundingToDatabase,
+} from "../LDK/utils/ldk-utils";
 
 router.get("/liveChainMonitors", async (req, res) => {
   let chainMonitor: ChainMonitor | null =
@@ -141,19 +144,18 @@ router.post("/savePeerAndChannelToDb", async (req, res) => {
   channelType === "Public" ? true : false;
 
   try {
-    const result =
-      await savePeerAndChannelToDatabase(
-        amount,
-        pubkey,
-        host,
-        port,
-        channel_name,
-        wallet_name,
-        channelType,
-        privkey,
-        paid,
-        payment_address
-      );
+    const result = await savePeerAndChannelToDatabase(
+      amount,
+      pubkey,
+      host,
+      port,
+      channel_name,
+      wallet_name,
+      channelType,
+      privkey,
+      paid,
+      payment_address
+    );
 
     if (result && result.status === 409) {
       res.status(409).json({
@@ -192,7 +194,7 @@ router.post("/setTxData", async (req, res) => {
     });
   } else {
     try {
-      await LDKClientFactory.getLDKClient().setEventTXData(txid);
+      await LDKClientFactory.getLDKClient().setEventTxData(txid);
       res.status(200).json({
         status: 200,
         message: "Txid was set correctly.",
@@ -227,13 +229,7 @@ router.post("/saveChannelPaymentInfoToDb", async (req, res) => {
     });
   } else {
     try {
-      await saveChannelFundingToDatabase(
-        amount,
-        paid,
-        txid,
-        vout,
-        address
-      );
+      await saveChannelFundingToDatabase(amount, paid, txid, vout, address);
       res
         .status(200)
         .json({ status: 200, message: "Channel funding saved to DB" });
