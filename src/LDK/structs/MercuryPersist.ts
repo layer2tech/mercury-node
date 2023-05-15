@@ -154,12 +154,6 @@ class MercuryPersist implements PersistInterface {
     data: ChannelMonitor,
     update_id: MonitorUpdateId
   ): ChannelMonitorUpdateStatus {
-    //console.log("update with->", update);
-    //console.table(update);
-
-    //console.log("update_id->", update_id);
-    //console.table(update_id);
-
     try {
       const channelIdStr = channel_id.to_channel_id().toString();
       const file_name = this.getChannelFileName(channel_id);
@@ -168,7 +162,6 @@ class MercuryPersist implements PersistInterface {
         console.error(`couldn't find filename: ${file_name}`);
         return ChannelMonitorUpdateStatus.LDKChannelMonitorUpdateStatus_PermanentFailure;
       }
-      //const file_path = path.join(CHANNELS_DIR, file_name);
       const channel_monitor_bytes = data.write();
       fs.writeFileSync(file_name, channel_monitor_bytes);
       return ChannelMonitorUpdateStatus.LDKChannelMonitorUpdateStatus_Completed;

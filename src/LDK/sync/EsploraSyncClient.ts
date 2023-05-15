@@ -116,7 +116,7 @@ export default class EsploraSyncClient implements FilterInterface {
             } else {
               // (Semi-)permanent failure, retry later.
               sync_state.pending_sync = true;
-              return Error(TxSyncError.from(err)); // Check me
+              throw new Error("Sync Error" + err); // Check me
             }
           }
         }
@@ -137,24 +137,6 @@ export default class EsploraSyncClient implements FilterInterface {
             confirmed_txs
           );
         } catch (err) {
-          /*
-          if (
-            err instanceof InternalError &&
-            err === InternalError.Inconsistency
-          ) {
-            // Immediately restart syncing when we encounter any inconsistencies.
-            DEBUG.log(
-              "Encountered inconsistency during transaction sync, restarting.",
-              "sync"
-            );
-            sync_state.pending_sync = true;
-            continue;
-          } else {
-            // (Semi-)permanent failure, retry later.
-            DEBUG.log("Failed during transaction sync, aborting.", "sync");
-            sync_state.pending_sync = true;
-            return Error(TxSyncError.from(err));
-          }*/
           DEBUG.log("Failed during transaction sync, aborting.", "sync", err);
         }
 
@@ -172,7 +154,6 @@ export default class EsploraSyncClient implements FilterInterface {
     tipHash: string //BlockHash
   ): Promise<void> {
     DEBUG.log("confirmables, tipHash", "sync_best_block_updated");
-    //console.table({ confirmables, tipHash });
 
     // Inform the interface of the new block.
     const tipHeader = await this.bitcoind_client.getHeaderByHash(tipHash);
@@ -180,7 +161,6 @@ export default class EsploraSyncClient implements FilterInterface {
 
     DEBUG.log("tipHeader->", "sync_best_block_updated", tipHeader);
     DEBUG.log("tipStatus->", "sync_best_block_updated", tipStatus);
-    //console.table(tipStatus);
 
     if (tipStatus.in_best_chain) {
       DEBUG.log("tipStatus.in_best_chain -> true", "sync_best_block_updated");
@@ -191,7 +171,7 @@ export default class EsploraSyncClient implements FilterInterface {
         );
         confirmables.forEach((c) => {
           DEBUG.log(
-            "c.best_block_updated(confirmables)>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",
+            "c.best_block_updated(confirmables)",
             "sync_best_block_updated",
             hexToUint8Array(tipHeader) + " " + tipStatus.height
           );
@@ -212,9 +192,6 @@ export default class EsploraSyncClient implements FilterInterface {
     DEBUG.log("*********", "sync_confirmed_transactions");
 
     for (const ctx of confirmed_txs) {
-      //DEBUG.log("---> CTX object --->", "sync_confirmed_transactions", ctx);
-      //console.table(ctx);
-
       let transaction = ctx.txs[0][1];
       for (const c of confirmables) {
         const txdata = [
@@ -224,25 +201,17 @@ export default class EsploraSyncClient implements FilterInterface {
           ),
         ];
 
-        console.log(
-          chalk.green(
-            "HEADER BY HASH ------------------------->" + ctx.block_header.id
-          )
-        );
-
         let hex_block_header = await this.bitcoind_client.getHeaderByHash(
           ctx.block_header.id
         );
 
         console.log(
-          chalk.bgRedBright(
-            `[EsploraSyncClient.ts]: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> c.transactions_confirmed(${hexToUint8Array(
+          chalk.magentaBright(
+            `[EsploraSyncClient.ts/sync_confirmed_transactions]: c.transactions_confirmed(${hexToUint8Array(
               hex_block_header
             )}, ${txdata}, ${ctx.block_height})`
           )
         );
-
-        console.table(txdata);
 
         c.transactions_confirmed(
           hexToUint8Array(hex_block_header),
@@ -251,20 +220,6 @@ export default class EsploraSyncClient implements FilterInterface {
         );
       }
       sync_state.watched_transactions.delete(transaction.toHex());
-
-      /*
-      [
-        {
-          hash: <Buffer c3 1c 87 eb 2a 22 f5 00 88 7a e6 3b 87 c9 6f 8c 2c 3f 55 ad f9 5d 09 41 e2 64 78 fd df 9d a9 cd>,
-          index: 1,
-          script: <Buffer >,
-          sequence: 4294967295,
-          witness: [
-            <Buffer 30 45 02 21 00 c4 20 92 95 49 d8 bf d0 ac e9 01 c1 0d 85 e6 20 57 e6 d3 11 73 a5 50 02 e2 9b 0e d9 60 a2 3e 39 02 20 52 5a 37 b3 b4 16 2c 9d 68 9d 4f ... 22 more bytes>,
-            <Buffer 02 56 8b a8 7b e9 04 07 0f e0 50 20 25 79 9f 0a 34 a8 1c c5 d7 bd 5c 21 d5 c3 e3 e1 cd 60 8d 5e 27>
-          ]
-        }
-      ]*/
 
       for (const input of ctx.txs[0][1].ins) {
         sync_state.watched_outputs.delete(
@@ -358,7 +313,10 @@ export default class EsploraSyncClient implements FilterInterface {
   ): Promise<ConfirmedTx | any> {
     if (block_hash !== undefined && block_height !== undefined) {
       console.log(
-        chalk.bgGreenBright("block_hash for block header->", block_hash)
+        chalk.magenta(
+          "[EsploraSyncClient.ts/get_confirmed_tx]: block_hash for block header->",
+          block_hash
+        )
       );
 
       const block_header = await this.bitcoind_client.getBlockHeader(
@@ -368,7 +326,12 @@ export default class EsploraSyncClient implements FilterInterface {
         return undefined;
       }
 
-      console.log(chalk.bgGreenBright("txid for getRawTransaction->", txid));
+      console.log(
+        chalk.magenta(
+          "[EsploraSyncClient.ts/get_confirmed_tx]: txid for getRawTransaction->",
+          txid
+        )
+      );
 
       const tx_hex = await this.bitcoind_client.getRawTransaction(txid);
       if (!tx_hex) {
@@ -380,9 +343,6 @@ export default class EsploraSyncClient implements FilterInterface {
       const merkel_proof = await this.bitcoind_client.getMerkleProofPosition(
         txid
       );
-
-      //console.log(chalk.greenBright("MERKEL_PROOF VALUES:", merkel_proof));
-      //console.table(merkel_proof);
 
       return {
         block_header,
@@ -414,8 +374,6 @@ export default class EsploraSyncClient implements FilterInterface {
   async get_unconfirmed_transactions(confirmables: Confirm[]) {
     // Query the interface for relevant txids and check whether the relevant blocks are still
     // in the best chain, mark them unconfirmed otherwise
-    DEBUG.log("Get relevantTxids", "get_unconfirmed_transactions");
-
     const relevantTxids = new Set(
       confirmables
         .map((c) => c.get_relevant_txids())
@@ -425,30 +383,17 @@ export default class EsploraSyncClient implements FilterInterface {
           uint8ArrayToHexString(tuple.get_b()),
         ])
     );
-
-    DEBUG.log("relevantTxids->", "get_unconfirmed_transactions", relevantTxids);
-
-    const unconfirmedTxs: string[] | any = []; //txid[]
-
+    const unconfirmedTxs: string[] | any = [];
     for (const [txid, blockHashOpt] of relevantTxids) {
       if (blockHashOpt !== undefined) {
         const blockStatus = await this.bitcoind_client.getBlockStatus(
           blockHashOpt
         );
-        if (blockStatus.in_best_chain) {
-          // Skip if the block in question is still confirmed.
-          continue;
+        if (!blockStatus.in_best_chain) {
+          unconfirmedTxs.push(txid);
         }
-
-        unconfirmedTxs.push(txid);
       }
     }
-
-    DEBUG.log(
-      "returning unconfirmedTxs ->",
-      "get_unconfirmed_transactions",
-      unconfirmedTxs
-    );
     return unconfirmedTxs;
   }
 
@@ -465,8 +410,8 @@ export default class EsploraSyncClient implements FilterInterface {
     for (const txid of unconfirmed_txs) {
       for (const c of confirmables) {
         console.log(
-          chalk.bgRed(
-            `>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> c.transaction_unconfirmed(hexToUint8Array(txid)) ${hexToUint8Array(
+          chalk.magentaBright(
+            `[EsploraSyncClient.ts/sync_unconfirmed_transactions]: c.transaction_unconfirmed(hexToUint8Array(txid)) ${hexToUint8Array(
               txid
             )}`
           )

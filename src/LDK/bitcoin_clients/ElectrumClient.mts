@@ -169,7 +169,6 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
     DEBUG.log("txid->", "getTxIdData", txid);
     try {
       const res = (await ElectrumClient.get(`tx/${txid}`)).data;
-      console.table(res);
 
       return {
         txid: res?.txid ?? "",

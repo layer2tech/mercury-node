@@ -52,9 +52,17 @@ class MercuryEventHandler implements EventHandlerInterface {
       // Private key file exists, read the contents
       const privateKeyBuffer = fs.readFileSync(privateKeyFilePath);
       this.privateKey = privateKeyBuffer;
-      console.log(chalk.red("Private key:", this.privateKey));
       console.log(
-        chalk.red("privateKeyBuffer", privateKeyBuffer.toString("hex"))
+        chalk.red(
+          "[MercuryEventHandler.ts/constructor]: Private key:",
+          this.privateKey
+        )
+      );
+      console.log(
+        chalk.red(
+          "[MercuryEventHandler.ts/constructor]: privateKeyBuffer",
+          privateKeyBuffer.toString("hex")
+        )
       );
     } else {
       // Private key file doesn't exist, generate a new private key
@@ -126,16 +134,28 @@ class MercuryEventHandler implements EventHandlerInterface {
   }
 
   static setInputTx(txData: any) {
-    console.log(chalk.bgRed("setInputTx:", txData));
-    console.table(txData);
     this.validateTx(txData);
-
     MercuryEventHandler.vout = 1;
-    console.log(chalk.bgRed("this.vout:", MercuryEventHandler.vout));
+    console.log(
+      chalk.red(
+        "[MercuryEventHandler.ts/setInputTx]: this.vout:",
+        MercuryEventHandler.vout
+      )
+    );
     MercuryEventHandler.txid = txData.txid;
-    console.log(chalk.bgRed("this.txid:", MercuryEventHandler.txid));
+    console.log(
+      chalk.red(
+        "[MercuryEventHandler.ts/setInputTx]: this.txid:",
+        MercuryEventHandler.txid
+      )
+    );
     MercuryEventHandler.sequence = txData.sequence;
-    console.log(chalk.bgRed("this.sequence", this.sequence));
+    console.log(
+      chalk.red(
+        "[MercuryEventHandler.ts/setInputTx]: this.sequence",
+        this.sequence
+      )
+    );
   }
 
   resetInputTx() {
