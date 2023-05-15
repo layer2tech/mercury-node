@@ -9,9 +9,10 @@ const router = express.Router();
 import db from "../db/db";
 import LDKClientFactory from "../LDK/init/LDKClientFactory";
 import { hexToUint8Array, uint8ArrayToHexString } from "../LDK/utils/utils";
+import { savePeerAndChannelToDatabase, saveChannelFundingToDatabase } from "../LDK/utils/ldk-utils";
 
 router.get("/liveChainMonitors", async (req, res) => {
-  let chainMonitor: ChainMonitor =
+  let chainMonitor: ChainMonitor | null =
     await LDKClientFactory.getLDKClient().getChainMonitor();
   if (chainMonitor) {
     res.status(200).json({ chainMonitors: chainMonitor.list_monitors() });
@@ -21,7 +22,7 @@ router.get("/liveChainMonitors", async (req, res) => {
 });
 
 router.get("/livePeers", async (req, res) => {
-  let peerManager: PeerManager =
+  let peerManager: PeerManager | null =
     await LDKClientFactory.getLDKClient().getPeerManager();
   if (peerManager) {
     let peer_node_ids: TwoTuple_PublicKeyCOption_NetAddressZZ[] | any =
@@ -141,7 +142,7 @@ router.post("/savePeerAndChannelToDb", async (req, res) => {
 
   try {
     const result =
-      await LDKClientFactory.getLDKClient().savePeerAndChannelToDatabase(
+      await savePeerAndChannelToDatabase(
         amount,
         pubkey,
         host,
@@ -226,7 +227,7 @@ router.post("/saveChannelPaymentInfoToDb", async (req, res) => {
     });
   } else {
     try {
-      await LDKClientFactory.getLDKClient().saveChannelFundingToDatabase(
+      await saveChannelFundingToDatabase(
         amount,
         paid,
         txid,

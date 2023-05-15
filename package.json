@@ -13,16 +13,34 @@
       "js",
       "jsx",
       "ts",
+      "mjs",
+      "mts",
       "d.ts",
       "wasm"
     ],
     "modulePathIgnorePatterns": [],
     "moduleNameMapper": {
-      "^(\\.{1,2}/.*)\\.js$": "$1"
+      "^(\\.{1,2}/.*)\\.js$": "$1",
+      "^(\\.{1,2}/.*)\\.m?js$": "$1"
     },
     "transform": {
-      "^.+\\.(ts|tsx)$": "ts-jest"
-    }
+      "^.+\\.(ts|tsx)$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ],
+      "^.+\\.m?[tj]sx?$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ]
+    },
+    "extensionsToTreatAsEsm": [
+      ".ts",
+      ".mts"
+    ]
   },
   "version": "1.0.0",
   "description": "",
@@ -77,6 +95,7 @@
     "webpack-cli": "^5.0.1"
   },
   "dependencies": {
+    "@jest/globals": "^29.5.0",
     "@psf/bip32-utils": "^1.0.4",
     "@types/express": "^4.17.6",
     "async-mutex": "^0.3.2",
@@ -94,7 +113,7 @@
     "fs": "0.0.1-security",
     "jest": "^29.4.1",
     "json-bigint": "^1.0.0",
-    "lightningdevkit": "^0.0.11-4.1",
+    "lightningdevkit": "^0.0.11-5.0",
     "nanoid": "^4.0.0",
     "netcat": "^1.5.0",
     "node-fetch": "^3.3.0",

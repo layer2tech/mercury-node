@@ -30,7 +30,7 @@ interface Channel {
 // Get the Node ID of our wallet
 router.get("/nodeID", async function (req, res) {
   const nodeId =
-    LDKClientFactory.getLDKClient().channelManager.get_our_node_id();
+    LDKClientFactory.getLDKClient().getOurNodeId();
   const hexNodeId = uint8ArrayToHexString(nodeId);
   res.json({ nodeID: hexNodeId });
 });
@@ -69,14 +69,13 @@ router.get("/liveChannels", async function (req, res) {
 });
 
 router.post("/createChannel", async (req, res) => {
-  const { pubkey, amount, push_msat, channelId, channelType, address } = req.body;
+  const { pubkey, amount, push_msat, channelId, channelType } = req.body;
   if (
     pubkey === undefined ||
     amount === undefined ||
     push_msat === undefined ||
     channelId === undefined ||
-    channelType === undefined ||
-    address === undefined
+    channelType === undefined
   ) {
     res.status(500).send("Missing required parameters");
   } else {
@@ -88,8 +87,7 @@ router.post("/createChannel", async (req, res) => {
           amount,
           push_msat,
           channelId,
-          channelType,
-          address
+          channelType
         );
         if (connection) {
           res.status(200).send("Created Channel on LDK");
@@ -304,7 +302,7 @@ router.delete("/mutualCloseChannel/:id", async (req, res) => {
 });
 
 router.delete("/deleteChannelByPaymentAddr/:addr", (req, res) => {
-  // delete channel by id
+  // delete channel by payment address
   const deleteData = `DELETE FROM channels WHERE payment_address=?`;
   db.run(deleteData, [req.params.addr], function (err: any) {
     if (err) {

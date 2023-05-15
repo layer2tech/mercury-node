@@ -1,9 +1,10 @@
 import LightningClient from "../LightningClient";
 import { initializeLDK } from "./initializeLDK";
+import { MockLightningClient } from "../../../test/mocks/MockLightningClient";
 
 class LDKClientFactory {
   private static instance: LDKClientFactory;
-  private client: LightningClient | null;
+  private client: LightningClient | MockLightningClient | null;
 
   private constructor() {
     this.client = null;
@@ -25,6 +26,10 @@ class LDKClientFactory {
     );
 
     if (!this.client) {
+      if (bitcoind_client === "test") {
+        this.client = new MockLightningClient();
+        return;
+      }
       const initLDK = await initializeLDK(bitcoind_client);
       if (initLDK) {
         this.client = new LightningClient(initLDK);
@@ -36,7 +41,7 @@ class LDKClientFactory {
     }
   }
 
-  public getLDKClient(): LightningClient {
+  public getLDKClient(): LightningClient | MockLightningClient {
     if (!this.client) {
       throw new Error(
         "[LDKClientFactory/getLDKClient]: LDKClient is not instantiated."

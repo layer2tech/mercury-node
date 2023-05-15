@@ -36,6 +36,89 @@ export const validateInvoiceBody = (
   }
 };
 
+ // This function is called from peerRoutes.ts /create-channel request
+ export const savePeerAndChannelToDatabase = async (
+  amount: number,
+  pubkey: string,
+  host: string,
+  port: number,
+  channel_name: string,
+  wallet_name: string,
+  channelType: boolean,
+  privkey: string, // Private key from txid address
+  paid: boolean,
+  payment_address: string // index of input
+) => {
+  console.log("[ldk-utils.ts] - savePeerAndChannelToDatabase");
+  console.log(
+    `[ldk-utils.ts] - values: amount:${amount}, 
+    pubkey:${pubkey}, host:${host}, port:${port}, channel_name:${channel_name}, 
+    wallet_name:${wallet_name}, channelType:${channelType}, 
+    privkey:${privkey}, paid:${paid}, payment_address:${payment_address}`
+  );
+
+  // Save the peer
+  try {
+    const result = await saveNewPeerToDB(host, port, pubkey);
+    console.log(`[ldk-utils.ts] - result: ${JSON.stringify(result)}`);
+    var peer_id = result.peer_id;
+    if (!peer_id) throw "[ldk-utils.ts] Error: PEER_ID undefined";
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+  console.log("[ldk-utils.ts]: Peer created, saveds its id: ", peer_id);
+
+  let channel_id = null;
+  let result;
+  // Save the channel
+  try {
+    result = await saveNewChannelToDB(
+      channel_name,
+      amount,
+      0,
+      channelType,
+      wallet_name,
+      peer_id,
+      privkey,
+      paid,
+      payment_address
+    );
+    console.log("[ldk-utils.ts]:" + result);
+    if (result && result.channel_id) {
+      console.log(result);
+      channel_id = result.channel_id;
+      console.log("Channel Created, saved its id: ", channel_id);
+    }
+  } catch (err) {
+    console.log("[ldk-utils.ts]:" + err);
+    throw err;
+  }
+  console.log(
+    "[ldk-utils.ts]: Channel Created, saved its id: ",
+    channel_id
+  );
+
+  return result;
+}
+
+export const saveChannelFundingToDatabase = async (
+  amount: number,
+  paid: boolean,
+  txid: string,
+  vout: number,
+  addr: string
+) => {
+  console.log("[ldk-utils.ts]: saveChannelFundingToDatabase");
+  try {
+    const result = await saveTxDataToDB(amount, paid, txid, vout, addr);
+    return result;
+  } catch (err) {
+    console.log("[ldk-utils.ts]: " + err);
+    throw err;
+  }
+}
+
 export const saveNewPeerToDB = (
   host: string,
   port: number,
@@ -263,23 +346,43 @@ export const saveTxDataToDB = (
 
 export const saveChannelIdToDb = (
   channelId: string,
-  address: string
+  pubkey: string
 ) => {
   console.log("[ldk-utils.ts] - saveChannelIdToDB");
   console.log(
-    `[ldk-utils.ts] - values: channelId:${channelId}, addr:${address}`
+    `[ldk-utils.ts] - values: channelId:${channelId}, pubkey:${pubkey}`
   );
   const updateData =
-      "UPDATE channels SET channel_id=? WHERE payment_address=?";
+      "UPDATE channels SET channel_id = ? WHERE peer_id = ( SELECT id FROM peers WHERE pubkey = ?)";
   db.run(
     updateData,
-    [channelId, address],
+    [channelId, pubkey],
     function (err: any, result: any) {
       if (err) {
         console.log("Error in saving channelId to db: " + err);
       }
     }
   );
+};
+
+export const checkIfChannelExists = (pubkey: string): Promise<boolean> => {
+  return new Promise((resolve, reject) => {
+    db.get(
+      `SELECT channel_id FROM channels WHERE peer_id = (SELECT id FROM peers WHERE pubkey = ?)`,
+      [pubkey],
+      (err: any, row: any) => {
+        if (err) {
+          reject(err);
+        } else {
+          if (row && row.channel_id) {
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        }
+      }
+    );
+  });
 };
 
 export const deleteChannelById = (

@@ -2,7 +2,7 @@ import axios from "axios";
 import { RawAxiosRequestConfig } from "axios";
 
 const TIMEOUT = 20000;
-const TOR_ENDPOINT = "http://localhost:3001";
+export const TOR_ENDPOINT = "http://localhost:3001";
 
 class TorClient {
   endpoint;
@@ -96,8 +96,8 @@ class TorClient {
             .replace(":vout", String(vout))
         )
       ).data;
-      if (res && res.status === "success" && res.data) {
-        return res.data;
+      if (res) {
+        return res;
       }
       throw new Error("Error fetching UTXO spent data");
     } catch (e: any) {

@@ -32,8 +32,8 @@ import {
   Result_InvoiceSignOrCreationErrorZ_Err,
   Result_InvoiceSignOrCreationErrorZ,
   Result_InvoiceParseOrSemanticErrorZ,
-  Result__u832APIErrorZ_OK,
   EventHandler,
+  RecipientOnionFields
 } from "lightningdevkit";
 import { NodeLDKNet } from "./structs/NodeLDKNet.mjs";
 import LightningClientInterface from "./types/LightningClientInterface.js";
@@ -44,15 +44,11 @@ import {
   uint8ArrayToHexString,
 } from "./utils/utils.js";
 import {
-  saveNewPeerToDB,
-  saveNewChannelToDB,
-  saveTxDataToDB,
-  saveChannelIdToDb
+  checkIfChannelExists
 } from "./utils/ldk-utils.js";
 import MercuryEventHandler from "./structs/MercuryEventHandler.js";
 import ElectrumClient from "./bitcoin_clients/ElectrumClient.mjs";
 import TorClient from "./bitcoin_clients/TorClient.mjs";
-import LDKClientFactory from "./init/LDKClientFactory.js";
 
 export default class LightningClient implements LightningClientInterface {
   feeEstimator: FeeEstimator;
@@ -115,6 +111,10 @@ export default class LightningClient implements LightningClientInterface {
   /*
     bitcoind Client Functions
   */
+
+  getOurNodeId() {
+    return this.channelManager.get_our_node_id();
+  }
 
   async getBlockHeight() {
     this.blockHeight = await this.bitcoind_client.getBlockHeight();
@@ -228,72 +228,6 @@ export default class LightningClient implements LightningClientInterface {
    * @param port
    */
 
-  // This function is called from peerRoutes.ts /create-channel request
-  async savePeerAndChannelToDatabase(
-    amount: number,
-    pubkey: string,
-    host: string,
-    port: number,
-    channel_name: string,
-    wallet_name: string,
-    channelType: boolean,
-    privkey: string, // Private key from txid address
-    paid: boolean,
-    payment_address: string // index of input
-  ) {
-    console.log("[LightningClient.ts] - savePeerAndChannelToDatabase");
-    console.log(
-      `[LightningClient.ts] - values: amount:${amount}, 
-      pubkey:${pubkey}, host:${host}, port:${port}, channel_name:${channel_name}, 
-      wallet_name:${wallet_name}, channelType:${channelType}, 
-      privkey:${privkey}, paid:${paid}, payment_address:${payment_address}`
-    );
-
-    // Save the peer
-    try {
-      const result = await saveNewPeerToDB(host, port, pubkey);
-      console.log(`[LightningClient.ts] - result: ${JSON.stringify(result)}`);
-      var peer_id = result.peer_id;
-      if (!peer_id) throw "[LightningClient.ts] Error: PEER_ID undefined";
-    } catch (err) {
-      console.log(err);
-      throw err;
-    }
-    console.log("[LightningClient.ts]: Peer created, saveds its id: ", peer_id);
-
-    let channel_id = null;
-    let result;
-    // Save the channel
-    try {
-      result = await saveNewChannelToDB(
-        channel_name,
-        amount,
-        0,
-        channelType,
-        wallet_name,
-        peer_id,
-        privkey,
-        paid,
-        payment_address
-      );
-      console.log("[LightningClient.ts]:" + result);
-      if (result && result.channel_id) {
-        console.log(result);
-        channel_id = result.channel_id;
-        console.log("Channel Created, saved its id: ", channel_id);
-      }
-    } catch (err) {
-      console.log("[LightningClient.ts]:" + err);
-      throw err;
-    }
-    console.log(
-      "[LightningClient.ts]: Channel Created, saved its id: ",
-      channel_id
-    );
-
-    return result;
-  }
-
   async sendPayment(invoiceStr: string) {
     const parsed_invoice = Invoice.constructor_from_str(invoiceStr);
 
@@ -314,6 +248,8 @@ export default class LightningClient implements LightningClientInterface {
           "[LightningClient.ts/sendPayment]: Invalid or zero value invoice"
         );
       }
+
+      const recipient_onion = RecipientOnionFields.constructor_new(invoice.payment_secret(), invoice.payment_metadata())
 
       let route: Route;
 
@@ -342,10 +278,10 @@ export default class LightningClient implements LightningClientInterface {
       if (route_res instanceof Result_RouteLightningErrorZ_OK) {
         route = route_res.res;
         console.log(route);
-        const payment_res = this.channelManager.send_payment(
+        const payment_res = this.channelManager.send_payment_with_route(
           route,
           invoice.payment_hash(),
-          invoice.payment_secret(),
+          recipient_onion,
           payment_id
         );
         console.log(payment_res);
@@ -358,23 +294,6 @@ export default class LightningClient implements LightningClientInterface {
     }
 
     throw Error("Error occured in [LightningClient.ts/sendPayment] method");
-  }
-
-  async saveChannelFundingToDatabase(
-    amount: number,
-    paid: boolean,
-    txid: string,
-    vout: number,
-    addr: string
-  ) {
-    console.log("[LightningClient.ts]: saveChannelFundingToDatabase");
-    try {
-      const result = await saveTxDataToDB(amount, paid, txid, vout, addr);
-      return result;
-    } catch (err) {
-      console.log("[LightningClient.ts]: " + err);
-      throw err;
-    }
   }
 
   // This function runs after createNewPeer->connectToPeer
@@ -404,8 +323,7 @@ export default class LightningClient implements LightningClientInterface {
     amount: number,
     push_msat: number,
     channelId: number,
-    channelType: boolean,
-    address: string
+    channelType: boolean
   ) {
     // To stop this from calling twice - check the database if a channel has already been created.
 
@@ -417,6 +335,7 @@ export default class LightningClient implements LightningClientInterface {
     let channelValSatoshis = BigInt(amount);
     let pushMsat = BigInt(push_msat);
     let userChannelId = BigInt(channelId);
+    let pubkeyHex = uint8ArrayToHexString(pubkey);
 
     // create the override_config
     let override_config: UserConfig = UserConfig.constructor_default();
@@ -429,21 +348,22 @@ export default class LightningClient implements LightningClientInterface {
       "[LightningClient.ts]: Reached here ready to create channel..."
     );
     try {
-      channelCreateResponse = this.channelManager.create_channel(
-        pubkey,
-        channelValSatoshis,
-        pushMsat,
-        userChannelId,
-        override_config
-      );
-      const result = channelCreateResponse as Result__u832APIErrorZ_OK;
-      const channelId = uint8ArrayToHexString(result.res);
-      saveChannelIdToDb(channelId, address);
+      const channelExists = await checkIfChannelExists(pubkeyHex);
+      if (!channelExists) {
+        channelCreateResponse = this.channelManager.create_channel(
+          pubkey,
+          channelValSatoshis,
+          pushMsat,
+          userChannelId,
+          override_config
+        );
+      } else {
+        throw new Error("Channel already exists with this pubkey - " + pubkeyHex);
+      }
     } catch (e) {
       if (pubkey.length !== 33) {
         console.log("[LightningClient.ts]: Entered incorrect pubkey - ", e);
       } else {
-        var pubkeyHex = uint8ArrayToHexString(pubkey);
         console.log(
           `[LightningClient.ts]: Lightning node with pubkey ${pubkeyHex} unreachable - `,
           e
