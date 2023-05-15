@@ -443,6 +443,8 @@ export default class LightningClient implements LightningClientInterface {
           userChannelId,
           override_config
         );
+      } else {
+        throw new Error("Channel already exists with this pubkey - " + pubkeyHex);
       }
     } catch (e) {
       if (pubkey.length !== 33) {
