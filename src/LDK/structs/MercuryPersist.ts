@@ -154,11 +154,11 @@ class MercuryPersist implements PersistInterface {
     data: ChannelMonitor,
     update_id: MonitorUpdateId
   ): ChannelMonitorUpdateStatus {
-    console.log("update with->", update);
-    console.table(update);
+    //console.log("update with->", update);
+    //console.table(update);
 
-    console.log("update_id->", update_id);
-    console.table(update_id);
+    //console.log("update_id->", update_id);
+    //console.table(update_id);
 
     try {
       const channelIdStr = channel_id.to_channel_id().toString();

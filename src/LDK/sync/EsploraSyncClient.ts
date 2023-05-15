@@ -172,7 +172,7 @@ export default class EsploraSyncClient implements FilterInterface {
     tipHash: string //BlockHash
   ): Promise<void> {
     DEBUG.log("confirmables, tipHash", "sync_best_block_updated");
-    console.table({ confirmables, tipHash });
+    //console.table({ confirmables, tipHash });
 
     // Inform the interface of the new block.
     const tipHeader = await this.bitcoind_client.getHeaderByHash(tipHash);
@@ -180,7 +180,7 @@ export default class EsploraSyncClient implements FilterInterface {
 
     DEBUG.log("tipHeader->", "sync_best_block_updated", tipHeader);
     DEBUG.log("tipStatus->", "sync_best_block_updated", tipStatus);
-    console.table(tipStatus);
+    //console.table(tipStatus);
 
     if (tipStatus.in_best_chain) {
       DEBUG.log("tipStatus.in_best_chain -> true", "sync_best_block_updated");
@@ -191,8 +191,9 @@ export default class EsploraSyncClient implements FilterInterface {
         );
         confirmables.forEach((c) => {
           DEBUG.log(
-            "c.best_block_updated(confirmables)",
-            "sync_best_block_updated"
+            "c.best_block_updated(confirmables)>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",
+            "sync_best_block_updated",
+            hexToUint8Array(tipHeader) + " " + tipStatus.height
           );
           c.best_block_updated(hexToUint8Array(tipHeader), tipStatus.height);
         });
@@ -211,8 +212,8 @@ export default class EsploraSyncClient implements FilterInterface {
     DEBUG.log("*********", "sync_confirmed_transactions");
 
     for (const ctx of confirmed_txs) {
-      DEBUG.log("---> CTX object --->", "sync_confirmed_transactions", ctx);
-      console.table(ctx);
+      //DEBUG.log("---> CTX object --->", "sync_confirmed_transactions", ctx);
+      //console.table(ctx);
 
       let transaction = ctx.txs[0][1];
       for (const c of confirmables) {
@@ -232,6 +233,16 @@ export default class EsploraSyncClient implements FilterInterface {
         let hex_block_header = await this.bitcoind_client.getHeaderByHash(
           ctx.block_header.id
         );
+
+        console.log(
+          chalk.bgRedBright(
+            `[EsploraSyncClient.ts]: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> c.transactions_confirmed(${hexToUint8Array(
+              hex_block_header
+            )}, ${txdata}, ${ctx.block_height})`
+          )
+        );
+
+        console.table(txdata);
 
         c.transactions_confirmed(
           hexToUint8Array(hex_block_header),
@@ -370,8 +381,8 @@ export default class EsploraSyncClient implements FilterInterface {
         txid
       );
 
-      console.log(chalk.greenBright("MERKEL_PROOF VALUES:", merkel_proof));
-      console.table(merkel_proof);
+      //console.log(chalk.greenBright("MERKEL_PROOF VALUES:", merkel_proof));
+      //console.table(merkel_proof);
 
       return {
         block_header,
@@ -453,6 +464,13 @@ export default class EsploraSyncClient implements FilterInterface {
     );
     for (const txid of unconfirmed_txs) {
       for (const c of confirmables) {
+        console.log(
+          chalk.bgRed(
+            `>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> c.transaction_unconfirmed(hexToUint8Array(txid)) ${hexToUint8Array(
+              txid
+            )}`
+          )
+        );
         c.transaction_unconfirmed(hexToUint8Array(txid)); //convert back to uint8array
       }
       sync_state.watched_transactions.add(txid);
