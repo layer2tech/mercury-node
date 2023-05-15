@@ -330,8 +330,7 @@ class MercuryEventHandler implements EventHandlerInterface {
       );
     }
   }
-  
-  
+
   handleChannelReadyEvent(e: Event_ChannelReady) {
     console.log(`[MercuryEventHandler.ts]: Channel ready ${e}`);
     console.log(
@@ -342,14 +341,14 @@ class MercuryEventHandler implements EventHandlerInterface {
       )} is ready to be used!`
     );
   }
-  
+
   handleChannelPendingEvent(event: Event_ChannelPending) {
     const {
       channel_id,
       user_channel_id,
       former_temporary_channel_id,
       counterparty_node_id,
-      funding_txo
+      funding_txo,
     } = event;
     const node_id = uint8ArrayToHexString(counterparty_node_id);
     const pubkey = node_id.split("@")[0];
