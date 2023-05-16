@@ -77,7 +77,6 @@
   "license": "ISC",
   "devDependencies": {
     "@electron/rebuild": "^3.2.10",
-    "@types/bitcoinjs-lib": "^5.0.0",
     "@types/cors": "^2.8.13",
     "@types/express": "^4.17.16",
     "@types/jest": "^29.5.1",
@@ -86,6 +85,7 @@
     "@types/request-promise-native": "^1.0.18",
     "@types/secp256k1": "^4.0.3",
     "@types/supertest": "^2.0.12",
+    "bitcoinjs-lib": "^6.1.0",
     "express": "^4.18.2",
     "ts-jest": "^29.0.5",
     "ts-loader": "^9.4.2",
@@ -102,6 +102,7 @@
     "axios": "^1.2.2",
     "bech32": "^1.1.4",
     "body-parser": "^1.19.0",
+    "chalk": "^5.2.0",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "default-shell": "^1.0.1",

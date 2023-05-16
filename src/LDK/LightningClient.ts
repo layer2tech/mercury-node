@@ -33,7 +33,7 @@ import {
   Result_InvoiceSignOrCreationErrorZ,
   Result_InvoiceParseOrSemanticErrorZ,
   EventHandler,
-  RecipientOnionFields
+  RecipientOnionFields,
 } from "lightningdevkit";
 import { NodeLDKNet } from "./structs/NodeLDKNet.mjs";
 import LightningClientInterface from "./types/LightningClientInterface.js";
@@ -43,12 +43,11 @@ import {
   hexToUint8Array,
   uint8ArrayToHexString,
 } from "./utils/utils.js";
-import {
-  checkIfChannelExists
-} from "./utils/ldk-utils.js";
+import { checkIfChannelExists } from "./utils/ldk-utils.js";
 import MercuryEventHandler from "./structs/MercuryEventHandler.js";
 import ElectrumClient from "./bitcoin_clients/ElectrumClient.mjs";
 import TorClient from "./bitcoin_clients/TorClient.mjs";
+import EsploraSyncClient from "./sync/EsploraSyncClient.js";
 
 export default class LightningClient implements LightningClientInterface {
   feeEstimator: FeeEstimator;
@@ -72,13 +71,15 @@ export default class LightningClient implements LightningClientInterface {
   params: ChainParameters;
   channelManager: ChannelManager;
   peerManager: PeerManager;
-  txDatas: any; // TODO: Specify this type
+  txDatas: any;
   currentConnections: any[] = [];
   blockHeight: number | undefined;
   latestBlockHeader: Uint8Array | undefined;
   netHandler: NodeLDKNet;
   bestBlockHash: any;
   router: Router;
+  syncClient: EsploraSyncClient;
+  txdata: any;
 
   constructor(props: LightningClientInterface) {
     this.feeEstimator = props.feeEstimator;
@@ -103,34 +104,27 @@ export default class LightningClient implements LightningClientInterface {
     this.channelManager = props.channelManager;
     this.peerManager = props.peerManager;
     this.router = props.router;
+    this.syncClient = props.syncClient;
     this.netHandler = new NodeLDKNet(this.peerManager);
   }
 
-  txdata: any;
-
   /*
     bitcoind Client Functions
+    These functions when called update the values of the object and return the value
   */
-
-  getOurNodeId() {
-    return this.channelManager.get_our_node_id();
-  }
-
-  async getBlockHeight() {
-    this.blockHeight = await this.bitcoind_client.getBlockHeight();
+  async updateBestBlockHeight() {
+    this.blockHeight = await this.bitcoind_client.getBestBlockHeight();
     return this.blockHeight;
   }
 
-  async getBestBlockHash() {
+  async updateBestBlockHash() {
     this.bestBlockHash = await this.bitcoind_client.getBestBlockHash();
     return this.bestBlockHash;
   }
 
-  async getLatestBlockHeader(height: number | undefined) {
+  async updateLatestBlockHeader(height: number | undefined) {
     if (height) {
-      let latestBlockHeader = await this.bitcoind_client.getLatestBlockHeader(
-        height
-      );
+      let latestBlockHeader = await this.bitcoind_client.getBlockHeader(height);
 
       this.latestBlockHeader = hexToBytes(latestBlockHeader);
     } else {
@@ -210,7 +204,7 @@ export default class LightningClient implements LightningClientInterface {
     );
   }
 
-  async setEventTXData(txid: any) {
+  async setEventTxData(txid: any) {
     this.txdata = await this.getTxData(txid);
     MercuryEventHandler.setInputTx(this.txdata);
   }
@@ -220,13 +214,6 @@ export default class LightningClient implements LightningClientInterface {
     console.log("[LightningClient.ts]-> getTxData ->", txData);
     return txData;
   }
-
-  /**
-   * Connects to Peer for outbound channel
-   * @param pubkeyHex
-   * @param host
-   * @param port
-   */
 
   async sendPayment(invoiceStr: string) {
     const parsed_invoice = Invoice.constructor_from_str(invoiceStr);
@@ -249,7 +236,10 @@ export default class LightningClient implements LightningClientInterface {
         );
       }
 
-      const recipient_onion = RecipientOnionFields.constructor_new(invoice.payment_secret(), invoice.payment_metadata())
+      const recipient_onion = RecipientOnionFields.constructor_new(
+        invoice.payment_secret(),
+        invoice.payment_metadata()
+      );
 
       let route: Route;
 
@@ -329,8 +319,8 @@ export default class LightningClient implements LightningClientInterface {
 
     console.log("[LightningClient.ts]: pubkey found:", pubkey);
 
-    await this.getBlockHeight();
-    await this.getLatestBlockHeader(this.blockHeight);
+    await this.updateBestBlockHeight();
+    await this.updateLatestBlockHeader(this.blockHeight);
 
     let channelValSatoshis = BigInt(amount);
     let pushMsat = BigInt(push_msat);
@@ -358,7 +348,9 @@ export default class LightningClient implements LightningClientInterface {
           override_config
         );
       } else {
-        throw new Error("Channel already exists with this pubkey - " + pubkeyHex);
+        throw new Error(
+          "Channel already exists with this pubkey - " + pubkeyHex
+        );
       }
     } catch (e) {
       if (pubkey.length !== 33) {
@@ -372,7 +364,7 @@ export default class LightningClient implements LightningClientInterface {
     }
     if (this.blockHeight && this.latestBlockHeader) {
       for (let i = 0; i++; i <= this.blockHeight) {
-        await this.getLatestBlockHeader(i + 1);
+        await this.updateLatestBlockHeader(i + 1);
         this.channelManager
           .as_Listen()
           .block_connected(this.latestBlockHeader, this.blockHeight);
@@ -461,11 +453,6 @@ export default class LightningClient implements LightningClientInterface {
     );
   }
 
-  /**
-   * Create Socket for Outbound channel creation
-   * @param peerDetails
-   */
-
   async create_socket(peerDetails: PeerDetails) {
     // Create Socket for outbound connection: check NodeNet LDK docs for inbound
     const { pubkey, host, port } = peerDetails;
@@ -491,6 +478,10 @@ export default class LightningClient implements LightningClientInterface {
     });
   }
 
+  getOurNodeId() {
+    return this.channelManager.get_our_node_id();
+  }
+
   getChainMonitor(): ChainMonitor {
     return this.chainMonitor;
   }
@@ -511,11 +502,16 @@ export default class LightningClient implements LightningClientInterface {
     return this.txBroadcasted;
   }
 
-  /**
-   * @returns connected peers
-   */
-  list_peers() {
+  listPeers() {
     return this.peerManager.get_peer_node_ids();
+  }
+
+  async sync() {
+    // sync the client
+    return await this.syncClient.sync([
+      this.channelManager.as_Confirm(),
+      this.chainMonitor.as_Confirm(),
+    ]);
   }
 
   // starts the lightning LDK
@@ -530,6 +526,11 @@ export default class LightningClient implements LightningClientInterface {
       // processes events on ChannelManager and ChainMonitor
       await this.processPendingEvents();
     }, 2000);
+
+    // sync up LDK with chain every 10seconds
+    setInterval(async () => {
+      await this.sync();
+    }, 10000);
   }
 
   async processPendingEvents() {

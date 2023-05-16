@@ -18,7 +18,9 @@ describe("Channel Routes", () => {
   it("GET /nodeID", async () => {
     const response = await request(app).get("/nodeID");
 
-    expect(response.body).toEqual({ nodeID: uint8ArrayToHexString(MOCK_DATA.NODE_ID) });
+    expect(response.body).toEqual({
+      nodeID: uint8ArrayToHexString(MOCK_DATA.NODE_ID),
+    });
   });
 
   it("GET /liveChannels", async () => {
@@ -78,16 +80,18 @@ describe("Channel Routes", () => {
 
   it("PUT /updateChannelName should update a channel name by id", async () => {
     const response = await request(app).put("/updateChannelName/1").send({
-      name: MOCK_DATA.CHANNEL_NAME
+      name: MOCK_DATA.CHANNEL_NAME,
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ message: "Channel name updated successfully" });
+    expect(response.body).toEqual({
+      message: "Channel name updated successfully",
+    });
   });
 
   it("PUT /updateChannelName with invalid channel id", async () => {
     const response = await request(app).put("/updateChannelName/abc").send({
-      name: MOCK_DATA.CHANNEL_NAME
+      name: MOCK_DATA.CHANNEL_NAME,
     });
 
     expect(response.statusCode).toBe(400);
@@ -96,74 +100,80 @@ describe("Channel Routes", () => {
 
   it("PUT /updateChannelPaid should update a channel paid status by id", async () => {
     const response = await request(app).put("/updateChannelName/1").send({
-      paid: MOCK_DATA.PAID
+      paid: MOCK_DATA.PAID,
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ message: "Channel name updated successfully" });
+    expect(response.body).toEqual({
+      message: "Channel name updated successfully",
+    });
   });
 
   it("PUT /updateChannelPaid with invalid channel id", async () => {
     const response = await request(app).put("/updateChannelPaid/abc").send({
-      paid: MOCK_DATA.PAID
+      paid: MOCK_DATA.PAID,
     });
 
     expect(response.statusCode).toBe(400);
     expect(response.body).toEqual({ error: "Invalid channel ID" });
   });
 
-  it('PUT /updateChannel should update a channel by id', async () => {
-    const response = await request(app)
-      .put('/updateChannel/1')
-      .send({
-        name: MOCK_DATA.CHANNEL_NAME,
-        amount: MOCK_DATA.AMOUNT,
-        push_msat: MOCK_DATA.PUSH_MSAT,
-        wallet_name: "Test Wallet",
-        peer_id: 1,
-        privkey: MOCK_DATA.PRIVKEY,
-        txid: MOCK_DATA.TXID,
-        vout: MOCK_DATA.VOUT,
-        paid: MOCK_DATA.PAID,
-        payment_address: MOCK_DATA.PAYMENT_ADDRESS,
-      });
+  it("PUT /updateChannel should update a channel by id", async () => {
+    const response = await request(app).put("/updateChannel/1").send({
+      name: MOCK_DATA.CHANNEL_NAME,
+      amount: MOCK_DATA.AMOUNT,
+      push_msat: MOCK_DATA.PUSH_MSAT,
+      wallet_name: "Test Wallet",
+      peer_id: 1,
+      privkey: MOCK_DATA.PRIVKEY,
+      txid: MOCK_DATA.TXID,
+      vout: MOCK_DATA.VOUT,
+      paid: MOCK_DATA.PAID,
+      payment_address: MOCK_DATA.PAYMENT_ADDRESS,
+    });
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ message: 'Channel updated successfully' });
+    expect(response.body).toEqual({ message: "Channel updated successfully" });
   });
 
-  it('PUT /updateChannel with invalid channel id', async () => {
-    const response = await request(app)
-      .put('/updateChannel/abc')
-      .send({});
+  it("PUT /updateChannel with invalid channel id", async () => {
+    const response = await request(app).put("/updateChannel/abc").send({});
 
     expect(response.statusCode).toBe(400);
-    expect(response.body).toEqual({ error: 'Invalid channel ID' });
+    expect(response.body).toEqual({ error: "Invalid channel ID" });
   });
 
   it("GET /removeDuplicateChannels", async () => {
     const response = await request(app).get("/removeDuplicateChannels");
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ message: "Duplicate channels removed successfully" });
+    expect(response.body).toEqual({
+      message: "Duplicate channels removed successfully",
+    });
   });
 
   it("DELETE /forceCloseChannel", async () => {
-    const response = await request(app).delete(`/forceCloseChannel/${MOCK_DATA.CHANNEL_ID}`);
+    const response = await request(app).delete(
+      `/forceCloseChannel/${MOCK_DATA.CHANNEL_ID}`
+    );
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({ message: "Success", status: 200 });
   });
 
   it("DELETE /mutualCloseChannel", async () => {
-    const response = await request(app).delete(`/mutualCloseChannel/${MOCK_DATA.CHANNEL_ID}`);
+    const response = await request(app).delete(
+      `/mutualCloseChannel/${MOCK_DATA.CHANNEL_ID}`
+    );
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({ message: "Success", status: 200 });
   });
 
   it("DELETE /deleteChannelByPaymentAddr", async () => {
-    const response = await request(app).delete(`/deleteChannelByPaymentAddr/${MOCK_DATA.PAYMENT_ADDRESS}`);
+    const response = await request(app).delete(
+      `/deleteChannelByPaymentAddr/${MOCK_DATA.PAYMENT_ADDRESS}`
+    );
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({ message: "Data deleted successfully" });
