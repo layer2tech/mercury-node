@@ -36,17 +36,7 @@ export async function debug_lightning() {
   let bestBlockHash = await LightningClient.updateBestBlockHash();
   console.log("[debug_lightning.ts]: bestBlockHash:", bestBlockHash);
 
-  // 03ff520f98be326ec107f4a7bb0109feb8b2b5848f0cede7f5c0e0f01a9209c08b@136.244.108.27:9601
-  // 0227e0e3a9198601964d77a5b2d9a2b21ffff59a85a85031d61c6bb27b2ece2075@136.244.108.27:9600
-
-  let reverse_txid =
-    "d427550453aa78b9263e305608abf1f0d8c39a619ece38169066617509b30b90"
-      .match(/[a-fA-F0-9]{2}/g)
-      ?.reverse()
-      .join("");
-  console.log("[debug_lightning.ts:/reverse_byte]", reverse_txid);
-
-  // Polar node details
+  // node details
   let pubkeyHex =
     "0227e0e3a9198601964d77a5b2d9a2b21ffff59a85a85031d61c6bb27b2ece2075";
   let hostname = "136.244.108.27";
@@ -64,42 +54,14 @@ export async function debug_lightning() {
     "5557bd457de22fb0950cf6364da8ecb0d15ee9c478f874071e5a85fab0978a5f"
   );
 
-  /*
-  const invoiceString = LightningClient.createInvoiceUtil(
-    BigInt(100),
-    "coffee",
-    36000
-  );
-  console.log("[debug_lightning.ts]: Invoice string returned:", invoiceString);
-
-  // get channel balance
-  const balance = LightningClient.getChannels();
-  balance.forEach((channel: ChannelDetails) => {
-    console.log("[debug_lightning.ts]: balances:", channel.get_balance_msat());
-  });*/
-
   // Connect to the channel
   let pubkey = hexToUint8Array(pubkeyHex);
-
-  /*
-  await savePeerAndChannelToDatabase(
-    1,
-    pubkeyHex,
-    hostname,
-    port,
-    "",
-    "Testnet Wallet 3",
-    true,
-    "cRrhJwXVBPHdbSRsZo31SU24zoFmy4Jsr8H1aMwRTDn3qb67zG1r",
-    false,
-    "tb1q60myaz6078nfggywsjlv6pphpjj2d9x7nas29c"
-  );*/
 
   if (pubkey) {
     // MUST ONLY BE CALLED ONCE - doesn't currently have any checks to prevent it - can be prevented by checking db
     //await LightningClient.createChannel(pubkey, 100000, 0, 1, true);
   }
-
+  // Close a channel
   //await LightningClient.forceCloseChannel("ef382090de601be8d62439d80def437503bb5a5e5c2ddc7a5aa27c4a7f3d3618");*/
 }
 

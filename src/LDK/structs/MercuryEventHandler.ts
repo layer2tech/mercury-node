@@ -16,6 +16,10 @@ import {
   EventHandlerInterface,
   ChannelManager,
   Event_ChannelReady,
+  Event_PaymentClaimed,
+  Option_PaymentFailureReasonZ_Some,
+  Result_PaymentPreimageAPIErrorZ_OK,
+  Result_PaymentPreimageAPIErrorZ,
 } from "lightningdevkit";
 
 import * as bitcoin from "bitcoinjs-lib";
@@ -84,6 +88,9 @@ class MercuryEventHandler implements EventHandlerInterface {
       case e instanceof Event_ChannelPending:
         this.handleChannelPendingEvent(e);
         break;
+      case e instanceof Event_PaymentClaimed:
+        this.handlePaymentClaimed(e);
+        break;
       case e instanceof Event_PaymentSent:
         this.handlePaymentSentEvent(e);
         break;
@@ -111,6 +118,12 @@ class MercuryEventHandler implements EventHandlerInterface {
       default:
         console.debug("[MercuryEventHandler.ts]: Event not handled: ", e);
     }
+  }
+
+  handlePaymentClaimed(e: Event_PaymentClaimed) {
+    let preimage: any =
+      e.payment_hash instanceof Result_PaymentPreimageAPIErrorZ_OK;
+    this.channelManager.claim_funds(preimage.res);
   }
 
   setChannelManager(channelManager: ChannelManager) {
