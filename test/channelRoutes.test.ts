@@ -37,6 +37,13 @@ describe("Channel Routes", () => {
       push_msat: MOCK_DATA.PUSH_MSAT,
       channelId: MOCK_DATA.CHANNEL_ID,
       channelType: MOCK_DATA.CHANNEL_TYPE,
+      host: MOCK_DATA.HOST,
+      port: MOCK_DATA.PORT,
+      channel_name: MOCK_DATA.CHANNEL_NAME,
+      wallet_name: "Test Wallet",
+      privkey: MOCK_DATA.PRIVKEY,
+      paid: MOCK_DATA.PAID,
+      payment_address: MOCK_DATA.PAYMENT_ADDRESS,
     });
 
     expect(response.statusCode).toBe(200);

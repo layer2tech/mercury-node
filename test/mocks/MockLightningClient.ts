@@ -58,20 +58,12 @@ export class MockLightningClient {
   forceCloseChannel(pubkey: string) {
     return true;
   }
-  savePeerAndChannelToDatabase() {
-    return {
-      status: 200,
-      message: "Saved peer and channel to database.",
-      channel_id: MOCK_DATA.CHANNEL_ID,
-    };
-  }
   getChainMonitor() {
     return null;
   }
   getPeerManager() {
     return null;
   }
-  saveChannelFundingToDatabase() {}
   sendPayment() {
     return true;
   }
