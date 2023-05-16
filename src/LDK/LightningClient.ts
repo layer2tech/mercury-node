@@ -44,7 +44,7 @@ import {
   uint8ArrayToHexString,
 } from "./utils/utils.js";
 import {
-  checkIfChannelExists
+  checkIfChannelExists, savePeerAndChannelToDatabase
 } from "./utils/ldk-utils.js";
 import MercuryEventHandler from "./structs/MercuryEventHandler.js";
 import ElectrumClient from "./bitcoin_clients/ElectrumClient.mjs";
@@ -323,7 +323,14 @@ export default class LightningClient implements LightningClientInterface {
     amount: number,
     push_msat: number,
     channelId: number,
-    channelType: boolean
+    channelType: boolean,
+    host: string,
+    port: number,
+    channel_name: string,
+    wallet_name: string,
+    privkey: string, // Private key from txid address
+    paid: boolean,
+    payment_address: string // index of input
   ) {
     // To stop this from calling twice - check the database if a channel has already been created.
 
@@ -350,13 +357,16 @@ export default class LightningClient implements LightningClientInterface {
     try {
       const channelExists = await checkIfChannelExists(pubkeyHex);
       if (!channelExists) {
-        channelCreateResponse = this.channelManager.create_channel(
-          pubkey,
-          channelValSatoshis,
-          pushMsat,
-          userChannelId,
-          override_config
-        );
+        const result = await savePeerAndChannelToDatabase(amount, pubkeyHex, host, port, channel_name, wallet_name, channelType, privkey, paid, payment_address);
+        if (result && result.status === 201) {
+          channelCreateResponse = this.channelManager.create_channel(
+            pubkey,
+            channelValSatoshis,
+            pushMsat,
+            userChannelId,
+            override_config
+          );
+        }
       } else {
         throw new Error("Channel already exists with this pubkey - " + pubkeyHex);
       }
