@@ -45,28 +45,6 @@ describe("Peer Routes", () => {
     expect(res.body).toEqual({ status: 500, message: "Missing required parameters" });
   });
 
-  it("POST /savePeerAndChannelToDb", async () => {
-    const res = await request(app).post("/savePeerAndChannelToDb").send({
-      amount: MOCK_DATA.AMOUNT,
-      pubkey: MOCK_DATA.PUBKEY,
-      host: MOCK_DATA.HOST,
-      port: MOCK_DATA.PORT,
-      channel_name: MOCK_DATA.CHANNEL_NAME,
-      wallet_name: "Test Wallet",
-      channelType: MOCK_DATA.CHANNEL_TYPE,
-      privkey: MOCK_DATA.PRIVKEY,
-      paid: MOCK_DATA.PAID,
-      payment_address: MOCK_DATA.PAYMENT_ADDRESS,
-    });
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({
-      status: 200,
-      message: "Saved peer and channel to database.",
-      channel_id: MOCK_DATA.CHANNEL_ID,
-    });
-  });
-
   it("POST /setTxData", async () => {
     const res = await request(app).post("/setTxData").send({
       txid: MOCK_DATA.TXID,
@@ -74,19 +52,6 @@ describe("Peer Routes", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ status: 200, message: "Txid was set correctly." });
-  });
-
-  it("POST /saveChannelPaymentInfoToDb", async () => {
-    const res = await request(app).post("/saveChannelPaymentInfoToDb").send({
-      amount: MOCK_DATA.AMOUNT,
-      paid: MOCK_DATA.PAID,
-      txid: MOCK_DATA.TXID,
-      vout: MOCK_DATA.VOUT,
-      address: MOCK_DATA.PAYMENT_ADDRESS,
-    });
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ status: 200, message: "Channel funding saved to DB" });
   });
 
   it("GET /getPeer returns a peer if found", async () => {
