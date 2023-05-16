@@ -27,6 +27,7 @@ import {
 import ElectrumClient from "../bitcoin_clients/ElectrumClient.mjs";
 import TorClient from "../bitcoin_clients/TorClient.mjs";
 import MercuryEventHandler from "../structs/MercuryEventHandler";
+import EsploraSyncClient from "../sync/EsploraSyncClient.js";
 
 export default interface LightningClientInterface {
   feeEstimator: FeeEstimator;
@@ -56,4 +57,5 @@ export default interface LightningClientInterface {
   blockHeight: number | undefined;
   latestBlockHeader: Uint8Array | undefined;
   netHandler: any;
+  syncClient: EsploraSyncClient;
 }

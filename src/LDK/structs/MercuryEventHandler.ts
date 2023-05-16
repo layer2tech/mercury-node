@@ -15,6 +15,7 @@ import {
   Result_NoneAPIErrorZ_OK,
   EventHandlerInterface,
   ChannelManager,
+  Event_ChannelReady,
 } from "lightningdevkit";
 
 import * as bitcoin from "bitcoinjs-lib";
@@ -26,6 +27,10 @@ import {
 import { ECPairFactory } from "ecpair";
 import * as ecc from "tiny-secp256k1";
 import crypto from "crypto";
+import chalk from "chalk";
+import { Transaction } from "bitcoinjs-lib";
+import fs from "fs";
+import { regtest } from "bitcoinjs-lib/src/networks.js";
 import { saveChannelIdToDb } from "../utils/ldk-utils.js";
 
 const ECPair = ECPairFactory(ecc);
@@ -40,7 +45,35 @@ class MercuryEventHandler implements EventHandlerInterface {
 
   constructor(_channelManager: ChannelManager) {
     this.channelManager = _channelManager;
-    this.privateKey = crypto.randomBytes(32);
+
+    const privateKeyFilePath = "private_key.txt";
+    // Check if the private key file exists
+    if (fs.existsSync(privateKeyFilePath)) {
+      // Private key file exists, read the contents
+      const privateKeyBuffer = fs.readFileSync(privateKeyFilePath);
+      this.privateKey = privateKeyBuffer;
+      console.log(
+        chalk.red(
+          "[MercuryEventHandler.ts/constructor]: Private key:",
+          this.privateKey
+        )
+      );
+      console.log(
+        chalk.red(
+          "[MercuryEventHandler.ts/constructor]: privateKeyBuffer",
+          privateKeyBuffer.toString("hex")
+        )
+      );
+    } else {
+      // Private key file doesn't exist, generate a new private key
+      const privateKeyBuffer = crypto.randomBytes(32);
+      this.privateKey = privateKeyBuffer;
+      // Save the private key to a file
+      fs.writeFileSync(privateKeyFilePath, privateKeyBuffer);
+      console.log(
+        chalk.red("New private key generated and saved:", this.privateKey)
+      );
+    }
   }
 
   handle_event(e: any) {
@@ -72,6 +105,9 @@ class MercuryEventHandler implements EventHandlerInterface {
       case e instanceof Event_ChannelClosed:
         this.handleChannelClosedEvent(e);
         break;
+      case e instanceof Event_ChannelReady:
+        this.handleChannelReadyEvent(e);
+        break;
       default:
         console.debug("[MercuryEventHandler.ts]: Event not handled: ", e);
     }
@@ -99,10 +135,27 @@ class MercuryEventHandler implements EventHandlerInterface {
 
   static setInputTx(txData: any) {
     this.validateTx(txData);
-
-    this.vout = txData.vout;
-    this.txid = txData.txid;
-    this.sequence = txData.sequence;
+    MercuryEventHandler.vout = 1;
+    console.log(
+      chalk.red(
+        "[MercuryEventHandler.ts/setInputTx]: this.vout:",
+        MercuryEventHandler.vout
+      )
+    );
+    MercuryEventHandler.txid = txData.txid;
+    console.log(
+      chalk.red(
+        "[MercuryEventHandler.ts/setInputTx]: this.txid:",
+        MercuryEventHandler.txid
+      )
+    );
+    MercuryEventHandler.sequence = txData.sequence;
+    console.log(
+      chalk.red(
+        "[MercuryEventHandler.ts/setInputTx]: this.sequence",
+        this.sequence
+      )
+    );
   }
 
   resetInputTx() {
@@ -161,6 +214,20 @@ class MercuryEventHandler implements EventHandlerInterface {
     );
   }
 
+  validator = (pubkey: Buffer, msghash: Buffer, signature: Buffer): boolean =>
+    ECPair.fromPublicKey(pubkey).verify(msghash, signature);
+
+  validateFundingEvent(output_script: Uint8Array) {
+    // validate event
+    if (
+      output_script.length !== 34 &&
+      output_script[0] !== 0 &&
+      output_script[1] !== 32
+    ) {
+      return;
+    }
+  }
+
   async handleFundingGenerationReadyEvent_Auto(
     event: Event_FundingGenerationReady
   ) {
@@ -171,29 +238,22 @@ class MercuryEventHandler implements EventHandlerInterface {
       output_script,
     } = event;
 
-    // validate event
-    if (
-      output_script.length !== 34 &&
-      output_script[0] !== 0 &&
-      output_script[1] !== 32
-    ) {
-      return;
-    }
-
     const network = bitcoin.networks.regtest;
 
     if (this.privateKey === undefined)
       throw Error("[MercuryEventHandler.ts]: private key is undefined");
+
     let electrum_wallet = ECPair.fromPrivateKey(this.privateKey, {
       network: network,
     });
     if (electrum_wallet === undefined)
       throw Error("[MercuryEventHandler.ts]: electrum wallet is undefined");
 
+    /*
     console.log(
       "[MercuryEventHandler.ts]: ECPair.fromPrivateKey:",
       ECPair.fromPrivateKey(this.privateKey, { network: network })
-    );
+    );*/
 
     // Create the psbt transaction
     const psbt = new bitcoin.Psbt({ network: network });
@@ -203,9 +263,21 @@ class MercuryEventHandler implements EventHandlerInterface {
       pubkey: electrum_wallet.publicKey,
       network: network,
     });
-    if (p2wpkh.output === undefined)
-      throw Error("[MercuryEventHandler.ts]: p2wpkh output is undefined");
+    let address = p2wpkh.address;
+    if (address === undefined) throw Error("No address found.");
 
+    /*
+    console.log(
+      chalk.red(
+        "[MercuryEventHandler.ts]: SEND TO THIS ADDRESS --------->",
+        address
+      )
+    );*/
+
+    // validation again
+    if (p2wpkh.output === undefined) {
+      throw Error("[MercuryEventHandler.ts]: p2wpkh output is undefined");
+    }
     if (MercuryEventHandler.txid === null) {
       throw Error("[MercuryEventHandler.ts]: No TXID was set");
     }
@@ -216,39 +288,78 @@ class MercuryEventHandler implements EventHandlerInterface {
       throw Error("[MercuryEventHandler.ts]: No sequence was set");
     }
 
+    let funding_input = 101000;
+    let funding_output = parseInt(channel_value_satoshis.toString(), 10);
+
+    /*
+    console.log(
+      chalk.red("[MercuryEventHandler.ts]: funding_input ->", funding_input)
+    );
+    console.log(
+      chalk.red("[MercuryEventHandler.ts]: funding_output ->", funding_output)
+    );*/
+
     psbt.addInput({
-      // if hash is string, txid, if hash is Buffer, is reversed compared to txid
       hash: MercuryEventHandler.txid,
-      index: MercuryEventHandler.vout,
-      sequence: MercuryEventHandler.sequence,
+      index: 1,
       witnessUtxo: {
-        script: p2wpkh.output,
-        value: parseInt(channel_value_satoshis.toString(), 10),
+        script: bitcoin.address.toOutputScript(address, regtest),
+        value: funding_input,
       },
     });
     psbt.addOutput({
       script: Buffer.from(output_script),
-      value: parseInt(channel_value_satoshis.toString(), 10),
+      value: funding_output,
     });
-    psbt.signAllInputs(electrum_wallet);
-    psbt.finalizeAllInputs();
-    let funding_tx: any = psbt.extractTransaction().toBuffer();
 
+    //psbt.signInput(0, electrum_wallet);
+    //psbt.validateSignaturesOfInput(0, this.validator);
+    //psbt.finalizeInput(0);
+
+    psbt.signAllInputs(electrum_wallet);
+    psbt.validateSignaturesOfAllInputs(this.validator);
+    psbt.finalizeAllInputs();
+
+    let funding: Transaction = psbt.extractTransaction();
+    let funding_tx: Uint8Array = funding.toBuffer();
+
+    /*
+    console.log(
+      "[MercuryEventHandler.ts]: output_script ->",
+      uint8ArrayToHexString(output_script)
+    );
     console.log("[MercuryEventHandler.ts]: privateKey ->", this.privateKey);
     console.log("[MercuryEventHandler.ts]: funding_tx ->", funding_tx);
+    console.log("[MercuryEventHandler.ts]: funding_tx_hex->", funding.toHex());*/
 
     try {
+      console.log(
+        chalk.red("Send the funding transaction to the channel manager!!!")
+      );
       // Send the funding transaction to the channel manager
-      this.channelManager.funding_transaction_generated(
+      let result: any = this.channelManager.funding_transaction_generated(
         temporary_channel_id,
         counterparty_node_id,
         funding_tx
       );
+
+      console.log("RESULT WAS->", result);
     } catch (e) {
       console.log(
         "[MercuryEventHandler.ts]: error occured in funding transaction generated method.."
       );
     }
+  }
+
+  handleChannelReadyEvent(e: Event_ChannelReady) {
+    console.log(`[MercuryEventHandler.ts]: Channel ready ${e}`);
+    console.log(
+      `[MercuryEventHandler.ts]: EVENT: Channel ${uint8ArrayToHexString(
+        e.channel_id
+      )} with peer ${uint8ArrayToHexString(
+        e.counterparty_node_id
+      )} is ready to be used!`
+    );
   }
 
   handleChannelPendingEvent(event: Event_ChannelPending) {
@@ -257,7 +368,7 @@ class MercuryEventHandler implements EventHandlerInterface {
       user_channel_id,
       former_temporary_channel_id,
       counterparty_node_id,
-      funding_txo
+      funding_txo,
     } = event;
     const node_id = uint8ArrayToHexString(counterparty_node_id);
     const pubkey = node_id.split("@")[0];

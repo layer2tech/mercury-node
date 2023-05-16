@@ -19,13 +19,10 @@ import {
   Option_FilterZ,
   ProbabilisticScorer,
   ProbabilisticScoringParameters,
-  Router,
   ChannelMonitor,
   DefaultRouter,
   LockableScore,
-  TwoTuple_TxidBlockHashZ,
   Persister,
-  ChannelManagerReadArgs,
   UtilMethods,
   TwoTuple_BlockHashChannelManagerZ,
   TwoTuple_BlockHashChannelMonitorZ,
@@ -41,63 +38,19 @@ import MercuryFeeEstimator from "../structs/MercuryFeeEstimator.mjs";
 import MercuryLogger from "../structs/MercuryLogger.js";
 // @ts-ignore
 import MercuryEventHandler from "../structs/MercuryEventHandler.js";
-import MercuryFilter from "../structs/MercuryFilter.js";
+// import MercuryFilter from "../structs/MercuryFilter.js"; - removed
 import LightningClientInterface from "../types/LightningClientInterface.js";
 import ElectrumClient from "../bitcoin_clients/ElectrumClient.mjs";
-import LightningClient from "../LightningClient.js";
 import TorClient from "../bitcoin_clients/TorClient.mjs";
 import MercuryPersist from "../structs/MercuryPersist.js";
 import MercuryPersister from "../structs/MercuryPersister.js";
-
-function readChannelsFromDictionary(file: string): ChannelMonitorRead[] {
-  let channels: ChannelMonitorRead[] = [];
-  try {
-    if (!fs.existsSync(file)) {
-      throw Error("File not found");
-    }
-    const dict = JSON.parse(fs.readFileSync(file, "utf-8"));
-
-    if (!Array.isArray(dict)) {
-      throw Error("Invalid dictionary format");
-    }
-
-    for (const obj of dict) {
-      if (!obj.monitor_file_name || !obj.id_file_name) {
-        throw Error("Invalid object in dictionary");
-      }
-
-      if (!fs.existsSync(obj.monitor_file_name)) {
-        throw Error("File not found: " + obj.monitor_file_name);
-      }
-
-      if (!fs.existsSync(obj.id_file_name)) {
-        throw Error("File not found: " + obj.id_file_name);
-      }
-
-      const channelmonitorbytes_read = fs.readFileSync(obj.monitor_file_name);
-      const outpointbytes_read = fs.readFileSync(obj.id_file_name);
-
-      const channelmonitor_object: ChannelMonitorRead = new ChannelMonitorRead(
-        outpointbytes_read,
-        channelmonitorbytes_read
-      );
-      channels.push(channelmonitor_object);
-    }
-  } catch (e) {
-    throw e;
-  }
-  return channels;
-}
-
-class ChannelMonitorRead {
-  outpoint: Uint8Array;
-  bytes: Uint8Array;
-
-  constructor(outpoint: Uint8Array, bytes: Uint8Array) {
-    this.outpoint = outpoint;
-    this.bytes = bytes;
-  }
-}
+import EsploraSyncClient from "../sync/EsploraSyncClient.js";
+import {
+  ChannelMonitorRead,
+  readChannelsFromDictionary,
+} from "../utils/ldk-utils.js";
+import chalk from "chalk";
+import { uint8ArrayToHexString } from "../utils/utils.js";
 
 export async function initializeLDK(electrum: string = "prod") {
   console.log("[initializeLDK.ts/setupLDK]: setupLdk ran");
@@ -109,14 +62,14 @@ export async function initializeLDK(electrum: string = "prod") {
   }
 
   // Initialize our bitcoind client.
-  let bitcoind_client;
+  let bitcoind_client: TorClient | ElectrumClient;
   console.log("[initialiseLDK.ts]: INIT CLIENT: ", electrum);
   if (electrum === "prod") {
     console.log("[initialiseLDK.ts]: Init TorClient");
-    bitcoind_client = new TorClient("");
+    bitcoind_client = new TorClient();
   } else {
     console.log("[initialiseLDK.ts]: Init ElectrumClient");
-    bitcoind_client = new ElectrumClient("");
+    bitcoind_client = new ElectrumClient();
   }
 
   // Check that the bitcoind we've connected to is running the network we expect
@@ -131,17 +84,21 @@ export async function initializeLDK(electrum: string = "prod") {
 
   // Step 3: Initialize the BroadcasterInterface
   const txBroadcaster = BroadcasterInterface.new_impl({
-    // Need to call the sendrawtransaction call for the RPC service, loggin this for now to determined when to implement
-    broadcast_transaction(tx: any) {
-      console.log("[initialiseLDK.ts]: Tx Broadcast: " + tx);
+    async broadcast_transaction(tx: Uint8Array) {
+      console.log(
+        "[initialiseLDK.ts]: Tx Broadcast: " + uint8ArrayToHexString(tx)
+      );
+      await bitcoind_client.setTx(uint8ArrayToHexString(tx));
     },
   });
 
   // Step 3: broadcast interface
   const txBroadcasted = new Promise((resolve, reject) => {
-    txBroadcaster.broadcast_transaction = (tx: any) => {
-      // Need to call the sendrawtransaction call for the RPC service, loggin this for now to determined when to implement
-      console.log("[initialiseLDK.ts]: Tx Broadcast: " + tx);
+    txBroadcaster.broadcast_transaction = async (tx: Uint8Array) => {
+      console.log(
+        "[initialiseLDK.ts]: Tx Broadcast: " + uint8ArrayToHexString(tx)
+      );
+      await bitcoind_client.setTx(uint8ArrayToHexString(tx));
       resolve(tx);
     };
   });
@@ -150,8 +107,10 @@ export async function initializeLDK(electrum: string = "prod") {
   const persist = Persist.new_impl(new MercuryPersist());
   const persister = Persister.new_impl(new MercuryPersister());
 
+  // Our sync client
+  const syncClient = new EsploraSyncClient(bitcoind_client);
   // Step 5: Initialize the ChainMonitor
-  const filter = Filter.new_impl(new MercuryFilter());
+  const filter = Filter.new_impl(syncClient);
 
   const chainMonitor: ChainMonitor = ChainMonitor.constructor_new(
     Option_FilterZ.constructor_some(filter),
@@ -164,7 +123,7 @@ export async function initializeLDK(electrum: string = "prod") {
 
   // Step 6: Initialize the KeysManager
   const keys_seed_path = ldk_data_dir + "keys_seed";
-  var seed = null;
+  var seed: any;
   if (!fs.existsSync(keys_seed_path)) {
     seed = crypto.randomBytes(32);
     fs.writeFileSync(keys_seed_path, seed);
@@ -234,9 +193,9 @@ export async function initializeLDK(electrum: string = "prod") {
   const config = UserConfig.constructor_default();
 
   console.log("[initialiseLDK.ts]: block_height, block_hash, block_header");
-  let block_height: number = await bitcoind_client.getBlockHeight();
+  let block_height: number = await bitcoind_client.getBestBlockHeight();
   let block_hash: string = await bitcoind_client.getBestBlockHash();
-  let block_header = await bitcoind_client.getLatestBlockHeader(block_height);
+  let block_header = await bitcoind_client.getBlockHeader(block_height);
 
   console.log("[initialiseLDK.ts]: chain parameters");
   const params = ChainParameters.constructor_new(
@@ -245,14 +204,12 @@ export async function initializeLDK(electrum: string = "prod") {
   );
 
   const channel_monitor_mut_references: ChannelMonitor[] = [];
-  let channelManager: ChannelManager | undefined;
+  let channelManager: ChannelManager;
   console.log("[initialiseLDK.ts]: ChannelManager create/restore");
   if (fs.existsSync("channel_manager_data.bin")) {
     console.log("[initialiseLDK.ts]: Loading the channel manager from disk...");
     const f = fs.readFileSync(`channel_manager_data.bin`);
-
     console.log("[initialiseLDK.ts]: create channel_monitor_references");
-
     channel_monitor_data.forEach((channel_monitor: ChannelMonitorRead) => {
       let val: any =
         UtilMethods.constructor_C2Tuple_BlockHashChannelMonitorZ_read(
@@ -266,33 +223,27 @@ export async function initializeLDK(electrum: string = "prod") {
         channel_monitor_mut_references.push(channel_monitor);
       }
     });
-
-    try {
-      console.log("[initialiseLDK.ts]: try and read the channel manager");
-      let readManager: any =
-        UtilMethods.constructor_C2Tuple_BlockHashChannelManagerZ_read(
-          f,
-          entropy_source,
-          node_signer,
-          signer_provider,
-          feeEstimator,
-          chainMonitor.as_Watch(),
-          txBroadcaster,
-          router,
-          logger,
-          config,
-          channel_monitor_mut_references
-        );
-
-      if (readManager.is_ok()) {
-        let read_channelManager: TwoTuple_BlockHashChannelManagerZ =
-          readManager.res;
-        channelManager = read_channelManager.get_b();
-      } else {
-        throw Error("Couldn't recreate channel manager from disk");
-      }
-    } catch (e) {
-      console.log("[initialiseLDK.ts]: error:", e);
+    console.log("[initialiseLDK.ts]: try and read the channel manager");
+    let readManager: any =
+      UtilMethods.constructor_C2Tuple_BlockHashChannelManagerZ_read(
+        f,
+        entropy_source,
+        node_signer,
+        signer_provider,
+        feeEstimator,
+        chainMonitor.as_Watch(),
+        txBroadcaster,
+        router,
+        logger,
+        config,
+        channel_monitor_mut_references
+      );
+    if (readManager.is_ok()) {
+      let read_channelManager: TwoTuple_BlockHashChannelManagerZ =
+        readManager.res;
+      channelManager = read_channelManager.get_b();
+    } else {
+      throw Error("Couldn't recreate channel manager from disk");
     }
   } else {
     console.log("[initialiseLDK.ts]: Create fresh channel manager");
@@ -317,36 +268,23 @@ export async function initializeLDK(electrum: string = "prod") {
 
   const channelHandshakeConfig = ChannelHandshakeConfig.constructor_default();
 
-  // Step 12: Sync ChannelMonitors and ChannelManager to chain tip - TODO
-
-  /*
-  // Retrieve transaction IDs to check the chain for un-confirmation.
-  let relevent_txids_1: TwoTuple_TxidBlockHashZ[] = channelManager.as_Confirm().get_relevant_txids();
-  let relevent_txids_2: TwoTuple_TxidBlockHashZ[] = chainMonitor.as_Confirm().get_relevant_txids();
-
-  // merge into one array
-  let relevant_txids: TwoTuple_TxidBlockHashZ[] = [];
-  if (relevent_txids_1 && Symbol.iterator in Object(relevent_txids_1)) {
-    relevant_txids.push(...relevent_txids_1);
-  }
-  if (relevent_txids_2 && Symbol.iterator in Object(relevent_txids_2)) {
-    relevant_txids.push(...relevent_txids_2);
-  }
-
-  let unconfirmed_txids: TwoTuple_TxidBlockHashZ[] = [];
-
-  // TODO: <insert code to find out from your chain source
-  //  if any of relevant_txids have been reorged out
-  //  of the chain>
-
-  unconfirmed_txids.forEach((txid) => {
-    channelManager.as_Confirm().transaction_unconfirmed(txid.get_a());
-    chainMonitor.as_Confirm().transaction_unconfirmed(txid.get_a());
-  });
-  channelManager.as_Confirm().best_block_updated(block_header, block_height);
-  chainMonitor.as_Confirm().best_block_updated(block_header, block_height);*/
+  // Step 12: Sync ChainMonitor and ChannelManager to chain tip
+  console.log(
+    chalk.blueBright(
+      "[initializeLDK.ts]: Step 12: Sync ChainMonitor and ChannelManager to chain tip"
+    )
+  );
+  await syncClient.sync([
+    channelManager.as_Confirm(),
+    chainMonitor.as_Confirm(),
+  ]);
 
   // Step 13: Give ChannelMonitors to ChainMonitor
+  console.log(
+    chalk.blueBright(
+      "[initializeLDK.ts]: Step 13: Give ChannelMonitors to ChainMonitor"
+    )
+  );
   if (channel_monitor_mut_references.length > 0) {
     let outpoints_mut: OutPoint[] = [];
 
@@ -378,8 +316,16 @@ export async function initializeLDK(electrum: string = "prod") {
   }
 
   // Step 14: Optional: Initialize the P2PGossipSync
+  console.log(
+    chalk.blueBright(
+      "[initializeLDK.ts]: Step 14: Optional: Initialize the P2PGossipSync - TODO"
+    )
+  );
 
   // Step 15: Initialize the PeerManager
+  console.log(
+    chalk.blueBright("[initializeLDK.ts]: Step 15: Initialize the PeerManager")
+  );
   const routingMessageHandler =
     IgnoringMessageHandler.constructor_new().as_RoutingMessageHandler();
   let channelMessageHandler;
@@ -488,6 +434,7 @@ export async function initializeLDK(electrum: string = "prod") {
       blockHeight: undefined,
       latestBlockHeader: undefined,
       netHandler: undefined,
+      syncClient: syncClient,
     };
     return LDKInit;
   }

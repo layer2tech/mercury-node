@@ -8,7 +8,10 @@ import bodyParser from "body-parser";
 import serverRoutes from "./routes/serverRoutes";
 import peerRoutes from "./routes/peerRoutes";
 import channelRoutes from "./routes/channelRoutes";
-import { closeConnections, savePeerAndChannelToDatabase } from "./LDK/utils/ldk-utils";
+import {
+  closeConnections,
+  savePeerAndChannelToDatabase,
+} from "./LDK/utils/ldk-utils";
 import { ChannelDetails } from "lightningdevkit";
 
 export async function debug_lightning() {
@@ -25,24 +28,29 @@ export async function debug_lightning() {
   console.log("[debug_lightning.ts]: start LDK");
   await LightningClient.start();
 
-  console.log("[debug_lightning.ts]: getBlockHeight");
-  let blockHeight = await LightningClient.getBlockHeight();
+  console.log("[debug_lightning.ts]: updateBestBlockHeight");
+  let bestBlockHeight = await LightningClient.updateBestBlockHeight();
+  console.log("[debug_lightning.ts]: bestBlockHeight:", bestBlockHeight);
 
-  console.log("[debug_lightning.ts]: getBestBlockHash");
-  let bestBlockHash = await LightningClient.getBestBlockHash();
+  console.log("[debug_lightning.ts]: updateBestBlockHash");
+  let bestBlockHash = await LightningClient.updateBestBlockHash();
+  console.log("[debug_lightning.ts]: bestBlockHash:", bestBlockHash);
 
-  // 035ed8262d974f29af1926d2d055112e4a96d91072d18ecfefec2ec0521877d11d@127.0.0.1:9737
-  // 029fb20b846d911b9aee81e7e64e46de70c52df93489465998f374fdc3e0df9845@127.0.0.1:9738
+  // 03ff520f98be326ec107f4a7bb0109feb8b2b5848f0cede7f5c0e0f01a9209c08b@136.244.108.27:9601
+  // 0227e0e3a9198601964d77a5b2d9a2b21ffff59a85a85031d61c6bb27b2ece2075@136.244.108.27:9600
 
-  // 03534237af8affcf708cfe553b59fafa3a8420a4aaf1b2861d6e52df967976b53b@127.0.0.1:9735
-
-  // 03534237af8affcf708cfe553b59fafa3a8420a4aaf1b2861d6e52df967976b53b@127.0.0.1:9735
+  let reverse_txid =
+    "d427550453aa78b9263e305608abf1f0d8c39a619ece38169066617509b30b90"
+      .match(/[a-fA-F0-9]{2}/g)
+      ?.reverse()
+      .join("");
+  console.log("[debug_lightning.ts:/reverse_byte]", reverse_txid);
 
   // Polar node details
   let pubkeyHex =
-    "03534237af8affcf708cfe553b59fafa3a8420a4aaf1b2861d6e52df967976b53b";
-  let hostname = "127.0.0.1";
-  let port = 9735;
+    "0227e0e3a9198601964d77a5b2d9a2b21ffff59a85a85031d61c6bb27b2ece2075";
+  let hostname = "136.244.108.27";
+  let port = 9600;
 
   // Connect to the peer node
   console.log("[debug_lightning.ts]: Connect to Peer");
@@ -52,10 +60,11 @@ export async function debug_lightning() {
   // bcrt1q0zxgl8d78wpkwmpql8fcr79dds5v80237zg52s
   // txid: 6738dc075642815b67845be57a452e93909fe4c7e52e7397c2713d9b6c57387d
 
-  LightningClient.setEventTXData(
-    "6cf30a3fc3a32774494a9b04d06459f1ffd05382cf9e4e943675bea74c99a64c"
+  LightningClient.setEventTxData(
+    "5557bd457de22fb0950cf6364da8ecb0d15ee9c478f874071e5a85fab0978a5f"
   );
 
+  /*
   const invoiceString = LightningClient.createInvoiceUtil(
     BigInt(100),
     "coffee",
@@ -67,22 +76,31 @@ export async function debug_lightning() {
   const balance = LightningClient.getChannels();
   balance.forEach((channel: ChannelDetails) => {
     console.log("[debug_lightning.ts]: balances:", channel.get_balance_msat());
-  });
+  });*/
 
   // Connect to the channel
   let pubkey = hexToUint8Array(pubkeyHex);
 
-  await savePeerAndChannelToDatabase(1, pubkeyHex, hostname, port, "",
-    "Testnet Wallet 3", true, "cRrhJwXVBPHdbSRsZo31SU24zoFmy4Jsr8H1aMwRTDn3qb67zG1r", 
-    false, "tb1q60myaz6078nfggywsjlv6pphpjj2d9x7nas29c"
-  );
+  /*
+  await savePeerAndChannelToDatabase(
+    1,
+    pubkeyHex,
+    hostname,
+    port,
+    "",
+    "Testnet Wallet 3",
+    true,
+    "cRrhJwXVBPHdbSRsZo31SU24zoFmy4Jsr8H1aMwRTDn3qb67zG1r",
+    false,
+    "tb1q60myaz6078nfggywsjlv6pphpjj2d9x7nas29c"
+  );*/
 
   if (pubkey) {
     // MUST ONLY BE CALLED ONCE - doesn't currently have any checks to prevent it - can be prevented by checking db
     //await LightningClient.createChannel(pubkey, 100000, 0, 1, true);
   }
 
-  //await LightningClient.forceCloseChannel("ef382090de601be8d62439d80def437503bb5a5e5c2ddc7a5aa27c4a7f3d3618");
+  //await LightningClient.forceCloseChannel("ef382090de601be8d62439d80def437503bb5a5e5c2ddc7a5aa27c4a7f3d3618");*/
 }
 
 // Constants
@@ -108,13 +126,13 @@ app.listen(PORT, async () => {
 // Exit handlers
 const onExit = () => {
   // code to be executed on exit, e.g. close connections, cleanup resources
-  console.log("[Server.ts]: Exiting the application");
+  console.log("[debug_lightning.ts]: Exiting the application");
   closeConnections();
 };
 
 const onSigInt = () => {
   // code to be executed on sigint, e.g. close connections, cleanup resources
-  console.log("[Server.ts]: Application interrupted");
+  console.log("[debug_lightning.ts]: Application interrupted");
   closeConnections();
   process.exit();
 };

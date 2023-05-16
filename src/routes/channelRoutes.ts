@@ -8,6 +8,7 @@ import {
   Option_u32Z,
   Option_u32Z_None,
   Option_u32Z_Some,
+  Option_u64Z_Some,
 } from "lightningdevkit";
 
 const router = express.Router();
@@ -59,8 +60,12 @@ router.get("/liveChannels", async function (req, res) {
         ),
         amount_in_satoshis: channel.get_channel_value_satoshis().toString(),
         public: channel.get_is_public(),
-        //confirmations: channel.get_confirmations().some,
+        confirmations: (channel.get_confirmations() as Option_u32Z_Some).some,
+        confirmations_required: (
+          channel.get_confirmations_required() as Option_u32Z_Some
+        ).some,
       });
+      console.log(channel.get_short_channel_id());
     }
     res.json(jsonChannels);
   } else {

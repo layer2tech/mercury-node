@@ -1,13 +1,31 @@
 import axios from "axios";
 import { RawAxiosRequestConfig } from "axios";
+import { BitcoinDaemonClientInterface } from "./BitcoinD.mjs";
 
 const TIMEOUT = 20000;
 export const TOR_ENDPOINT = "http://localhost:3001";
 
-class TorClient {
-  endpoint;
-  constructor(endpoint: string) {
-    this.endpoint = endpoint;
+class TorClient implements BitcoinDaemonClientInterface {
+  getMerkleProofPosition(txid: string) {
+    throw new Error("Method not implemented.");
+  }
+  setTx(txid: string): Promise<any> {
+    throw new Error("Method not implemented.");
+  }
+  getTxOut(txid: string, vout: number): any {
+    throw new Error("Method not implemented.");
+  }
+  getRawTransaction(txid: string): any {
+    throw new Error("Method not implemented.");
+  }
+  getOutputStatus(txid: string, height: number): any {
+    throw new Error("Method not implemented.");
+  }
+  getHeaderByHash(hash: string): any {
+    throw new Error("Method not implemented.");
+  }
+  getBlockStatus(hash: string): any {
+    throw new Error("Method not implemented.");
   }
 
   async getBestBlockHash() {
@@ -25,7 +43,7 @@ class TorClient {
     }
   }
 
-  async getBlockHeight() {
+  async getBestBlockHeight() {
     console.log("[TorClient.mts]: getBlockHeight...");
     let res;
     try {
@@ -42,7 +60,7 @@ class TorClient {
     }
   }
 
-  async getLatestBlockHeader(height: number) {
+  async getBlockHeader(height: number | string) {
     let currentBlockHash;
     try {
       console.log("[TorClient.mts]: Get latest block header...............");
@@ -81,9 +99,12 @@ class TorClient {
       .data;
 
     return {
-      txid: res.txid,
-      vout: res.vin[0].vout,
-      sequence: res.vin[0].sequence,
+      txid: res?.txid ?? "",
+      vout: res?.vin[0]?.vout ?? -1,
+      sequence: res?.vin[0]?.sequence ?? -1,
+      height: res?.status?.block_height ?? -1,
+      confirmed: res?.status?.confirmed ?? false,
+      hash: res?.status?.block_hash ?? -1,
     };
   }
 
