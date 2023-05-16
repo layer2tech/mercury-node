@@ -235,9 +235,8 @@ export default class EsploraSyncClient implements FilterInterface {
     let confirmed_txs: ConfirmedTx[] = [];
 
     for (const txid of sync_state.watched_transactions) {
-      DEBUG.log("******", "get_confirmed_transactions");
       DEBUG.log(
-        "txid get confirmed,txid:@",
+        "const txid of sync_state.watched_transactions, txid: ",
         "get_confirmed_transactions",
         txid
       );
@@ -385,12 +384,24 @@ export default class EsploraSyncClient implements FilterInterface {
     );
     const unconfirmedTxs: string[] | any = [];
     for (const [txid, blockHashOpt] of relevantTxids) {
+      DEBUG.log(
+        "const [txid, blockHashOpt] of relevantTxids",
+        "get_unconfirmed_transactions",
+        txid + " blockHashOpt:" + blockHashOpt
+      );
       if (blockHashOpt !== undefined) {
+        let reverse_blockhash = this.reverse_txid(blockHashOpt);
         const blockStatus = await this.bitcoind_client.getBlockStatus(
-          blockHashOpt
+          reverse_blockhash + ""
         );
         if (!blockStatus.in_best_chain) {
-          unconfirmedTxs.push(txid);
+          DEBUG.log(
+            "!blockStatus.in_best_chain adding unconfirmedTx",
+            "get_unconfirmed_transactions",
+            txid
+          );
+          let reverse_txid = this.reverse_txid(txid + "");
+          unconfirmedTxs.push(reverse_txid);
         }
       }
     }

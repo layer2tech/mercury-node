@@ -39,6 +39,13 @@ export async function debug_lightning() {
   // 03ff520f98be326ec107f4a7bb0109feb8b2b5848f0cede7f5c0e0f01a9209c08b@136.244.108.27:9601
   // 0227e0e3a9198601964d77a5b2d9a2b21ffff59a85a85031d61c6bb27b2ece2075@136.244.108.27:9600
 
+  let reverse_txid =
+    "d427550453aa78b9263e305608abf1f0d8c39a619ece38169066617509b30b90"
+      .match(/[a-fA-F0-9]{2}/g)
+      ?.reverse()
+      .join("");
+  console.log("[debug_lightning.ts:/reverse_byte]", reverse_txid);
+
   // Polar node details
   let pubkeyHex =
     "0227e0e3a9198601964d77a5b2d9a2b21ffff59a85a85031d61c6bb27b2ece2075";
@@ -54,7 +61,7 @@ export async function debug_lightning() {
   // txid: 6738dc075642815b67845be57a452e93909fe4c7e52e7397c2713d9b6c57387d
 
   LightningClient.setEventTxData(
-    "48d787878ccc266b642db4ae5d109e72ed5b122e3a51a5d1cdc261fff544d054"
+    "5557bd457de22fb0950cf6364da8ecb0d15ee9c478f874071e5a85fab0978a5f"
   );
 
   /*

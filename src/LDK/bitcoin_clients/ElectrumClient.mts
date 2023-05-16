@@ -197,19 +197,7 @@ class ElectrumClient implements BitcoinDaemonClientInterface {
   }
 
   static async post(endpoint: string, body: string, timeout_ms = TIMEOUT) {
-    /*
-    
-    const config = {
-      method: "post",
-      url: url,
-      headers: { "Content-Type": "application/json" },
-      timeout: timeout_ms,
-      data: { body },
-    };
-    return await axios(config);*/
-
-    console.log("body is equal to:");
-
+    console.log("[ElectrumClient.ts/post]: body is equal to:", body);
     const url = HOST + ":" + PORT + "/" + endpoint;
     return await axios.post(url, body);
   }
