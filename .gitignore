@@ -7,3 +7,4 @@ package-lock.json
 .ldk
 .scorer
 channels
+private_key.txt
