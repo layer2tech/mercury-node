@@ -265,7 +265,7 @@ export default class LightningClient implements LightningClientInterface {
         InFlightHtlcs.constructor_new()
       );
 
-      let payment_id = new Uint8Array(Math.random() * 1000);
+      let payment_id = new Uint8Array(Array.from({ length: 32 }, () => Math.floor(Math.random() * 256)));
 
       if (route_res instanceof Result_RouteLightningErrorZ_OK) {
         route = route_res.res;
