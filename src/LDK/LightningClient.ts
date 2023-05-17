@@ -209,7 +209,7 @@ export default class LightningClient implements LightningClientInterface {
     );
   }
 
-  private async setEventTxData(txid: any) {
+  async setEventTxData(txid: any) {
     this.txdata = await this.getTxData(txid);
     MercuryEventHandler.setInputTx(this.txdata);
   }

@@ -82,6 +82,7 @@ export async function debug_lightning() {
     // txid: 5557bd457de22fb0950cf6364da8ecb0d15ee9c478f874071e5a85fab0978a5f
 
     // MUST ONLY BE CALLED ONCE - calling it twice opens a new channel
+    /*
     await LightningClient.createChannel(
       pubkey,
       100000,
@@ -90,7 +91,7 @@ export async function debug_lightning() {
       true,
       "5557bd457de22fb0950cf6364da8ecb0d15ee9c478f874071e5a85fab0978a5f",
       hostInfo
-    );
+    );*/
   }
 
   // Close a channel
