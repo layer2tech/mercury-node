@@ -51,6 +51,9 @@ import ElectrumClient from "./bitcoin_clients/ElectrumClient.mjs";
 import TorClient from "./bitcoin_clients/TorClient.mjs";
 import EsploraSyncClient from "./sync/EsploraSyncClient.js";
 
+import { ChalkColor, Logger as UtilLogger } from "../LDK/utils/Logger.js";
+const DEBUG = new UtilLogger(ChalkColor.bgCyan, "LightningClient.ts");
+
 export default class LightningClient implements LightningClientInterface {
   feeEstimator: FeeEstimator;
   bitcoind_client: TorClient | ElectrumClient;
@@ -130,7 +133,7 @@ export default class LightningClient implements LightningClientInterface {
 
       this.latestBlockHeader = hexToBytes(latestBlockHeader);
     } else {
-      throw Error("[LightningClient.ts]: Block Height undefined");
+      throw Error(": Block Height undefined");
     }
     return this.latestBlockHeader;
   }
@@ -176,21 +179,13 @@ export default class LightningClient implements LightningClientInterface {
       );
 
     if (invoice instanceof Result_InvoiceSignOrCreationErrorZ_Err) {
-      console.log(
-        "[LightningClient.ts][createInvoiceUtil]: ",
-        invoice.err.to_str()
-      );
-      throw new Error(
-        "[LightningClient.ts][createInvoiceUtil]:" + invoice.err.to_str()
-      );
+      DEBUG.log("invoice.err.to_str()", "createInvoice", invoice.err.to_str());
+      throw new Error(":" + invoice.err.to_str());
     } else if (invoice instanceof Result_InvoiceSignOrCreationErrorZ_OK) {
       let successful_invoice: any =
         Result_InvoiceSignOrCreationErrorZ_OK.constructor_ok(invoice.res);
       let encoded_invoice: Invoice = successful_invoice.res;
-      console.log(
-        "[LightningClient.ts][createInvoiceUtil]: Encoded_invoice:",
-        encoded_invoice.to_str()
-      );
+      DEBUG.log("Encoded_invoice:", "createInvoice", encoded_invoice.to_str());
 
       return encoded_invoice.to_str();
     }
@@ -207,7 +202,7 @@ export default class LightningClient implements LightningClientInterface {
 
   async getTxData(txid: any) {
     let txData = await this.bitcoind_client.getTxIdData(txid);
-    console.log("[LightningClient.ts]-> getTxData ->", txData);
+    DEBUG.log("getTxData ->", "getTxData", txData);
     return txData;
   }
 
@@ -218,14 +213,14 @@ export default class LightningClient implements LightningClientInterface {
 
     if (parsed_invoice instanceof Result_InvoiceParseOrSemanticErrorZ_OK) {
       const invoice = parsed_invoice.res;
-      console.log("[LightningClient.ts/sendPayment]: " + invoice);
+      DEBUG.log("invoice", "sendPayment", invoice);
 
       let amt_msat: bigint = 0n;
 
       let invoiceSome = invoice.amount_milli_satoshis();
       if (invoiceSome instanceof Option_u64Z_Some) {
         amt_msat = invoiceSome.some;
-        console.log(amt_msat);
+        DEBUG.log("amount_msat", "sendPayment", amt_msat);
       }
 
       if (amt_msat === 0n) {
@@ -250,8 +245,9 @@ export default class LightningClient implements LightningClientInterface {
         amt_msat
       );
 
-      console.log(
-        "[LightningClient.ts/sendPayment]: USABLE CHANNELS",
+      DEBUG.log(
+        "USABLE CHANNELS",
+        "sendPayment",
         this.channelManager.list_usable_channels()
       );
       const route_res = this.router.find_route(
@@ -261,18 +257,20 @@ export default class LightningClient implements LightningClientInterface {
         InFlightHtlcs.constructor_new()
       );
 
-      let payment_id = new Uint8Array(Array.from({ length: 32 }, () => Math.floor(Math.random() * 256)));
+      let payment_id = new Uint8Array(
+        Array.from({ length: 32 }, () => Math.floor(Math.random() * 256))
+      );
 
       if (route_res instanceof Result_RouteLightningErrorZ_OK) {
         route = route_res.res;
-        console.log(route);
+        DEBUG.log("route value", "sendPayment", route);
         const payment_res = this.channelManager.send_payment_with_route(
           route,
           invoice.payment_hash(),
           recipient_onion,
           payment_id
         );
-        console.log(payment_res);
+        DEBUG.log("payment_res", "sendPayment", payment_res);
         return payment_res;
       }
     } else if (
@@ -295,14 +293,19 @@ export default class LightningClient implements LightningClientInterface {
         id: this.currentConnections.length + 1,
       };
       try {
-        let socket = await this.create_socket(peerDetails);
-        return true; // return true if the connection is successful
+        let result = await this.create_socket(peerDetails);
+        if (result) {
+          return true; // return true if the connection is successful
+        } else {
+          throw new Error("Unable to create socket");
+        }
       } catch (e) {
-        console.error("[LightningClient.ts]: error on create_socket", e);
+        console.error(": error on create_socket", e);
         throw e; // re-throw the error to the parent function
       }
+    } else {
+      throw new Error("Was not able to convert pubkeyHex to a uint8array");
     }
-    throw new Error("Was not able to convert pubkeyHex to a uint8array");
   }
 
   // This function runs after createNewChannel->createChannel
@@ -337,7 +340,7 @@ export default class LightningClient implements LightningClientInterface {
     // Set the txid of the channel
     this.setEventTxData(funding_txid);
 
-    console.log("[LightningClient.ts]: pubkey found:", pubkey);
+    DEBUG.log("pubkey found:", "createChannel", pubkey);
 
     await this.updateBestBlockHeight();
     await this.updateLatestBlockHeader(this.blockHeight);
@@ -354,9 +357,7 @@ export default class LightningClient implements LightningClientInterface {
       .set_announced_channel(channelType);
 
     let channelCreateResponse;
-    console.log(
-      "[LightningClient.ts]: Reached here ready to create channel..."
-    );
+    DEBUG.log("Reached here ready to create channel...", "createChannel");
     try {
       const channelExists = await checkIfChannelExists(pubkeyHex);
       if (!channelExists) {
@@ -388,10 +389,11 @@ export default class LightningClient implements LightningClientInterface {
       }
     } catch (e) {
       if (pubkey.length !== 33) {
-        console.log("[LightningClient.ts]: Entered incorrect pubkey - ", e);
+        DEBUG.log("Entered incorrect pubkey - ", "createChannel", e);
       } else {
-        console.log(
-          `[LightningClient.ts]: Lightning node with pubkey ${pubkeyHex} unreachable - `,
+        DEBUG.log(
+          `: Lightning node with pubkey ${pubkeyHex} unreachable - `,
+          "createChannel",
           e
         );
       }
@@ -408,8 +410,9 @@ export default class LightningClient implements LightningClientInterface {
       }
     }
 
-    console.log(
-      "[LightningClient.ts]: Channel Create Response: ",
+    DEBUG.log(
+      "Channel Create Response: ",
+      "createChannel",
       channelCreateResponse
     );
     // Should return Ok response to display to user
@@ -420,19 +423,13 @@ export default class LightningClient implements LightningClientInterface {
   forceCloseChannel(pubkey: string): boolean {
     const channels: ChannelDetails[] = this.getChannels();
 
-    console.log(
-      "[LightningClient.ts/forceCloseChannel]: channels found->",
-      channels
-    );
+    DEBUG.log("channels found->", "forceCloseChannel", channels);
 
     let channelClosed = false;
 
     for (const chn of channels) {
       const hexId = uint8ArrayToHexString(chn.get_channel_id());
-      console.log(
-        "[LightningClient.ts/forceCloseChannel]: channelId found->",
-        hexId
-      );
+      DEBUG.log("channelId found->", "forceCloseChannel", hexId);
 
       if (hexId === pubkey) {
         const result: Result_NoneAPIErrorZ =
@@ -459,17 +456,11 @@ export default class LightningClient implements LightningClientInterface {
   mutualCloseChannel(pubkey: string): boolean {
     const channels: ChannelDetails[] = this.getChannels();
 
-    console.log(
-      "[LightningClient.ts/mutualCloseChannel]: channels found->",
-      channels
-    );
+    DEBUG.log("channels found->", "mutualCloseChannel", channels);
 
     for (const chn of channels) {
       const hexId = uint8ArrayToHexString(chn.get_channel_id());
-      console.log(
-        "[LightningClient.ts/mutualCloseChannel]: channelId found->",
-        hexId
-      );
+      DEBUG.log("channelId found->", "mutualCloseChannel", hexId);
       if (hexId === pubkey) {
         const result: Result_NoneAPIErrorZ = this.channelManager.close_channel(
           chn.get_channel_id(),
@@ -489,29 +480,27 @@ export default class LightningClient implements LightningClientInterface {
     );
   }
 
-  async create_socket(peerDetails: PeerDetails) {
+  async create_socket(peerDetails: PeerDetails): Promise<boolean> {
     // Create Socket for outbound connection: check NodeNet LDK docs for inbound
     const { pubkey, host, port } = peerDetails;
     try {
       await this.netHandler.connect_peer(host, port, pubkey);
     } catch (e) {
-      console.log(
-        "[LightningClient.ts/create_socket]: Error connecting to peer: ",
-        e
-      );
-      throw e; // or handle the error in a different way
+      DEBUG.log("Error connecting to peer: ", "create_socket", e);
+      throw e;
     }
 
-    await new Promise<void>((resolve) => {
+    let result = await new Promise<boolean>((resolve) => {
       // Wait until the peers are connected and have exchanged the initial handshake
       var timer: any;
       timer = setInterval(() => {
         if (this.peerManager.get_peer_node_ids().length == 1) {
-          resolve();
+          resolve(true);
           clearInterval(timer);
         }
       }, 1000);
     });
+    return result;
   }
 
   getOurNodeId() {
@@ -552,12 +541,10 @@ export default class LightningClient implements LightningClientInterface {
 
   // starts the lightning LDK
   async start() {
-    console.log(
-      "[LightningClient.ts/start]: Calling ChannelManager's timer_tick_occurred on startup"
-    );
+    DEBUG.log("Calling ChannelManager's timer_tick_occurred on startup");
     this.channelManager.timer_tick_occurred();
 
-    console.log("[LightningClient.ts/start]: Listening for events");
+    DEBUG.log("Listening for events");
     setInterval(async () => {
       // processes events on ChannelManager and ChainMonitor
       await this.processPendingEvents();

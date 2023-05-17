@@ -49,11 +49,13 @@ import {
   ChannelMonitorRead,
   readChannelsFromDictionary,
 } from "../utils/ldk-utils.js";
-import chalk from "chalk";
 import { uint8ArrayToHexString } from "../utils/utils.js";
 
+import { ChalkColor, Logger as UtilLogger } from "../../LDK/utils/Logger.js";
+const DEBUG = new UtilLogger(ChalkColor.Blue, "initializeLDK.ts");
+
 export async function initializeLDK(electrum: string = "prod") {
-  console.log("[initializeLDK.ts/setupLDK]: setupLdk ran");
+  DEBUG.log("started initializeLDK");
 
   // Initialize the LDK data directory if necessary.
   const ldk_data_dir = "./.ldk/";
@@ -63,12 +65,12 @@ export async function initializeLDK(electrum: string = "prod") {
 
   // Initialize our bitcoind client.
   let bitcoind_client: TorClient | ElectrumClient;
-  console.log("[initialiseLDK.ts]: INIT CLIENT: ", electrum);
+  DEBUG.logD("env for bitcoind_client: ", electrum);
   if (electrum === "prod") {
-    console.log("[initialiseLDK.ts]: Init TorClient");
+    DEBUG.log("Using TorClient for bitcoind_client");
     bitcoind_client = new TorClient();
   } else {
-    console.log("[initialiseLDK.ts]: Init ElectrumClient");
+    DEBUG.log("Using ElectrumClient for bitcoind_client ");
     bitcoind_client = new ElectrumClient();
   }
 
@@ -77,41 +79,39 @@ export async function initializeLDK(electrum: string = "prod") {
 
   // ## Setup
   // Step 1: Initialize the FeeEstimator
+  DEBUG.log("Step 1: Initialize the FeeEstimator");
   const feeEstimator = FeeEstimator.new_impl(new MercuryFeeEstimator());
 
   // Step 2: Initialize the Logger
+  DEBUG.log("Step 2: Initialize the Logger");
   const logger = Logger.new_impl(new MercuryLogger());
 
-  // Step 3: Initialize the BroadcasterInterface
+  // Step 3: broadcast interface
+  DEBUG.log("Step 3: Initialize the BroadcasterInterface and broadcast");
   const txBroadcaster = BroadcasterInterface.new_impl({
     async broadcast_transaction(tx: Uint8Array) {
-      console.log(
-        "[initialiseLDK.ts]: Tx Broadcast: " + uint8ArrayToHexString(tx)
-      );
+      DEBUG.log("Tx Broadcast: " + uint8ArrayToHexString(tx));
       await bitcoind_client.setTx(uint8ArrayToHexString(tx));
     },
   });
-
-  // Step 3: broadcast interface
   const txBroadcasted = new Promise((resolve, reject) => {
     txBroadcaster.broadcast_transaction = async (tx: Uint8Array) => {
-      console.log(
-        "[initialiseLDK.ts]: Tx Broadcast: " + uint8ArrayToHexString(tx)
-      );
+      DEBUG.log("Tx Broadcast: " + uint8ArrayToHexString(tx));
       await bitcoind_client.setTx(uint8ArrayToHexString(tx));
       resolve(tx);
     };
   });
 
   // Step 4: Initialize Persist
+  DEBUG.log("Step 4: Initialize Persist");
   const persist = Persist.new_impl(new MercuryPersist());
   const persister = Persister.new_impl(new MercuryPersister());
 
+  // Step 5: Initialize the ChainMonitor
+  DEBUG.log("Step 5: Initialize the ChainMonitor, filter and sync client");
   // Our sync client
   const syncClient = new EsploraSyncClient(bitcoind_client);
-  // Step 5: Initialize the ChainMonitor
   const filter = Filter.new_impl(syncClient);
-
   const chainMonitor: ChainMonitor = ChainMonitor.constructor_new(
     Option_FilterZ.constructor_some(filter),
     txBroadcaster,
@@ -122,6 +122,7 @@ export async function initializeLDK(electrum: string = "prod") {
   const chainWatch = chainMonitor.as_Watch();
 
   // Step 6: Initialize the KeysManager
+  DEBUG.log("Step 6: Initialize the KeysManager");
   const keys_seed_path = ldk_data_dir + "keys_seed";
   var seed: any;
   if (!fs.existsSync(keys_seed_path)) {
@@ -143,7 +144,8 @@ export async function initializeLDK(electrum: string = "prod") {
   let signer_provider = keysManager.as_SignerProvider();
 
   // Step 7: Read ChannelMonitor state from disk
-  console.log("[initialiseLDK.ts]: reading channel monitor data...");
+  DEBUG.log("Step 7: Read ChannelMonitor state from disk");
+  DEBUG.log("reading channel monitor data...");
   let channel_monitor_data: ChannelMonitorRead[] = [];
   if (fs.existsSync("channels/channel_lookup.json")) {
     try {
@@ -151,13 +153,15 @@ export async function initializeLDK(electrum: string = "prod") {
         "channels/channel_lookup.json"
       );
     } catch (e) {
-      console.log("[initialiseLDK.ts]: error:" + e);
+      console.error("error:" + e);
     }
   }
 
   // Step 8: Poll for the best chain tip, which may be used by the channel manager & spv client
+  DEBUG.log("Step 8: Poll for the best chain tip");
 
   // Step 9: Initialize Network Graph, routing ProbabilisticScorer
+  DEBUG.log("Step 9: Initialize Network Graph, routing ProbabilisticScorer");
   const genesisBlock = BestBlock.constructor_from_network(network);
   const genesisBlockHash = genesisBlock.block_hash();
   const networkGraph = NetworkGraph.constructor_new(network, logger);
@@ -180,6 +184,7 @@ export async function initializeLDK(electrum: string = "prod") {
   });
 
   // Step 10: Create Router
+  DEBUG.log("Step 10: Create Router");
   let default_router = DefaultRouter.constructor_new(
     networkGraph,
     logger,
@@ -190,14 +195,15 @@ export async function initializeLDK(electrum: string = "prod") {
   let router = default_router.as_Router();
 
   // Step 11: Initialize the ChannelManager
+  DEBUG.log("Step 11: Initialize the ChannelManager");
   const config = UserConfig.constructor_default();
 
-  console.log("[initialiseLDK.ts]: block_height, block_hash, block_header");
+  DEBUG.log("Call GET block_height, block_hash, block_header");
   let block_height: number = await bitcoind_client.getBestBlockHeight();
   let block_hash: string = await bitcoind_client.getBestBlockHash();
   let block_header = await bitcoind_client.getBlockHeader(block_height);
 
-  console.log("[initialiseLDK.ts]: chain parameters");
+  DEBUG.log("intiialize chain parameters");
   const params = ChainParameters.constructor_new(
     Network.LDKNetwork_Regtest,
     BestBlock.constructor_new(Buffer.from(block_hash, "hex"), block_height)
@@ -205,11 +211,11 @@ export async function initializeLDK(electrum: string = "prod") {
 
   const channel_monitor_mut_references: ChannelMonitor[] = [];
   let channelManager: ChannelManager;
-  console.log("[initialiseLDK.ts]: ChannelManager create/restore");
+  DEBUG.log("At ChannelManager create/restore");
   if (fs.existsSync("channel_manager_data.bin")) {
-    console.log("[initialiseLDK.ts]: Loading the channel manager from disk...");
+    DEBUG.log("Loading the channel manager from disk...");
     const f = fs.readFileSync(`channel_manager_data.bin`);
-    console.log("[initialiseLDK.ts]: create channel_monitor_references");
+    DEBUG.log("create channel_monitor_references");
     channel_monitor_data.forEach((channel_monitor: ChannelMonitorRead) => {
       let val: any =
         UtilMethods.constructor_C2Tuple_BlockHashChannelMonitorZ_read(
@@ -223,7 +229,7 @@ export async function initializeLDK(electrum: string = "prod") {
         channel_monitor_mut_references.push(channel_monitor);
       }
     });
-    console.log("[initialiseLDK.ts]: try and read the channel manager");
+    DEBUG.log("try and read the channel manager");
     let readManager: any =
       UtilMethods.constructor_C2Tuple_BlockHashChannelManagerZ_read(
         f,
@@ -246,7 +252,7 @@ export async function initializeLDK(electrum: string = "prod") {
       throw Error("Couldn't recreate channel manager from disk");
     }
   } else {
-    console.log("[initialiseLDK.ts]: Create fresh channel manager");
+    DEBUG.log("Create fresh channel manager");
     // fresh manager
     channelManager = ChannelManager.constructor_new(
       feeEstimator,
@@ -269,22 +275,14 @@ export async function initializeLDK(electrum: string = "prod") {
   const channelHandshakeConfig = ChannelHandshakeConfig.constructor_default();
 
   // Step 12: Sync ChainMonitor and ChannelManager to chain tip
-  console.log(
-    chalk.blueBright(
-      "[initializeLDK.ts]: Step 12: Sync ChainMonitor and ChannelManager to chain tip"
-    )
-  );
+  DEBUG.log("Step 12: Sync ChainMonitor and ChannelManager to chain tip");
   await syncClient.sync([
     channelManager.as_Confirm(),
     chainMonitor.as_Confirm(),
   ]);
 
   // Step 13: Give ChannelMonitors to ChainMonitor
-  console.log(
-    chalk.blueBright(
-      "[initializeLDK.ts]: Step 13: Give ChannelMonitors to ChainMonitor"
-    )
-  );
+  DEBUG.log("Step 13: Give ChannelMonitors to ChainMonitor");
   if (channel_monitor_mut_references.length > 0) {
     let outpoints_mut: OutPoint[] = [];
 
@@ -316,16 +314,10 @@ export async function initializeLDK(electrum: string = "prod") {
   }
 
   // Step 14: Optional: Initialize the P2PGossipSync
-  console.log(
-    chalk.blueBright(
-      "[initializeLDK.ts]: Step 14: Optional: Initialize the P2PGossipSync - TODO"
-    )
-  );
+  DEBUG.log("Step 14: Optional: Initialize the P2PGossipSync - TODO");
 
   // Step 15: Initialize the PeerManager
-  console.log(
-    chalk.blueBright("[initializeLDK.ts]: Step 15: Initialize the PeerManager")
-  );
+  DEBUG.log("Step 15: Initialize the PeerManager");
   const routingMessageHandler =
     IgnoringMessageHandler.constructor_new().as_RoutingMessageHandler();
   let channelMessageHandler;
@@ -355,8 +347,10 @@ export async function initializeLDK(electrum: string = "prod") {
 
   // ## Running LDK
   // Step 16: Initialize networking
+  DEBUG.log("Step 16: Initialize networking - TODO");
 
   // Step 17: Connect and Disconnect Blocks
+  DEBUG.log("Step 17: Connect and Disconnect Blocks");
   let channel_manager_listener = channelManager;
   let chain_monitor_listener = chainMonitor;
   let bitcoind_block_source = bitcoind_client;
@@ -378,7 +372,7 @@ export async function initializeLDK(electrum: string = "prod") {
   // check on interval
 
   // Step 18: Handle LDK Events
-  console.log("[initialiseLDK.ts]: Create EventHandler");
+  DEBUG.log("Step 18: Handle LDK Events");
   let eventHandler;
 
   if (channelManager) {
@@ -387,11 +381,13 @@ export async function initializeLDK(electrum: string = "prod") {
   }
 
   // Step 19: Persist ChannelManager and NetworkGraph
+  DEBUG.log("Step 19: Persist ChannelManager and NetworkGraph");
   persister.persist_manager(channelManager);
   persister.persist_graph(networkGraph);
 
   // ************************************************************************************************
   // Step 20: Background Processing
+  DEBUG.log("Step 20: Background Processing");
 
   // Regularly reconnect to channel peers.
   // peerManager?.timer_tick_occurred() - use this, checks for disconnected peers
