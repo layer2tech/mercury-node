@@ -31,7 +31,6 @@ import {
   Result_InvoiceSignOrCreationErrorZ_OK,
   Result_InvoiceSignOrCreationErrorZ_Err,
   Result_InvoiceSignOrCreationErrorZ,
-  Result_InvoiceParseOrSemanticErrorZ,
   EventHandler,
   RecipientOnionFields,
 } from "lightningdevkit";
@@ -44,7 +43,8 @@ import {
   uint8ArrayToHexString,
 } from "./utils/utils.js";
 import {
-  checkIfChannelExists, savePeerAndChannelToDatabase
+  checkIfChannelExists,
+  savePeerAndChannelToDatabase,
 } from "./utils/ldk-utils.js";
 import MercuryEventHandler from "./structs/MercuryEventHandler.js";
 import ElectrumClient from "./bitcoin_clients/ElectrumClient.mjs";
@@ -135,6 +135,9 @@ export default class LightningClient implements LightningClientInterface {
     return this.latestBlockHeader;
   }
 
+  /*
+
+  */
   async createInvoiceUtil(
     amount_sats: bigint,
     description: string,
@@ -316,15 +319,26 @@ export default class LightningClient implements LightningClientInterface {
     push_msat: number,
     channelId: number,
     channelType: boolean,
-    host: string,
-    port: number,
-    channel_name: string,
-    wallet_name: string,
-    privkey: string, // Private key from txid address
-    paid: boolean,
-    payment_address: string // index of input
+
+    hostProperties: {
+      host: string;
+      port: number;
+      channel_name: string;
+      wallet_name: string;
+      privkey: string;
+      paid: boolean;
+      payment_address: string;
+    }
   ) {
-    // To stop this from calling twice - check the database if a channel has already been created.
+    const {
+      host,
+      port,
+      channel_name,
+      wallet_name,
+      privkey,
+      paid,
+      payment_address,
+    } = hostProperties;
 
     console.log("[LightningClient.ts]: pubkey found:", pubkey);
 
@@ -349,7 +363,18 @@ export default class LightningClient implements LightningClientInterface {
     try {
       const channelExists = await checkIfChannelExists(pubkeyHex);
       if (!channelExists) {
-        const result = await savePeerAndChannelToDatabase(amount, pubkeyHex, host, port, channel_name, wallet_name, channelType, privkey, paid, payment_address);
+        const result = await savePeerAndChannelToDatabase(
+          amount,
+          pubkeyHex,
+          host,
+          port,
+          channel_name,
+          wallet_name,
+          channelType,
+          privkey,
+          paid,
+          payment_address
+        );
         if (result && result.status === 201) {
           channelCreateResponse = this.channelManager.create_channel(
             pubkey,
@@ -380,8 +405,10 @@ export default class LightningClient implements LightningClientInterface {
         this.channelManager
           .as_Listen()
           .block_connected(this.latestBlockHeader, this.blockHeight);
+        this.chainMonitor
+          .as_Listen()
+          .block_connected(this.latestBlockHeader, this.blockHeight);
       }
-      // this.chain_monitor.block_connected(this.latest_block_header, this.txdata, this.block_height);
     }
 
     console.log(
