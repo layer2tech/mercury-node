@@ -86,6 +86,7 @@ router.post("/createChannel", async (req, res) => {
     privkey,
     paid,
     payment_address,
+    funding_txid,
   } = req.body;
   if (
     pubkey === undefined ||
@@ -99,7 +100,8 @@ router.post("/createChannel", async (req, res) => {
     wallet_name === undefined ||
     privkey === undefined ||
     paid === undefined ||
-    payment_address === undefined
+    payment_address === undefined ||
+    funding_txid === undefined
   ) {
     res.status(500).send("Missing required parameters");
   } else {
@@ -112,6 +114,7 @@ router.post("/createChannel", async (req, res) => {
           push_msat,
           channelId,
           channelType,
+          funding_txid,
           {
             host,
             port,

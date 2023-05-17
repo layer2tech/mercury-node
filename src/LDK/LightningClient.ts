@@ -138,7 +138,7 @@ export default class LightningClient implements LightningClientInterface {
   /*
 
   */
-  async createInvoiceUtil(
+  async createInvoice(
     amount_sats: bigint,
     description: string,
     expiry_time_secs: number
@@ -209,7 +209,7 @@ export default class LightningClient implements LightningClientInterface {
     );
   }
 
-  async setEventTxData(txid: any) {
+  private async setEventTxData(txid: any) {
     this.txdata = await this.getTxData(txid);
     MercuryEventHandler.setInputTx(this.txdata);
   }
@@ -221,6 +221,8 @@ export default class LightningClient implements LightningClientInterface {
   }
 
   async sendPayment(invoiceStr: string) {
+    if (invoiceStr === "") return;
+
     const parsed_invoice = Invoice.constructor_from_str(invoiceStr);
 
     if (parsed_invoice instanceof Result_InvoiceParseOrSemanticErrorZ_OK) {
@@ -319,6 +321,7 @@ export default class LightningClient implements LightningClientInterface {
     push_msat: number,
     channelId: number,
     channelType: boolean,
+    funding_txid: string,
 
     hostProperties: {
       host: string;
@@ -339,6 +342,9 @@ export default class LightningClient implements LightningClientInterface {
       paid,
       payment_address,
     } = hostProperties;
+
+    // Set the txid of the channel
+    this.setEventTxData(funding_txid);
 
     console.log("[LightningClient.ts]: pubkey found:", pubkey);
 
