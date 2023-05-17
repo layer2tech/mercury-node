@@ -15,6 +15,8 @@ import {
 import { ChannelDetails } from "lightningdevkit";
 import { ChalkColor, Logger } from "./LDK/utils/Logger.js";
 const DEBUG = new Logger(ChalkColor.Cyan, "debug_lightning.ts");
+import dotenv from "dotenv";
+dotenv.config();
 
 export async function debug_lightning() {
   DEBUG.log("initialiseWasm");
@@ -38,10 +40,14 @@ export async function debug_lightning() {
   DEBUG.log("bestBlockHash:", "", bestBlockHash);
 
   // Counterparty LND Node details
-  let pubkeyHex =
-    "0227e0e3a9198601964d77a5b2d9a2b21ffff59a85a85031d61c6bb27b2ece2075";
-  let hostname = "136.244.108.27";
-  let port = 9600;
+  const pubkeyHex = process.env["PUBKEY_HEX"];
+  const hostname = process.env["HOSTNAME"];
+  const portRead = process.env["PORT"];
+
+  if (!pubkeyHex || !hostname || !portRead) {
+    throw new Error("Required environment variables are not set.");
+  }
+  const port = parseInt(portRead);
 
   // Connect to the peer node
   DEBUG.log("Connect to Peer");
@@ -49,15 +55,15 @@ export async function debug_lightning() {
 
   // Sample create invoice
   const receiveInvoice = await LightningClient.createInvoice(
-    BigInt(100),
-    "Coffee",
+    BigInt(500),
+    "Sandwich",
     36000
   );
 
   DEBUG.log("Lightning Invoice for receiving: ", "", receiveInvoice);
 
   // Send a payment to an invoice
-  LightningClient.sendPayment("");
+  // LightningClient.sendPayment("lnbcrt10u1pjxfkl7sp55yx83ddzp5rmhgyr9a580udza7cytgz9xy34eff5exwp94am7slspp5xgvxrrep978g8jfdz9aw8zefmeq3xp58m24ckrrt7l4fgckdtq9qdq5w3hjqcn40ysxzgr5v4ssxqyjw5qcqp29qyysgq9djsnkqysjueruzz75pvjnk3sfarumnh09pwvm7f2df069qk4zpy6vqw3wqd3f8ws2jmaykvwzjav8p0aven9ypxsp643q4w5vzksgsp5g75xm");
 
   // Connect to the channel
   let pubkey = hexToUint8Array(pubkeyHex);

@@ -208,6 +208,7 @@ export default class LightningClient implements LightningClientInterface {
 
   async sendPayment(invoiceStr: string) {
     if (invoiceStr === "") return;
+    DEBUG.logD("Sending payment to", invoiceStr);
 
     const parsed_invoice = Invoice.constructor_from_str(invoiceStr);
 
