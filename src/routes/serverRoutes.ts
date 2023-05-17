@@ -15,7 +15,7 @@ router.post("/generateInvoice", async function (req, res) {
     // make sure we have valid object
     validateInvoiceBody(amount_in_sats, invoice_expiry_secs, description);
 
-    let invoice = await LDKClientFactory.getLDKClient().createInvoiceUtil(
+    let invoice = await LDKClientFactory.getLDKClient().createInvoice(
       BigInt(amount_in_sats),
       invoice_expiry_secs,
       description
@@ -44,10 +44,6 @@ router.post("/sendPayment", async function (req, res) {
     console.log(err);
     res.status(500).json({ error: err });
   }
-});
-
-router.post("/receivePayment", async function (req, res) {
-  // receive a payment
 });
 
 export default router;

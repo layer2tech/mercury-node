@@ -4,6 +4,9 @@ export enum ChalkColor {
   Green = "green",
   Yellow = "yellow",
   Magenta = "magenta",
+  Blue = "blue",
+  Red = "red",
+  Cyan = "cyan",
 }
 
 export class Logger {

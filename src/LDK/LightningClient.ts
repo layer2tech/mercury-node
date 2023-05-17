@@ -31,7 +31,6 @@ import {
   Result_InvoiceSignOrCreationErrorZ_OK,
   Result_InvoiceSignOrCreationErrorZ_Err,
   Result_InvoiceSignOrCreationErrorZ,
-  Result_InvoiceParseOrSemanticErrorZ,
   EventHandler,
   RecipientOnionFields,
 } from "lightningdevkit";
@@ -44,7 +43,8 @@ import {
   uint8ArrayToHexString,
 } from "./utils/utils.js";
 import {
-  checkIfChannelExists, savePeerAndChannelToDatabase
+  checkIfChannelExists,
+  savePeerAndChannelToDatabase,
 } from "./utils/ldk-utils.js";
 import MercuryEventHandler from "./structs/MercuryEventHandler.js";
 import ElectrumClient from "./bitcoin_clients/ElectrumClient.mjs";
@@ -135,7 +135,10 @@ export default class LightningClient implements LightningClientInterface {
     return this.latestBlockHeader;
   }
 
-  async createInvoiceUtil(
+  /*
+
+  */
+  async createInvoice(
     amount_sats: bigint,
     description: string,
     expiry_time_secs: number
@@ -172,11 +175,6 @@ export default class LightningClient implements LightningClientInterface {
         min_final_cltv_expiry
       );
 
-    console.log(
-      "[LightningClient.ts][createInvoiceUtil]: Invoice before encoded:",
-      invoice
-    );
-
     if (invoice instanceof Result_InvoiceSignOrCreationErrorZ_Err) {
       console.log(
         "[LightningClient.ts][createInvoiceUtil]: ",
@@ -188,10 +186,6 @@ export default class LightningClient implements LightningClientInterface {
     } else if (invoice instanceof Result_InvoiceSignOrCreationErrorZ_OK) {
       let successful_invoice: any =
         Result_InvoiceSignOrCreationErrorZ_OK.constructor_ok(invoice.res);
-      console.log(
-        "[LightningClient.ts][createInvoiceUtil]: Invoice generated with UTIL METHODS:",
-        successful_invoice.res
-      );
       let encoded_invoice: Invoice = successful_invoice.res;
       console.log(
         "[LightningClient.ts][createInvoiceUtil]: Encoded_invoice:",
@@ -218,6 +212,8 @@ export default class LightningClient implements LightningClientInterface {
   }
 
   async sendPayment(invoiceStr: string) {
+    if (invoiceStr === "") return;
+
     const parsed_invoice = Invoice.constructor_from_str(invoiceStr);
 
     if (parsed_invoice instanceof Result_InvoiceParseOrSemanticErrorZ_OK) {
@@ -316,15 +312,30 @@ export default class LightningClient implements LightningClientInterface {
     push_msat: number,
     channelId: number,
     channelType: boolean,
-    host: string,
-    port: number,
-    channel_name: string,
-    wallet_name: string,
-    privkey: string, // Private key from txid address
-    paid: boolean,
-    payment_address: string // index of input
+    funding_txid: string,
+
+    hostProperties: {
+      host: string;
+      port: number;
+      channel_name: string;
+      wallet_name: string;
+      privkey: string;
+      paid: boolean;
+      payment_address: string;
+    }
   ) {
-    // To stop this from calling twice - check the database if a channel has already been created.
+    const {
+      host,
+      port,
+      channel_name,
+      wallet_name,
+      privkey,
+      paid,
+      payment_address,
+    } = hostProperties;
+
+    // Set the txid of the channel
+    this.setEventTxData(funding_txid);
 
     console.log("[LightningClient.ts]: pubkey found:", pubkey);
 
@@ -349,7 +360,18 @@ export default class LightningClient implements LightningClientInterface {
     try {
       const channelExists = await checkIfChannelExists(pubkeyHex);
       if (!channelExists) {
-        const result = await savePeerAndChannelToDatabase(amount, pubkeyHex, host, port, channel_name, wallet_name, channelType, privkey, paid, payment_address);
+        const result = await savePeerAndChannelToDatabase(
+          amount,
+          pubkeyHex,
+          host,
+          port,
+          channel_name,
+          wallet_name,
+          channelType,
+          privkey,
+          paid,
+          payment_address
+        );
         if (result && result.status === 201) {
           channelCreateResponse = this.channelManager.create_channel(
             pubkey,
@@ -380,8 +402,10 @@ export default class LightningClient implements LightningClientInterface {
         this.channelManager
           .as_Listen()
           .block_connected(this.latestBlockHeader, this.blockHeight);
+        this.chainMonitor
+          .as_Listen()
+          .block_connected(this.latestBlockHeader, this.blockHeight);
       }
-      // this.chain_monitor.block_connected(this.latest_block_header, this.txdata, this.block_height);
     }
 
     console.log(

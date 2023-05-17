@@ -30,8 +30,7 @@ interface Channel {
 
 // Get the Node ID of our wallet
 router.get("/nodeID", async function (req, res) {
-  const nodeId =
-    LDKClientFactory.getLDKClient().getOurNodeId();
+  const nodeId = LDKClientFactory.getLDKClient().getOurNodeId();
   const hexNodeId = uint8ArrayToHexString(nodeId);
   res.json({ nodeID: hexNodeId });
 });
@@ -74,10 +73,11 @@ router.get("/liveChannels", async function (req, res) {
 });
 
 router.post("/createChannel", async (req, res) => {
-  const { pubkey, 
-    amount, 
-    push_msat, 
-    channelId, 
+  const {
+    pubkey,
+    amount,
+    push_msat,
+    channelId,
     channelType,
     host,
     port,
@@ -85,7 +85,8 @@ router.post("/createChannel", async (req, res) => {
     wallet_name,
     privkey,
     paid,
-    payment_address
+    payment_address,
+    funding_txid,
   } = req.body;
   if (
     pubkey === undefined ||
@@ -99,7 +100,8 @@ router.post("/createChannel", async (req, res) => {
     wallet_name === undefined ||
     privkey === undefined ||
     paid === undefined ||
-    payment_address === undefined
+    payment_address === undefined ||
+    funding_txid === undefined
   ) {
     res.status(500).send("Missing required parameters");
   } else {
@@ -112,13 +114,16 @@ router.post("/createChannel", async (req, res) => {
           push_msat,
           channelId,
           channelType,
-          host,
-          port,
-          channel_name,
-          wallet_name,
-          privkey,
-          paid,
-          payment_address
+          funding_txid,
+          {
+            host,
+            port,
+            channel_name,
+            wallet_name,
+            privkey,
+            paid,
+            payment_address,
+          }
         );
         if (connection) {
           res.status(200).send("Created Channel on LDK");
