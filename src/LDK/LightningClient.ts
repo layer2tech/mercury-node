@@ -175,11 +175,6 @@ export default class LightningClient implements LightningClientInterface {
         min_final_cltv_expiry
       );
 
-    console.log(
-      "[LightningClient.ts][createInvoiceUtil]: Invoice before encoded:",
-      invoice
-    );
-
     if (invoice instanceof Result_InvoiceSignOrCreationErrorZ_Err) {
       console.log(
         "[LightningClient.ts][createInvoiceUtil]: ",
@@ -191,10 +186,6 @@ export default class LightningClient implements LightningClientInterface {
     } else if (invoice instanceof Result_InvoiceSignOrCreationErrorZ_OK) {
       let successful_invoice: any =
         Result_InvoiceSignOrCreationErrorZ_OK.constructor_ok(invoice.res);
-      console.log(
-        "[LightningClient.ts][createInvoiceUtil]: Invoice generated with UTIL METHODS:",
-        successful_invoice.res
-      );
       let encoded_invoice: Invoice = successful_invoice.res;
       console.log(
         "[LightningClient.ts][createInvoiceUtil]: Encoded_invoice:",

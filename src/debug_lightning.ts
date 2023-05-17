@@ -14,7 +14,7 @@ import {
 } from "./LDK/utils/ldk-utils";
 import { ChannelDetails } from "lightningdevkit";
 import { ChalkColor, Logger } from "./LDK/utils/Logger.js";
-const DEBUG = new Logger(ChalkColor.Yellow, "debug_lightning.ts");
+const DEBUG = new Logger(ChalkColor.Cyan, "debug_lightning.ts");
 
 export async function debug_lightning() {
   DEBUG.log("running");
@@ -31,11 +31,11 @@ export async function debug_lightning() {
 
   DEBUG.log("call updateBestBlockHeight");
   let bestBlockHeight = await LightningClient.updateBestBlockHeight();
-  DEBUG.log("bestBlockHeight:", "debug_lightning", bestBlockHeight);
+  DEBUG.log("bestBlockHeight:", "", bestBlockHeight);
 
   DEBUG.log("call updateBestBlockHash");
   let bestBlockHash = await LightningClient.updateBestBlockHash();
-  DEBUG.log("bestBlockHash:", "debug_lightning", bestBlockHash);
+  DEBUG.log("bestBlockHash:", "", bestBlockHash);
 
   // node details
   let pubkeyHex =
@@ -48,17 +48,13 @@ export async function debug_lightning() {
   await LightningClient.connectToPeer(pubkeyHex, hostname, port);
 
   // Sample create invoice
-  const receiveInvoice = LightningClient.createInvoice(
+  const receiveInvoice = await LightningClient.createInvoice(
     BigInt(100),
     "Coffee",
     36000
   );
 
-  DEBUG.log(
-    "Lightning Invoice for receiving: ",
-    "debug_lightning",
-    receiveInvoice
-  );
+  DEBUG.log("Lightning Invoice for receiving: ", "", receiveInvoice);
 
   // Send a payment to an invoice
   LightningClient.sendPayment("");
