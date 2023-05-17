@@ -17,10 +17,10 @@ import { ChalkColor, Logger } from "./LDK/utils/Logger.js";
 const DEBUG = new Logger(ChalkColor.Cyan, "debug_lightning.ts");
 
 export async function debug_lightning() {
-  DEBUG.log("running");
+  DEBUG.log("initialiseWasm");
   await initialiseWasm();
 
-  DEBUG.log("import LDK");
+  DEBUG.log("createLDKClient with dev");
   await LDKClientFactory.createLDKClient("dev");
 
   DEBUG.log("getLDKClient");
@@ -37,7 +37,7 @@ export async function debug_lightning() {
   let bestBlockHash = await LightningClient.updateBestBlockHash();
   DEBUG.log("bestBlockHash:", "", bestBlockHash);
 
-  // node details
+  // Counterparty LND Node details
   let pubkeyHex =
     "0227e0e3a9198601964d77a5b2d9a2b21ffff59a85a85031d61c6bb27b2ece2075";
   let hostname = "136.244.108.27";

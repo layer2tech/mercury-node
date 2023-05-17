@@ -7,6 +7,7 @@ export enum ChalkColor {
   Blue = "blue",
   Red = "red",
   Cyan = "cyan",
+  bgCyan = "bgCyan",
 }
 
 export class Logger {
@@ -20,6 +21,11 @@ export class Logger {
   constructor(color: ChalkColor, filename: string) {
     this.color = color;
     this.filename = filename;
+  }
+
+  logD(msg: string = "", data = "") {
+    const chalkColor = this.getColor();
+    console.log(chalk[chalkColor](`[${this.filename}]: ${msg} ${data}`));
   }
 
   log(msg: string = "", func: string = "", data: any = "") {
