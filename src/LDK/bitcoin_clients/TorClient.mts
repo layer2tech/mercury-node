@@ -98,9 +98,11 @@ class TorClient implements BitcoinDaemonClientInterface {
     let res = (await TorClient.get(`${TOR_ENDPOINT}${GET_ROUTE.TX}/${txid}`))
       .data;
 
+    console.log(JSON.stringify(res));
+
     return {
       txid: res?.txid ?? "",
-      vout: res?.vin[0]?.vout ?? -1,
+      vout: res?.vout ?? -1,
       sequence: res?.vin[0]?.sequence ?? -1,
       height: res?.status?.block_height ?? -1,
       confirmed: res?.status?.confirmed ?? false,
