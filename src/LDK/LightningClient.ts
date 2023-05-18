@@ -314,7 +314,6 @@ export default class LightningClient implements LightningClientInterface {
     pubkey: Uint8Array,
     amount: number,
     push_msat: number,
-    channelId: number,
     channelType: boolean,
     host: string,
     port: number,
@@ -333,7 +332,6 @@ export default class LightningClient implements LightningClientInterface {
 
     let channelValSatoshis = BigInt(amount);
     let pushMsat = BigInt(push_msat);
-    let userChannelId = BigInt(channelId);
     let pubkeyHex = uint8ArrayToHexString(pubkey);
 
     // create the override_config
@@ -350,7 +348,8 @@ export default class LightningClient implements LightningClientInterface {
       const channelExists = await checkIfChannelExists(pubkeyHex);
       if (!channelExists) {
         const result = await savePeerAndChannelToDatabase(amount, pubkeyHex, host, port, channel_name, wallet_name, channelType, privkey, paid, payment_address);
-        if (result && result.status === 201) {
+        if (result && result.status === 201 && result.channel_id!== undefined) {
+          const userChannelId = BigInt(result.channel_id);
           channelCreateResponse = this.channelManager.create_channel(
             pubkey,
             channelValSatoshis,
