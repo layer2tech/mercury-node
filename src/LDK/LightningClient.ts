@@ -85,6 +85,7 @@ export default class LightningClient implements LightningClientInterface {
   router: Router;
   syncClient: EsploraSyncClient;
   txdata: any;
+  payment_address: any;
 
   constructor(props: LightningClientInterface) {
     this.feeEstimator = props.feeEstimator;
@@ -195,9 +196,10 @@ export default class LightningClient implements LightningClientInterface {
     );
   }
 
-  async setEventTxData(txid: any) {
+  async setEventTxData(txid: any, payment_address: string) {
     this.txdata = await this.getTxData(txid);
-    MercuryEventHandler.setInputTx(this.txdata);
+    this.payment_address = payment_address;
+    MercuryEventHandler.setInputTx(this.txdata, this.payment_address);
   }
 
   async getTxData(txid: any) {
@@ -317,7 +319,7 @@ export default class LightningClient implements LightningClientInterface {
     channelId: number,
     channelType: boolean,
     funding_txid: string,
-
+    payment_address: string,
     hostProperties: {
       host: string;
       port: number;
@@ -325,21 +327,13 @@ export default class LightningClient implements LightningClientInterface {
       wallet_name: string;
       privkey: string;
       paid: boolean;
-      payment_address: string;
     }
   ) {
-    const {
-      host,
-      port,
-      channel_name,
-      wallet_name,
-      privkey,
-      paid,
-      payment_address,
-    } = hostProperties;
+    const { host, port, channel_name, wallet_name, privkey, paid } =
+      hostProperties;
 
     // Set the txid of the channel
-    this.setEventTxData(funding_txid);
+    this.setEventTxData(funding_txid, payment_address);
 
     DEBUG.log("pubkey found:", "createChannel", pubkey);
 

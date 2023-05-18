@@ -115,6 +115,7 @@ router.post("/createChannel", async (req, res) => {
           channelId,
           channelType,
           funding_txid,
+          payment_address,
           {
             host,
             port,
@@ -122,7 +123,6 @@ router.post("/createChannel", async (req, res) => {
             wallet_name,
             privkey,
             paid,
-            payment_address,
           }
         );
         if (connection) {
