@@ -30,8 +30,7 @@ interface Channel {
 
 // Get the Node ID of our wallet
 router.get("/nodeID", async function (req, res) {
-  const nodeId =
-    LDKClientFactory.getLDKClient().getOurNodeId();
+  const nodeId = LDKClientFactory.getLDKClient().getOurNodeId();
   const hexNodeId = uint8ArrayToHexString(nodeId);
   res.json({ nodeID: hexNodeId });
 });
@@ -74,8 +73,9 @@ router.get("/liveChannels", async function (req, res) {
 });
 
 router.post("/createChannel", async (req, res) => {
-  const { pubkey, 
-    amount, 
+  const {
+    pubkey,
+    amount,
     push_msat,
     channelType,
     host,
@@ -84,7 +84,8 @@ router.post("/createChannel", async (req, res) => {
     wallet_name,
     privkey,
     paid,
-    payment_address
+    payment_address,
+    funding_txid,
   } = req.body;
   if (
     pubkey === undefined ||
@@ -97,7 +98,8 @@ router.post("/createChannel", async (req, res) => {
     wallet_name === undefined ||
     privkey === undefined ||
     paid === undefined ||
-    payment_address === undefined
+    payment_address === undefined ||
+    funding_txid === undefined
   ) {
     res.status(500).send("Missing required parameters");
   } else {
@@ -109,13 +111,16 @@ router.post("/createChannel", async (req, res) => {
           amount,
           push_msat,
           channelType,
-          host,
-          port,
-          channel_name,
-          wallet_name,
-          privkey,
-          paid,
-          payment_address
+          funding_txid,
+          {
+            host,
+            port,
+            channel_name,
+            wallet_name,
+            privkey,
+            paid,
+            payment_address,
+          }
         );
         if (connection) {
           res.status(200).send("Created Channel on LDK");
@@ -133,10 +138,9 @@ router.get("/usableChannels", async function (req, res) {
   const activeChannels: ChannelDetails[] =
     LDKClientFactory.getLDKClient().getUsableChannels();
 
-  let jsonChannels = [];
+  let jsonChannels: any = [];
   activeChannels.forEach((channel: ChannelDetails) => {
     let confirmations: Option_u32Z | Option_u32Z_Some | Option_u32Z_None | any;
-
     jsonChannels.push({
       channel_hexId: uint8ArrayToHexString(channel.get_channel_id()),
       balance_msat: channel.get_balance_msat(),
@@ -149,6 +153,7 @@ router.get("/usableChannels", async function (req, res) {
       confirmations: confirmations?.some,
     });
   });
+  res.json(jsonChannels);
 });
 
 // This gets all the channels from the database of all wallets

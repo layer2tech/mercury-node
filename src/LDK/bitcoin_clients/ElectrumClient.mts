@@ -1,11 +1,13 @@
 import axios from "axios";
 import { BitcoinDaemonClientInterface } from "./BitcoinD.mjs";
+import dotenv from "dotenv";
+dotenv.config();
 
 const TIMEOUT = 20000;
 
 // CHANGE THESE TO THE ESPLORA HOST
-const HOST = "http://136.244.108.27";
-const PORT = "3002";
+const HOST = "http://" + process.env["HOSTNAME"];
+const PORT = process.env["NODE_PORT"];
 const USER = "";
 const PASS = "";
 

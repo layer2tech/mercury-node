@@ -43,7 +43,7 @@ export class MockLightningClient {
     return true;
   }
   setEventTxData() {}
-  createInvoiceUtil() {
+  createInvoice() {
     return MOCK_DATA.INVOICE;
   }
   getUsableChannels() {

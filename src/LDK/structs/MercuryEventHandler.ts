@@ -20,6 +20,11 @@ import {
   Option_PaymentFailureReasonZ_Some,
   Result_PaymentPreimageAPIErrorZ_OK,
   Result_PaymentPreimageAPIErrorZ,
+  PaymentPurpose_InvoicePayment,
+  PaymentPurpose,
+  PaymentPurpose_SpontaneousPayment,
+  Result_PaymentSecretAPIErrorZ,
+  Event_PaymentClaimable,
 } from "lightningdevkit";
 
 import * as bitcoin from "bitcoinjs-lib";
@@ -39,6 +44,26 @@ import { saveChannelIdToDb } from "../utils/ldk-utils.js";
 
 const ECPair = ECPairFactory(ecc);
 
+enum HTLCStatus {
+  Pending,
+  Succeeded,
+  Failed,
+}
+
+class MillisatAmount {
+  value: bigint | undefined;
+  constructor(value: bigint | undefined) {
+    this.value = value;
+  }
+}
+
+interface PaymentInfo {
+  preimage: any;
+  secret: any;
+  status: HTLCStatus;
+  amt_msat: MillisatAmount;
+}
+
 class MercuryEventHandler implements EventHandlerInterface {
   channelManager: ChannelManager;
   privateKey: Buffer;
@@ -47,8 +72,12 @@ class MercuryEventHandler implements EventHandlerInterface {
   static txid: any;
   static sequence: any;
 
+  payments!: Map<Uint8Array, PaymentInfo>;
+
   constructor(_channelManager: ChannelManager) {
     this.channelManager = _channelManager;
+
+    // REMOVE THIS, NEEDS TO BE PASSED IN ON ROUTES.
 
     const privateKeyFilePath = "private_key.txt";
     // Check if the private key file exists
@@ -78,6 +107,8 @@ class MercuryEventHandler implements EventHandlerInterface {
         chalk.red("New private key generated and saved:", this.privateKey)
       );
     }
+
+    this.payments = new Map();
   }
 
   handle_event(e: any) {
@@ -90,6 +121,9 @@ class MercuryEventHandler implements EventHandlerInterface {
         break;
       case e instanceof Event_PaymentClaimed:
         this.handlePaymentClaimed(e);
+        break;
+      case e instanceof Event_PaymentClaimable:
+        this.handlePaymentClaimable(e);
         break;
       case e instanceof Event_PaymentSent:
         this.handlePaymentSentEvent(e);
@@ -120,10 +154,70 @@ class MercuryEventHandler implements EventHandlerInterface {
     }
   }
 
+  handlePaymentClaimable(e: Event_PaymentClaimable) {
+    const { payment_hash, amount_msat, purpose } = e;
+
+    console.log(
+      `[MercuryEventHandler.ts/handlePaymentClaimable]: received payment from payment hash ${uint8ArrayToHexString(
+        payment_hash
+      )} of ${amount_msat} millisatoshis`
+    );
+
+    let payment_preimage: any;
+    if (purpose instanceof PaymentPurpose_InvoicePayment) {
+      payment_preimage = PaymentPurpose.constructor_invoice_payment(
+        purpose.payment_preimage,
+        purpose.payment_secret
+      );
+    } else if (purpose instanceof PaymentPurpose_SpontaneousPayment) {
+      payment_preimage = PaymentPurpose.constructor_spontaneous_payment(
+        purpose.spontaneous_payment
+      );
+    }
+    this.channelManager.claim_funds(payment_preimage.write());
+  }
+
   handlePaymentClaimed(e: Event_PaymentClaimed) {
-    let preimage: any =
-      e.payment_hash instanceof Result_PaymentPreimageAPIErrorZ_OK;
-    this.channelManager.claim_funds(preimage.res);
+    const { payment_hash, purpose, amount_msat, receiver_node_id, clone_ptr } =
+      e;
+    console.log(
+      `[MercuryEventHandler.ts]: EVENT: claimed payment from payment hash ${uint8ArrayToHexString(
+        payment_hash
+      )} of ${amount_msat} millisatoshis`
+    );
+    const { payment_preimage, payment_secret } = (() => {
+      if (purpose instanceof PaymentPurpose_InvoicePayment) {
+        return {
+          payment_preimage: purpose.payment_preimage,
+          payment_secret: purpose.payment_secret,
+        };
+      } else if (purpose instanceof PaymentPurpose_SpontaneousPayment) {
+        return {
+          payment_preimage: purpose.spontaneous_payment,
+          payment_secret: null,
+        };
+      } else {
+        throw new Error("Invalid payment purpose");
+      }
+    })();
+
+    if (this.payments.has(e.payment_hash)) {
+      const payment = this.payments.get(e.payment_hash);
+      if (payment) {
+        payment.status = HTLCStatus.Succeeded;
+        payment.preimage = payment_preimage;
+        payment.secret = payment_secret;
+      }
+    } else {
+      this.payments.set(e.payment_hash, {
+        preimage: payment_preimage,
+        secret: payment_secret,
+        status: HTLCStatus.Succeeded,
+        amt_msat: new MillisatAmount(amount_msat),
+      });
+    }
+
+    console.log(payment_preimage, payment_secret);
   }
 
   setChannelManager(channelManager: ChannelManager) {
