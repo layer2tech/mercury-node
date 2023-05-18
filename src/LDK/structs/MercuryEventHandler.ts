@@ -73,6 +73,7 @@ class MercuryEventHandler implements EventHandlerInterface {
   static sequence: any;
 
   payments!: Map<Uint8Array, PaymentInfo>;
+  static value: number;
 
   constructor(_channelManager: ChannelManager) {
     this.channelManager = _channelManager;
@@ -240,29 +241,36 @@ class MercuryEventHandler implements EventHandlerInterface {
     }
   }
 
-  static setInputTx(txData: any) {
+  static setInputTx(txData: any, payment_address: string) {
     this.validateTx(txData);
-    MercuryEventHandler.vout = 1;
-    console.log(
-      chalk.red(
-        "[MercuryEventHandler.ts/setInputTx]: this.vout:",
-        MercuryEventHandler.vout
-      )
-    );
+
+    let matchingVoutIndex = -1; // Initialize with -1 if no match is found
+    let amount = 0;
+
+    console.log("vout->", txData.vout);
+    console.log("vout.length->", txData.vout.length);
+
+    for (let i = 0; i < txData.vout.length; i++) {
+      console.log("txData.vout[i]->", txData.vout[i]);
+
+      if (txData.vout[i].scriptpubkey_address === payment_address) {
+        matchingVoutIndex = i;
+        amount = txData.vout[i].value;
+        break; // Exit the loop once a match is found
+      }
+    }
+
+    if (matchingVoutIndex === -1) {
+      throw new Error(
+        `No matching vout found for payment address: ${payment_address}`
+      );
+    }
+
+    // vout is equal to the one with the same payment address we passed in
+    MercuryEventHandler.vout = matchingVoutIndex;
+    MercuryEventHandler.value = amount;
     MercuryEventHandler.txid = txData.txid;
-    console.log(
-      chalk.red(
-        "[MercuryEventHandler.ts/setInputTx]: this.txid:",
-        MercuryEventHandler.txid
-      )
-    );
     MercuryEventHandler.sequence = txData.sequence;
-    console.log(
-      chalk.red(
-        "[MercuryEventHandler.ts/setInputTx]: this.sequence",
-        this.sequence
-      )
-    );
   }
 
   resetInputTx() {
@@ -408,10 +416,10 @@ class MercuryEventHandler implements EventHandlerInterface {
 
     psbt.addInput({
       hash: MercuryEventHandler.txid,
-      index: 1,
+      index: MercuryEventHandler.vout,
       witnessUtxo: {
         script: bitcoin.address.toOutputScript(address, regtest),
-        value: funding_input,
+        value: MercuryEventHandler.value,
       },
     });
     psbt.addOutput({

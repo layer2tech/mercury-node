@@ -76,7 +76,6 @@ export async function debug_lightning() {
       wallet_name: "",
       privkey: "",
       paid: true, // TODO: this should be figured out by ldk not manually inserted
-      payment_address: "bcrt1qa0h3k6mfhjxedelag752k04lkj245e47kaullm",
     };
 
     // Set the TXID for the funding generation event
@@ -84,16 +83,17 @@ export async function debug_lightning() {
     // txid: 5557bd457de22fb0950cf6364da8ecb0d15ee9c478f874071e5a85fab0978a5f
 
     // MUST ONLY BE CALLED ONCE - calling it twice opens a new channel
-    /*
+
     await LightningClient.createChannel(
       pubkey,
       100000,
       0,
       1,
       true,
-      "5557bd457de22fb0950cf6364da8ecb0d15ee9c478f874071e5a85fab0978a5f",
+      "2e16f040848706abd85e266651e1b2699c67fa39c71e6797e9f751722149d808",
+      "bcrt1qa0h3k6mfhjxedelag752k04lkj245e47kaullm",
       hostInfo
-    );*/
+    );
   }
 
   // Close a channel

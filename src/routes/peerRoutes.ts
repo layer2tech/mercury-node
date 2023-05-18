@@ -182,7 +182,7 @@ router.post("/savePeerAndChannelToDb", async (req, res) => {
 });
 
 router.post("/setTxData", async (req, res) => {
-  const { txid } = req.body;
+  const { txid, payment_address } = req.body;
 
   console.log("[peerRoutes.ts]->setTxData" + txid);
 
@@ -194,7 +194,10 @@ router.post("/setTxData", async (req, res) => {
     });
   } else {
     try {
-      await LDKClientFactory.getLDKClient().setEventTxData(txid);
+      await LDKClientFactory.getLDKClient().setEventTxData(
+        txid,
+        payment_address
+      );
       res.status(200).json({
         status: 200,
         message: "Txid was set correctly.",
