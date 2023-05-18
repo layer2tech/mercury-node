@@ -141,10 +141,9 @@ router.get("/usableChannels", async function (req, res) {
   const activeChannels: ChannelDetails[] =
     LDKClientFactory.getLDKClient().getUsableChannels();
 
-  let jsonChannels = [];
+  let jsonChannels: any = [];
   activeChannels.forEach((channel: ChannelDetails) => {
     let confirmations: Option_u32Z | Option_u32Z_Some | Option_u32Z_None | any;
-
     jsonChannels.push({
       channel_hexId: uint8ArrayToHexString(channel.get_channel_id()),
       balance_msat: channel.get_balance_msat(),
@@ -157,6 +156,7 @@ router.get("/usableChannels", async function (req, res) {
       confirmations: confirmations?.some,
     });
   });
+  res.json(jsonChannels);
 });
 
 // This gets all the channels from the database of all wallets
