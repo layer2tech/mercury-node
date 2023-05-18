@@ -243,16 +243,10 @@ class MercuryEventHandler implements EventHandlerInterface {
 
   static setInputTx(txData: any, payment_address: string) {
     this.validateTx(txData);
-
     let matchingVoutIndex = -1; // Initialize with -1 if no match is found
     let amount = 0;
 
-    console.log("vout->", txData.vout);
-    console.log("vout.length->", txData.vout.length);
-
     for (let i = 0; i < txData.vout.length; i++) {
-      console.log("txData.vout[i]->", txData.vout[i]);
-
       if (txData.vout[i].scriptpubkey_address === payment_address) {
         matchingVoutIndex = i;
         amount = txData.vout[i].value;
