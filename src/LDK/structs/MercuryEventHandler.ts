@@ -109,6 +109,19 @@ class MercuryEventHandler implements EventHandlerInterface {
       );
     }
 
+    const network = bitcoin.networks.regtest;
+    let electrum_wallet = ECPair.fromPrivateKey(this.privateKey, {
+      network: network,
+    });
+    const p2wpkh = bitcoin.payments.p2wpkh({
+      pubkey: electrum_wallet.publicKey,
+      network: network,
+    });
+    console.log(
+      chalk.bgRed(
+        "[MercuryEventHandler.ts]: Pay to this address: " + p2wpkh.address
+      )
+    );
     this.payments = new Map();
   }
 
@@ -243,16 +256,10 @@ class MercuryEventHandler implements EventHandlerInterface {
 
   static setInputTx(txData: any, payment_address: string) {
     this.validateTx(txData);
-
     let matchingVoutIndex = -1; // Initialize with -1 if no match is found
     let amount = 0;
 
-    console.log("vout->", txData.vout);
-    console.log("vout.length->", txData.vout.length);
-
     for (let i = 0; i < txData.vout.length; i++) {
-      console.log("txData.vout[i]->", txData.vout[i]);
-
       if (txData.vout[i].scriptpubkey_address === payment_address) {
         matchingVoutIndex = i;
         amount = txData.vout[i].value;
@@ -381,13 +388,12 @@ class MercuryEventHandler implements EventHandlerInterface {
     let address = p2wpkh.address;
     if (address === undefined) throw Error("No address found.");
 
-    /*
     console.log(
       chalk.red(
         "[MercuryEventHandler.ts]: SEND TO THIS ADDRESS --------->",
         address
       )
-    );*/
+    );
 
     // validation again
     if (p2wpkh.output === undefined) {
