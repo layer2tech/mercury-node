@@ -47,10 +47,23 @@ class MercuryPersist implements PersistInterface {
   private getChannelFileName(channelId: OutPoint): string | null {
     const channelIdStr = channelId.to_channel_id().toString();
 
-    // lookup inside channel_lookup.json file
+    try {
+      const channelLookupData = fs.readFileSync(
+        "channels/channel_lookup.json",
+        "utf8"
+      );
+      const channelLookup = JSON.parse(channelLookupData);
 
-    // return monitor_file_name location
-    return "channels/channelMonitor_1.dat";
+      for (const entry of channelLookup) {
+        if (entry.key === channelIdStr) {
+          return entry.monitor_file_name;
+        }
+      }
+    } catch (error) {
+      console.error("Error reading channel_lookup.json:", error);
+    }
+
+    return null; // Return null if no matching entry is found or an error occurs
   }
 
   private getHighestFileCounter(lookup: Array<any>): number {
