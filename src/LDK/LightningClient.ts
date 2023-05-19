@@ -50,6 +50,8 @@ import MercuryEventHandler from "./structs/MercuryEventHandler.js";
 import ElectrumClient from "./bitcoin_clients/ElectrumClient.mjs";
 import TorClient from "./bitcoin_clients/TorClient.mjs";
 import EsploraSyncClient from "./sync/EsploraSyncClient.js";
+// @ts-ignore
+import * as wif from 'wif';
 
 import { ChalkColor, Logger as UtilLogger } from "../LDK/utils/Logger.js";
 const DEBUG = new UtilLogger(ChalkColor.bgCyan, "LightningClient.ts");
@@ -203,7 +205,7 @@ export default class LightningClient implements LightningClientInterface {
   }
 
   async setPrivateKey(privateKey: string) {
-    MercuryEventHandler.privateKey = Buffer.from(privateKey, "base64").slice(0, 32);
+    MercuryEventHandler.privateKey = wif.decode(privateKey).privateKey;
   }
 
   async getTxData(txid: any) {

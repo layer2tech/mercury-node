@@ -35,7 +35,7 @@ router.post("/sendPayment", async function (req, res) {
       invoice_str
     );
     if (payment_res) {
-      res.status(200).json({ payment_res });
+      res.status(200).json({ message: "Payment successful" });
     } else {
       res.status(500).json({ error: "Payment failed" });
     }

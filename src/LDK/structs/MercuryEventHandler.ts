@@ -109,19 +109,19 @@ class MercuryEventHandler implements EventHandlerInterface {
     //   );
     // }
 
-    const network = bitcoin.networks.regtest;
-    let electrum_wallet = ECPair.fromPrivateKey(MercuryEventHandler.privateKey, {
-      network: network,
-    });
-    const p2wpkh = bitcoin.payments.p2wpkh({
-      pubkey: electrum_wallet.publicKey,
-      network: network,
-    });
-    console.log(
-      chalk.bgRed(
-        "[MercuryEventHandler.ts]: Pay to this address: " + p2wpkh.address
-      )
-    );
+    // const network = bitcoin.networks.regtest;
+    // let electrum_wallet = ECPair.fromPrivateKey(MercuryEventHandler.privateKey, {
+    //   network: network,
+    // });
+    // const p2wpkh = bitcoin.payments.p2wpkh({
+    //   pubkey: electrum_wallet.publicKey,
+    //   network: network,
+    // });
+    // console.log(
+    //   chalk.bgRed(
+    //     "[MercuryEventHandler.ts]: Pay to this address: " + p2wpkh.address
+    //   )
+    // );
     this.payments = new Map();
   }
 
