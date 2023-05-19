@@ -202,6 +202,10 @@ export default class LightningClient implements LightningClientInterface {
     MercuryEventHandler.setInputTx(this.txdata, this.payment_address);
   }
 
+  async setPrivateKey(privateKey: string) {
+    MercuryEventHandler.privateKey = Buffer.from(privateKey, "base64").slice(0, 32);
+  }
+
   async getTxData(txid: any) {
     let txData = await this.bitcoind_client.getTxIdData(txid);
     DEBUG.log("getTxData ->", "getTxData", txData);
@@ -333,6 +337,8 @@ export default class LightningClient implements LightningClientInterface {
 
     // Set the txid of the channel
     this.setEventTxData(funding_txid, payment_address);
+
+    this.setPrivateKey(privkey);
 
     DEBUG.log("pubkey found:", "createChannel", pubkey);
 

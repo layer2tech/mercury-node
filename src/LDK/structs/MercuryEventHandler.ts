@@ -66,7 +66,6 @@ interface PaymentInfo {
 
 class MercuryEventHandler implements EventHandlerInterface {
   channelManager: ChannelManager;
-  privateKey: Buffer;
 
   static vout: any;
   static txid: any;
@@ -74,43 +73,44 @@ class MercuryEventHandler implements EventHandlerInterface {
 
   payments!: Map<Uint8Array, PaymentInfo>;
   static value: number;
+  static privateKey: Buffer;
 
   constructor(_channelManager: ChannelManager) {
     this.channelManager = _channelManager;
 
     // REMOVE THIS, NEEDS TO BE PASSED IN ON ROUTES.
 
-    const privateKeyFilePath = "private_key.txt";
-    // Check if the private key file exists
-    if (fs.existsSync(privateKeyFilePath)) {
-      // Private key file exists, read the contents
-      const privateKeyBuffer = fs.readFileSync(privateKeyFilePath);
-      this.privateKey = privateKeyBuffer;
-      console.log(
-        chalk.red(
-          "[MercuryEventHandler.ts/constructor]: Private key:",
-          this.privateKey
-        )
-      );
-      console.log(
-        chalk.red(
-          "[MercuryEventHandler.ts/constructor]: privateKeyBuffer",
-          privateKeyBuffer.toString("hex")
-        )
-      );
-    } else {
-      // Private key file doesn't exist, generate a new private key
-      const privateKeyBuffer = crypto.randomBytes(32);
-      this.privateKey = privateKeyBuffer;
-      // Save the private key to a file
-      fs.writeFileSync(privateKeyFilePath, privateKeyBuffer);
-      console.log(
-        chalk.red("New private key generated and saved:", this.privateKey)
-      );
-    }
+    // const privateKeyFilePath = "private_key.txt";
+    // // Check if the private key file exists
+    // if (fs.existsSync(privateKeyFilePath)) {
+    //   // Private key file exists, read the contents
+    //   const privateKeyBuffer = fs.readFileSync(privateKeyFilePath);
+    //   this.privateKey = privateKeyBuffer;
+    //   console.log(
+    //     chalk.red(
+    //       "[MercuryEventHandler.ts/constructor]: Private key:",
+    //       this.privateKey
+    //     )
+    //   );
+    //   console.log(
+    //     chalk.red(
+    //       "[MercuryEventHandler.ts/constructor]: privateKeyBuffer",
+    //       privateKeyBuffer.toString("hex")
+    //     )
+    //   );
+    // } else {
+    //   // Private key file doesn't exist, generate a new private key
+    //   const privateKeyBuffer = crypto.randomBytes(32);
+    //   this.privateKey = privateKeyBuffer;
+    //   // Save the private key to a file
+    //   fs.writeFileSync(privateKeyFilePath, privateKeyBuffer);
+    //   console.log(
+    //     chalk.red("New private key generated and saved:", this.privateKey)
+    //   );
+    // }
 
     const network = bitcoin.networks.regtest;
-    let electrum_wallet = ECPair.fromPrivateKey(this.privateKey, {
+    let electrum_wallet = ECPair.fromPrivateKey(MercuryEventHandler.privateKey, {
       network: network,
     });
     const p2wpkh = bitcoin.payments.p2wpkh({
@@ -362,10 +362,10 @@ class MercuryEventHandler implements EventHandlerInterface {
 
     const network = bitcoin.networks.regtest;
 
-    if (this.privateKey === undefined)
+    if (MercuryEventHandler.privateKey === undefined)
       throw Error("[MercuryEventHandler.ts]: private key is undefined");
 
-    let electrum_wallet = ECPair.fromPrivateKey(this.privateKey, {
+    let electrum_wallet = ECPair.fromPrivateKey(MercuryEventHandler.privateKey, {
       network: network,
     });
     if (electrum_wallet === undefined)
