@@ -77,7 +77,6 @@ router.post("/createChannel", async (req, res) => {
     pubkey,
     amount,
     push_msat,
-    channelId,
     channelType,
     host,
     port,
@@ -92,7 +91,6 @@ router.post("/createChannel", async (req, res) => {
     pubkey === undefined ||
     amount === undefined ||
     push_msat === undefined ||
-    channelId === undefined ||
     channelType === undefined ||
     host === undefined ||
     port === undefined ||
@@ -112,7 +110,6 @@ router.post("/createChannel", async (req, res) => {
           hexToUint8Array(pubkey),
           amount,
           push_msat,
-          channelId,
           channelType,
           funding_txid,
           payment_address,
