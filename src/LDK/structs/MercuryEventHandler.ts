@@ -25,6 +25,7 @@ import {
   PaymentPurpose_SpontaneousPayment,
   Result_PaymentSecretAPIErrorZ,
   Event_PaymentClaimable,
+  Event_PaymentPathSuccessful,
 } from "lightningdevkit";
 
 import * as bitcoin from "bitcoinjs-lib";
@@ -163,10 +164,15 @@ class MercuryEventHandler implements EventHandlerInterface {
       case e instanceof Event_ChannelReady:
         this.handleChannelReadyEvent(e);
         break;
+      case e instanceof Event_PaymentPathSuccessful:
+        this.handlePaymentPathSuccessful(e);
+        break;
       default:
         console.debug("[MercuryEventHandler.ts]: Event not handled: ", e);
     }
   }
+
+  handlePaymentPathSuccessful(e: any) {}
 
   handlePaymentClaimable(e: Event_PaymentClaimable) {
     const { payment_hash, amount_msat, purpose } = e;

@@ -15,13 +15,14 @@ import {
 } from "../LDK/utils/ldk-utils";
 
 router.get("/liveChainMonitors", async (req, res) => {
+  /* - TODO: Broken, has circular JSON error
   let chainMonitor: ChainMonitor | null =
     await LDKClientFactory.getLDKClient().getChainMonitor();
   if (chainMonitor) {
     res.status(200).json({ chainMonitors: chainMonitor.list_monitors() });
   } else {
     res.status(500).json("Failed to get chain monitor");
-  }
+  }*/
 });
 
 router.get("/livePeers", async (req, res) => {
