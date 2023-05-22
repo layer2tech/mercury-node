@@ -50,6 +50,8 @@ import MercuryEventHandler from "./structs/MercuryEventHandler.js";
 import ElectrumClient from "./bitcoin_clients/ElectrumClient.mjs";
 import TorClient from "./bitcoin_clients/TorClient.mjs";
 import EsploraSyncClient from "./sync/EsploraSyncClient.js";
+// @ts-ignore
+import * as wif from 'wif';
 
 import { ChalkColor, Logger as UtilLogger } from "../LDK/utils/Logger.js";
 const DEBUG = new UtilLogger(ChalkColor.bgCyan, "LightningClient.ts");
@@ -202,6 +204,10 @@ export default class LightningClient implements LightningClientInterface {
     MercuryEventHandler.setInputTx(this.txdata, this.payment_address);
   }
 
+  async setPrivateKey(privateKey: string) {
+    MercuryEventHandler.privateKey = wif.decode(privateKey).privateKey;
+  }
+
   async getTxData(txid: any) {
     let txData = await this.bitcoind_client.getTxIdData(txid);
     DEBUG.log("getTxData ->", "getTxData", txData);
@@ -316,7 +322,6 @@ export default class LightningClient implements LightningClientInterface {
     pubkey: Uint8Array,
     amount: number,
     push_msat: number,
-    channelId: number,
     channelType: boolean,
     funding_txid: string,
     payment_address: string,
@@ -335,6 +340,8 @@ export default class LightningClient implements LightningClientInterface {
     // Set the txid of the channel
     this.setEventTxData(funding_txid, payment_address);
 
+    this.setPrivateKey(privkey);
+
     DEBUG.log("pubkey found:", "createChannel", pubkey);
 
     await this.updateBestBlockHeight();
@@ -342,7 +349,6 @@ export default class LightningClient implements LightningClientInterface {
 
     let channelValSatoshis = BigInt(amount);
     let pushMsat = BigInt(push_msat);
-    let userChannelId = BigInt(channelId);
     let pubkeyHex = uint8ArrayToHexString(pubkey);
 
     // create the override_config
@@ -368,7 +374,8 @@ export default class LightningClient implements LightningClientInterface {
           paid,
           payment_address
         );
-        if (result && result.status === 201) {
+        if (result && result.status === 201 && result.channel_id!== undefined) {
+          const userChannelId = BigInt(result.channel_id);
           channelCreateResponse = this.channelManager.create_channel(
             pubkey,
             channelValSatoshis,
