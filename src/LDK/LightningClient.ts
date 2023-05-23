@@ -204,9 +204,21 @@ export default class LightningClient implements LightningClientInterface {
     MercuryEventHandler.setInputTx(this.txdata, this.payment_address);
   }
 
+  // probably should move to a utils file
+  private isHex(str: string): boolean {
+    const hexPattern = /^[0-9a-fA-F]+$/;
+    return hexPattern.test(str);
+  }
+
   async setPrivateKey(privateKey: string) {
     DEBUG.log("trying to decode private key", "setPrivateKey", privateKey);
-    MercuryEventHandler.privateKey = wif.decode(privateKey).privateKey;
+
+    if (this.isHex(privateKey)) {
+      MercuryEventHandler.privateKey = Buffer.from(privateKey);
+    } else {
+      // TODO add checks to see if this a wif encoded string
+      MercuryEventHandler.privateKey = wif.decode(privateKey).privateKey;
+    }
   }
 
   async getTxData(txid: any) {
