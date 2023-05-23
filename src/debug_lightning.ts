@@ -88,22 +88,20 @@ export async function debug_lightning() {
     );
 
     // Sample create invoice
-    /*
     const receiveInvoice = await LightningClient.createInvoice(
-      BigInt(500),
-      "Sandwich",
+      BigInt(36900),
+      "Lunch Meal",
       36000
     );
     DEBUG.log("Lightning Invoice for receiving: ", "", receiveInvoice);
-    */
 
-    /*
     // Send a payment to an invoice
+    /*
     DEBUG.log(
-      "Sending payment to: lnbcrt500n1pjxkjrqsp5xkjtlr2lg0k2nwa9p3wttzt2hq774vppusarv5vv255lz45r9h0spp5rcutc6ty0zaukrhr598sdktpvxphqp0ujrhf3vg76fk64u69mm8qdqsvys8xctwv3mkjcmgxqyjw5qcqp29qyysgqge089d35s4u3z5rs54mvccvfkv92v3mgkx4nmgd3l8j5qwz6vg4x299h7t6wed0l6q6p6g3p6r3307a9s8cgg9rcvchyuzdcvhtfkmqphhxlz2"
+      "Sending payment to: lnbcrt500u1pjxcl69sp5ujmw5t5v962rczhk8l25fq76x46sx3l65gswp0gq9at78eps8xzqpp5y0pvvjn8jmj4dwkz5y950rd7mnl7tqhd05e769fpya4c3apwc8cqdqdx5cxkgrnv968xxqyjw5qcqp29qyysgqhq62thmesgkf79m2srntqslle04lvxr3tgchfcsgm5jgan67zzfjf7dxwuk7npv5u4ztfz6hs6u7jv8cdcv35mn4tr6rdkmjqe6alwgp3q77z2"
     );
     LightningClient.sendPayment(
-      "lnbcrt500n1pjxkjrqsp5xkjtlr2lg0k2nwa9p3wttzt2hq774vppusarv5vv255lz45r9h0spp5rcutc6ty0zaukrhr598sdktpvxphqp0ujrhf3vg76fk64u69mm8qdqsvys8xctwv3mkjcmgxqyjw5qcqp29qyysgqge089d35s4u3z5rs54mvccvfkv92v3mgkx4nmgd3l8j5qwz6vg4x299h7t6wed0l6q6p6g3p6r3307a9s8cgg9rcvchyuzdcvhtfkmqphhxlz2"
+      "lnbcrt500u1pjxcl69sp5ujmw5t5v962rczhk8l25fq76x46sx3l65gswp0gq9at78eps8xzqpp5y0pvvjn8jmj4dwkz5y950rd7mnl7tqhd05e769fpya4c3apwc8cqdqdx5cxkgrnv968xxqyjw5qcqp29qyysgqhq62thmesgkf79m2srntqslle04lvxr3tgchfcsgm5jgan67zzfjf7dxwuk7npv5u4ztfz6hs6u7jv8cdcv35mn4tr6rdkmjqe6alwgp3q77z2"
     );*/
   }
 

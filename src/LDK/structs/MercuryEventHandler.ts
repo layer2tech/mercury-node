@@ -26,6 +26,7 @@ import {
   Result_PaymentSecretAPIErrorZ,
   Event_PaymentClaimable,
   Event_PaymentPathSuccessful,
+  Event_HTLCHandlingFailed,
 } from "lightningdevkit";
 
 import * as bitcoin from "bitcoinjs-lib";
@@ -144,34 +145,48 @@ class MercuryEventHandler implements EventHandlerInterface {
       case e instanceof Event_PaymentPathSuccessful:
         this.handlePaymentPathSuccessful(e);
         break;
+      case e instanceof Event_HTLCHandlingFailed:
+        this.handleHTLCHandlingFailed(e);
+        break;
       default:
         console.debug("[MercuryEventHandler.ts]: Event not handled: ", e);
     }
+  }
+  handleHTLCHandlingFailed(e: any) {
+    throw new Error("Method not implemented.");
   }
 
   handlePaymentPathSuccessful(e: any) {}
 
   handlePaymentClaimable(e: Event_PaymentClaimable) {
     const { payment_hash, amount_msat, purpose } = e;
-
-    console.log(
-      `[MercuryEventHandler.ts/handlePaymentClaimable]: received payment from payment hash ${uint8ArrayToHexString(
+    DEBUG.log(
+      `received payment from payment hash ${uint8ArrayToHexString(
         payment_hash
-      )} of ${amount_msat} millisatoshis`
+      )} of ${amount_msat} millisatoshis`,
+      "handlePaymentClaimable"
     );
-
-    let payment_preimage: any;
+    let payment_preimage: PaymentPurpose;
     if (purpose instanceof PaymentPurpose_InvoicePayment) {
+      DEBUG.log(
+        "purpose is instance of PaymentPurpose_InvoicePayment",
+        "handlePaymentClaimable"
+      );
       payment_preimage = PaymentPurpose.constructor_invoice_payment(
         purpose.payment_preimage,
         purpose.payment_secret
       );
+      this.channelManager.claim_funds(purpose.payment_preimage);
     } else if (purpose instanceof PaymentPurpose_SpontaneousPayment) {
+      DEBUG.log(
+        "purpose is instance of PaymentPurpose_SpontaneousPayment",
+        "handlePaymentClaimable"
+      );
       payment_preimage = PaymentPurpose.constructor_spontaneous_payment(
         purpose.spontaneous_payment
       );
+      this.channelManager.claim_funds(purpose.spontaneous_payment);
     }
-    this.channelManager.claim_funds(payment_preimage.write());
   }
 
   handlePaymentClaimed(e: Event_PaymentClaimed) {

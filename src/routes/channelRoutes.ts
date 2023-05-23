@@ -57,6 +57,7 @@ router.get("/liveChannels", async function (req, res) {
         funding_txo: uint8ArrayToHexString(
           channel.get_funding_txo().get_txid()
         ),
+        balance_msat: channel.get_balance_msat().toString(),
         amount_in_satoshis: channel.get_channel_value_satoshis().toString(),
         public: channel.get_is_public(),
         confirmations: (channel.get_confirmations() as Option_u32Z_Some).some,
