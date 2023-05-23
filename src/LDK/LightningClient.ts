@@ -51,7 +51,7 @@ import ElectrumClient from "./bitcoin_clients/ElectrumClient.mjs";
 import TorClient from "./bitcoin_clients/TorClient.mjs";
 import EsploraSyncClient from "./sync/EsploraSyncClient.js";
 // @ts-ignore
-import * as wif from 'wif';
+import * as wif from "wif";
 
 import { ChalkColor, Logger as UtilLogger } from "../LDK/utils/Logger.js";
 const DEBUG = new UtilLogger(ChalkColor.bgCyan, "LightningClient.ts");
@@ -204,8 +204,21 @@ export default class LightningClient implements LightningClientInterface {
     MercuryEventHandler.setInputTx(this.txdata, this.payment_address);
   }
 
+  // probably should move to a utils file
+  private isHex(str: string): boolean {
+    const hexPattern = /^[0-9a-fA-F]+$/;
+    return hexPattern.test(str);
+  }
+
   async setPrivateKey(privateKey: string) {
-    MercuryEventHandler.privateKey = wif.decode(privateKey).privateKey;
+    DEBUG.log("trying to decode private key", "setPrivateKey", privateKey);
+
+    if (this.isHex(privateKey)) {
+      MercuryEventHandler.privateKey = Buffer.from(privateKey, "hex");
+    } else {
+      // TODO add checks to see if this a wif encoded string
+      MercuryEventHandler.privateKey = wif.decode(privateKey).privateKey;
+    }
   }
 
   async getTxData(txid: any) {
@@ -319,7 +332,7 @@ export default class LightningClient implements LightningClientInterface {
   // This function runs after createNewChannel->createChannel
   async createChannel(
     pubkey: Uint8Array,
-    amount: number,
+    amount_sat: number,
     push_msat: number,
     channelType: boolean,
     funding_txid: string,
@@ -330,27 +343,25 @@ export default class LightningClient implements LightningClientInterface {
       channel_name: string;
       wallet_name: string;
       privkey: string;
-      paid: boolean;
     }
   ) {
-    const { host, port, channel_name, wallet_name, privkey, paid } =
-      hostProperties;
+    const { host, port, channel_name, wallet_name, privkey } = hostProperties;
 
+    // Set the private key to check payments with
+    this.setPrivateKey(privkey);
     // Set the txid of the channel
     this.setEventTxData(funding_txid, payment_address);
 
-    this.setPrivateKey(privkey);
-
-    DEBUG.log("pubkey found:", "createChannel", pubkey);
-
+    // Update chain values
     await this.updateBestBlockHeight();
     await this.updateLatestBlockHeader(this.blockHeight);
 
-    let channelValSatoshis = BigInt(amount);
+    // Convert values
+    let channelValSatoshis = BigInt(amount_sat);
     let pushMsat = BigInt(push_msat);
     let pubkeyHex = uint8ArrayToHexString(pubkey);
 
-    // create the override_config
+    // Create the override_config
     let override_config: UserConfig = UserConfig.constructor_default();
     override_config
       .get_channel_handshake_config()
@@ -362,7 +373,7 @@ export default class LightningClient implements LightningClientInterface {
       const channelExists = await checkIfChannelExists(pubkeyHex);
       if (!channelExists) {
         const result = await savePeerAndChannelToDatabase(
-          amount,
+          amount_sat,
           pubkeyHex,
           host,
           port,
@@ -370,10 +381,14 @@ export default class LightningClient implements LightningClientInterface {
           wallet_name,
           channelType,
           privkey,
-          paid,
+          false, // TODO: this needs to be updated by checking the txid status to confirmed
           payment_address
         );
-        if (result && result.status === 201 && result.channel_id!== undefined) {
+        if (
+          result &&
+          result.status === 201 &&
+          result.channel_id !== undefined
+        ) {
           const userChannelId = BigInt(result.channel_id);
           channelCreateResponse = this.channelManager.create_channel(
             pubkey,
@@ -381,6 +396,10 @@ export default class LightningClient implements LightningClientInterface {
             pushMsat,
             userChannelId,
             override_config
+          );
+        } else {
+          throw new Error(
+            "Channel couldn't be created error retrieving data from db exists"
           );
         }
       } else {
@@ -399,6 +418,8 @@ export default class LightningClient implements LightningClientInterface {
         );
       }
     }
+
+    // Update blocks for channelManager/chainMonitor
     if (this.blockHeight && this.latestBlockHeader) {
       for (let i = 0; i++; i <= this.blockHeight) {
         await this.updateLatestBlockHeader(i + 1);
@@ -416,6 +437,7 @@ export default class LightningClient implements LightningClientInterface {
       "createChannel",
       channelCreateResponse
     );
+
     // Should return Ok response to display to user
     return true;
   }

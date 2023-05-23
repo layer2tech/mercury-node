@@ -17,6 +17,7 @@ import { ChalkColor, Logger } from "./LDK/utils/Logger.js";
 const DEBUG = new Logger(ChalkColor.Cyan, "debug_lightning.ts");
 import dotenv from "dotenv";
 dotenv.config();
+import fs from "fs";
 
 export async function debug_lightning() {
   DEBUG.log("initialiseWasm");
@@ -53,29 +54,21 @@ export async function debug_lightning() {
   DEBUG.log("Connect to Peer");
   await LightningClient.connectToPeer(pubkeyHex, hostname, port);
 
-  // Sample create invoice
-  const receiveInvoice = await LightningClient.createInvoice(
-    BigInt(500),
-    "Sandwich",
-    36000
-  );
-
-  DEBUG.log("Lightning Invoice for receiving: ", "", receiveInvoice);
-
-  // Send a payment to an invoice
-  // LightningClient.sendPayment("lnbcrt10u1pjxfkl7sp55yx83ddzp5rmhgyr9a580udza7cytgz9xy34eff5exwp94am7slspp5xgvxrrep978g8jfdz9aw8zefmeq3xp58m24ckrrt7l4fgckdtq9qdq5w3hjqcn40ysxzgr5v4ssxqyjw5qcqp29qyysgq9djsnkqysjueruzz75pvjnk3sfarumnh09pwvm7f2df069qk4zpy6vqw3wqd3f8ws2jmaykvwzjav8p0aven9ypxsp643q4w5vzksgsp5g75xm");
-
   // Connect to the channel
   let pubkey = hexToUint8Array(pubkeyHex);
 
   if (pubkey) {
+    let privateKey = loadPrivateKeyFromFile("private_key.txt");
+    if (privateKey === "") {
+      privateKey = crypto.randomBytes(32).toString("hex");
+    }
+
     let hostInfo = {
       host: pubkeyHex,
       port,
-      channel_name: "",
-      wallet_name: "",
-      privkey: "",
-      paid: true, // TODO: this should be figured out by ldk not manually inserted
+      channel_name: "Mercury Channel",
+      wallet_name: "LightningWallet",
+      privkey: privateKey,
     };
 
     // Set the TXID for the funding generation event
@@ -88,17 +81,53 @@ export async function debug_lightning() {
       pubkey,
       100000,
       0,
-      1,
-      true,
-      "2e16f040848706abd85e266651e1b2699c67fa39c71e6797e9f751722149d808",
+      false,
+      "e186fb8e90877e13231f04ec8a09109198d44aafe7f62392c5dcbc7314eb25ae",
       "bcrt1qa0h3k6mfhjxedelag752k04lkj245e47kaullm",
       hostInfo
     );
+
+    // Sample create invoice
+    const receiveInvoice = await LightningClient.createInvoice(
+      BigInt(36900),
+      "Lunch Meal",
+      36000
+    );
+    DEBUG.log("Lightning Invoice for receiving: ", "", receiveInvoice);
+
+    // Send a payment to an invoice
+    /*
+    DEBUG.log(
+      "Sending payment to: lnbcrt500u1pjxcl69sp5ujmw5t5v962rczhk8l25fq76x46sx3l65gswp0gq9at78eps8xzqpp5y0pvvjn8jmj4dwkz5y950rd7mnl7tqhd05e769fpya4c3apwc8cqdqdx5cxkgrnv968xxqyjw5qcqp29qyysgqhq62thmesgkf79m2srntqslle04lvxr3tgchfcsgm5jgan67zzfjf7dxwuk7npv5u4ztfz6hs6u7jv8cdcv35mn4tr6rdkmjqe6alwgp3q77z2"
+    );
+    LightningClient.sendPayment(
+      "lnbcrt500u1pjxcl69sp5ujmw5t5v962rczhk8l25fq76x46sx3l65gswp0gq9at78eps8xzqpp5y0pvvjn8jmj4dwkz5y950rd7mnl7tqhd05e769fpya4c3apwc8cqdqdx5cxkgrnv968xxqyjw5qcqp29qyysgqhq62thmesgkf79m2srntqslle04lvxr3tgchfcsgm5jgan67zzfjf7dxwuk7npv5u4ztfz6hs6u7jv8cdcv35mn4tr6rdkmjqe6alwgp3q77z2"
+    );*/
   }
 
   // Close a channel
   //await LightningClient.forceCloseChannel("ef382090de601be8d62439d80def437503bb5a5e5c2ddc7a5aa27c4a7f3d3618");*/
 }
+
+const loadPrivateKeyFromFile = (privateKeyFilePath: string): string => {
+  let privateKey: string = "";
+
+  // Check if the private key file exists
+  if (fs.existsSync(privateKeyFilePath)) {
+    // Private key file exists, read the contents
+    const privateKeyBuffer = fs
+      .readFileSync(privateKeyFilePath)
+      .toString("hex");
+    privateKey = privateKeyBuffer;
+
+    DEBUG.log("Private key:", "loadPrivateKeyFromFile", privateKey);
+    DEBUG.log("privateKeyBuffer", "loadPrivateKeyFromFile", privateKeyBuffer);
+  } else {
+    console.error("private key file doesn't exist");
+    return "";
+  }
+  return privateKey;
+};
 
 // Constants
 const PORT = 3003;
