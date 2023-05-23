@@ -119,7 +119,6 @@ router.post("/createChannel", async (req, res) => {
             channel_name,
             wallet_name,
             privkey,
-            paid,
           }
         );
         if (connection) {
