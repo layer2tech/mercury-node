@@ -11,7 +11,8 @@ router.get("/closeConnections", async function (req, res) {
 
 router.post("/generateInvoice", async function (req, res) {
   try {
-    const { amount_in_sats, invoice_expiry_secs, description } = req.body;
+    let { amount_in_sats, invoice_expiry_secs, description } = req.body;
+    amount_in_sats = Number(amount_in_sats)
     // make sure we have valid object
     validateInvoiceBody(amount_in_sats, invoice_expiry_secs, description);
 
