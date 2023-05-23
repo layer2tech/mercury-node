@@ -214,7 +214,7 @@ export default class LightningClient implements LightningClientInterface {
     DEBUG.log("trying to decode private key", "setPrivateKey", privateKey);
 
     if (this.isHex(privateKey)) {
-      MercuryEventHandler.privateKey = Buffer.from(privateKey);
+      MercuryEventHandler.privateKey = Buffer.from(privateKey, "hex");
     } else {
       // TODO add checks to see if this a wif encoded string
       MercuryEventHandler.privateKey = wif.decode(privateKey).privateKey;
