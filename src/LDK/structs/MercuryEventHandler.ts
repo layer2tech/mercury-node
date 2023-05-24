@@ -152,9 +152,7 @@ class MercuryEventHandler implements EventHandlerInterface {
         console.debug("[MercuryEventHandler.ts]: Event not handled: ", e);
     }
   }
-  handleHTLCHandlingFailed(e: any) {
-    throw new Error("Method not implemented.");
-  }
+  handleHTLCHandlingFailed(e: any) {}
 
   handlePaymentPathSuccessful(e: any) {}
 

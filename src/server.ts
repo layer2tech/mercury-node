@@ -29,14 +29,19 @@ app.listen(PORT, async () => {
   console.log(
     `[Server.ts]: lightning-adapter listening at http://localhost:${PORT}`
   );
-  await initialiseWasm();
-  console.log("[Server.ts]: Finished initialiseWasm");
-  await LDKClientFactory.createLDKClient("dev"); // prod or dev
-  console.log("[Server.ts]: Finished create LDK");
-  const LightningClient = LDKClientFactory.getLDKClient();
-  console.log("[Server.ts]: Starting LDK Client");
-  await LightningClient.start();
-  console.log("[Server.ts]: LDK Client started");
+
+  try {
+    await initialiseWasm();
+    console.log("[Server.ts]: Finished initialiseWasm");
+    await LDKClientFactory.createLDKClient("dev"); // prod or dev
+    console.log("[Server.ts]: Finished create LDK");
+    const LightningClient = LDKClientFactory.getLDKClient();
+    console.log("[Server.ts]: Starting LDK Client");
+    await LightningClient.start();
+    console.log("[Server.ts]: LDK Client started");
+  } catch (e) {
+    console.error(`Error occured setting up LDK \n ${e} \n`);
+  }
 });
 
 // Exit handlers
