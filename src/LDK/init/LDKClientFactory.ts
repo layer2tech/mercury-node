@@ -30,12 +30,18 @@ class LDKClientFactory {
         this.client = new MockLightningClient();
         return;
       }
-      const initLDK = await initializeLDK(bitcoind_client);
-      if (initLDK) {
-        this.client = new LightningClient(initLDK);
-      } else {
+      try {
+        const initLDK = await initializeLDK(bitcoind_client);
+        if (initLDK) {
+          this.client = new LightningClient(initLDK);
+        } else {
+          throw new Error(
+            "[LDKClientFactory/createLDKClient]: Couldn't initialize LDK \n"
+          );
+        }
+      } catch (e) {
         throw new Error(
-          "[LDKClientFactory/createLDKClient]: Couldn't initialize LDK"
+          `[LDKClientFactory/createLDKClient]: Couldn't initialize LDK  \n ${e} \n`
         );
       }
     }
