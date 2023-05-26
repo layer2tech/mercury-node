@@ -41,3 +41,19 @@ export const validateSigFunction = (
   // Return the result of the verification
   return verified;
 };
+
+export const stringifyEvent = (event: any) => {
+  let eventString = `${event.constructor.name} {\n`;
+
+  for (const key in event) {
+    if (event[key] instanceof Uint8Array) {
+      const hexString = uint8ArrayToHexString(event[key]);
+      eventString += `  ${key}: ${hexString},\n`;
+    } else {
+      eventString += `  ${key}: ${event[key]},\n`;
+    }
+  }
+
+  eventString += '}';
+  return eventString;
+}

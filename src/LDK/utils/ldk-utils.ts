@@ -1,6 +1,8 @@
 import LDKClientFactory from "../init/LDKClientFactory";
 import db from "../../db/db";
 import fs from "fs";
+import e from "cors";
+import { uint8ArrayToHexString, stringifyEvent } from "./utils";
 
 export const closeConnections = () => {
   console.log("[ldk-utils.ts]: Closing all the connections");
@@ -365,6 +367,45 @@ export const saveChannelIdToDb = (
     }
   );
 };
+
+export const saveEventDataToDb = (
+  event: any
+) => {
+  console.log("[ldk-utils.ts] - saveEventDataToDB");
+  const event_type = Object.getPrototypeOf(event).constructor.name;
+  const event_data = stringifyEvent(event);
+  const channel_id_hex = uint8ArrayToHexString(event.channel_id ? event.channel_id : event.temporary_channel_id);
+
+  const insertEventData = `INSERT INTO events (event_type, event_data, channel_id_hex) VALUES (?, ?, ?)`;
+  db.run(
+    insertEventData, 
+    [event_type, event_data, channel_id_hex], 
+    function(err: any) {
+      if (err) {
+        console.log("Error in saving event to db: " + err);
+      }
+      console.log('Data inserted successfully.');
+    }
+  );
+}
+
+export const replaceTempChannelIdInDb = (
+  channel_id: string,
+  temp_channel_id: string
+) => {
+  console.log("[ldk-utils.ts] - replaceTempChannelIdInDb");
+  const updateData =
+      "UPDATE events SET channel_id_hex = ? WHERE channel_id_hex = ?";
+  db.run(
+    updateData,
+    [channel_id, temp_channel_id],
+    function (err: any, result: any) {
+      if (err) {
+        console.log("Error in replacing channelId to db: " + err);
+      }
+    }
+  );
+}
 
 export const checkIfChannelExists = (pubkey: string): Promise<boolean> => {
   return new Promise((resolve, reject) => {
