@@ -178,6 +178,74 @@ const db = new sqlite3.Database("lightning.db", (err) => {
     }
   });
 
+  // Create the 'events' table if it doesn't exist
+  const createEventsTable = `CREATE TABLE IF NOT EXISTS events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_type TEXT NOT NULL,
+    event_data TEXT NOT NULL,
+    channel_id_hex INTEGER NOT NULL
+  )`;
+  db.run(createEventsTable, (err) => {
+    if (err) {
+      console.error(err.message);
+    }
+    console.log("[database.ts]: Table 'events' created or already exist");
+  });
+
+  if (isDev) {
+    // Insert some sample data into the 'events' table if there's no data
+    db.get("SELECT count(*) as count FROM events", (err, row: any) => {
+      if (err) {
+        console.error(err.message);
+      }
+      if (row.count === 0) {
+        console.log(
+          "[database.ts]: Inserting sample data for table events ..."
+        );
+        const sampleData = [
+          {
+            event_type: "Event_FundingGenerationReady",
+            event_data: `Event_FundingGenerationReady {
+              ptrs_to: [object Object],
+              ptr: 4304647200,
+              temporary_channel_id: 614d54affc469907359be53607ed79a51f13e5b6d745a40ec015639d1390e1a7,
+              counterparty_node_id: 0227e0e3a9198601964d77a5b2d9a2b21ffff59a85a85031d61c6bb27b2ece2075,
+              channel_value_satoshis: 100000,
+              output_script: 0020c3e6cce8fdbb4cfedde222d6669255d44566e37a553d05c3b1b06a365b0a634a,
+              user_channel_id: 1329227995784915872903807060280344576,
+            }`,
+            channel_id_hex: "614d54affc469907359be53607ed79a51f13e5b6d745a40ec015639d1390e1a7"
+          },
+          {
+            event_type: "Event_ChannelPending",
+            event_data: `Event_ChannelPending {
+              ptrs_to: [object Object],
+              ptr: 4304686320,
+              channel_id: e8a6f2a4f7cc9a8952622542d660934e02dcfcfc088e59710c1a1a43bed3053d,
+              user_channel_id: 1329227995784915872903807060280344576,
+              former_temporary_channel_id: 614d54affc469907359be53607ed79a51f13e5b6d745a40ec015639d1390e1a7,
+              counterparty_node_id: 0227e0e3a9198601964d77a5b2d9a2b21ffff59a85a85031d61c6bb27b2ece2075,
+              funding_txo: [object Object],
+            }`,
+            channel_id_hex: "e8a6f2a4f7cc9a8952622542d660934e02dcfcfc088e59710c1a1a43bed3053d"
+          }
+        ];
+        const insertData = `INSERT INTO events (event_type, event_data, channel_id_hex) VALUES (?,?,?)`;
+        sampleData.forEach((data) => {
+          db.run(insertData, [
+            data.event_type,
+            data.event_data,
+            data.channel_id_hex,
+          ]);
+        });
+      } else {
+        console.log(
+          "[database.ts]: Table 'events' already contains data, skipping the sample data insertion."
+        );
+      }
+    });
+  }
+
   console.log("[database.ts]: Insert complete");
 });
 

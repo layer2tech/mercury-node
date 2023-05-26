@@ -42,7 +42,7 @@ import chalk from "chalk";
 import { Transaction } from "bitcoinjs-lib";
 import fs from "fs";
 import { regtest } from "bitcoinjs-lib/src/networks.js";
-import { saveChannelIdToDb } from "../utils/ldk-utils.js";
+import { saveChannelIdToDb, saveEventDataToDb, replaceTempChannelIdInDb } from "../utils/ldk-utils.js";
 import { ChalkColor, Logger as UtilLogger } from "../../LDK/utils/Logger.js";
 const DEBUG = new UtilLogger(ChalkColor.Red, "MercuryEventHandler.ts");
 
@@ -105,6 +105,7 @@ class MercuryEventHandler implements EventHandlerInterface {
   }
 
   handle_event(e: any) {
+    saveEventDataToDb(e);
     switch (true) {
       case e instanceof Event_FundingGenerationReady:
         this.handleFundingGenerationReadyEvent_Auto(e);
@@ -466,8 +467,10 @@ class MercuryEventHandler implements EventHandlerInterface {
     const pubkey = node_id.split("@")[0];
 
     const channel_id_str = uint8ArrayToHexString(channel_id);
+    const temp_channel_id_str = uint8ArrayToHexString(former_temporary_channel_id);
     if (pubkey !== undefined && channel_id_str !== undefined) {
       saveChannelIdToDb(channel_id_str, pubkey);
+      replaceTempChannelIdInDb(channel_id_str, temp_channel_id_str);
     }
   }
 
