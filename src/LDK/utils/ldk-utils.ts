@@ -1,7 +1,6 @@
 import LDKClientFactory from "../init/LDKClientFactory";
 import db from "../../db/db";
 import fs from "fs";
-import e from "cors";
 import { uint8ArrayToHexString, stringifyEvent } from "./utils";
 
 export const closeConnections = () => {
