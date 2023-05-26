@@ -166,6 +166,15 @@ router.get("/allChannels", async function (req, res) {
   });
 });
 
+router.get("/allEvents", async function (req, res) {
+  db.all("SELECT * FROM events", (err: any, rows: any) => {
+    if (err) {
+      throw err;
+    }
+    res.json(rows);
+  });
+});
+
 // load channels by wallet name e.g. -> localhost:3003/channel/loadChannels/vLDK
 router.get("/loadChannels/:wallet_name", (req, res) => {
   const wallet_id = req.params.wallet_name;

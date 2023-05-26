@@ -71,6 +71,13 @@ describe("Channel Routes", () => {
     expect(response.body).toEqual(expect.any(Array));
   });
 
+  it("GET /allEvents", async () => {
+    const response = await request(app).get("/allEvents");
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual(expect.any(Array));
+  });
+
   it("GET /loadChannels should return 200 and the list of channels for a given wallet name", async () => {
     const response = await request(app).get("/loadChannels/ldk1");
 
