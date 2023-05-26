@@ -35,6 +35,16 @@ router.get("/nodeID", async function (req, res) {
   res.json({ nodeID: hexNodeId });
 });
 
+router.get("/balance", async function (req, res) {
+  // for all usable channels, add up the balance and return it
+  let activeChannels = LDKClientFactory.getLDKClient().getUsableChannels();
+  let total_balance: any = 0;
+  activeChannels.forEach((chn: ChannelDetails) => {
+    total_balance += chn.get_balance_msat();
+  });
+  res.json({ balance: total_balance });
+});
+
 // This is live channels that the LDK adapter has open - different to channels persisted in database.
 router.get("/liveChannels", async function (req, res) {
   const channels: ChannelDetails[] =
