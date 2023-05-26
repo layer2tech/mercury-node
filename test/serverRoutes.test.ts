@@ -42,6 +42,6 @@ describe("GET Routes", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ payment_res: true });
+    expect(response.body).toEqual({ "message": "Payment successful" });
   });
 });

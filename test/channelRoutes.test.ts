@@ -35,7 +35,6 @@ describe("Channel Routes", () => {
       pubkey: MOCK_DATA.PUBKEY,
       amount: MOCK_DATA.AMOUNT,
       push_msat: MOCK_DATA.PUSH_MSAT,
-      channelId: MOCK_DATA.CHANNEL_ID,
       channelType: MOCK_DATA.CHANNEL_TYPE,
       host: MOCK_DATA.HOST,
       port: MOCK_DATA.PORT,
@@ -44,6 +43,7 @@ describe("Channel Routes", () => {
       privkey: MOCK_DATA.PRIVKEY,
       paid: MOCK_DATA.PAID,
       payment_address: MOCK_DATA.PAYMENT_ADDRESS,
+      funding_txid: MOCK_DATA.FUNDING_TXID
     });
 
     expect(response.statusCode).toBe(200);
