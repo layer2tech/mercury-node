@@ -57,3 +57,7 @@ export const stringifyEvent = (event: any) => {
   eventString += '}';
   return eventString;
 }
+
+export const convertToMillisats = (sats: number) => {
+  return sats * 1000;
+}
