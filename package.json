@@ -44,7 +44,7 @@
   },
   "version": "1.0.0",
   "description": "",
-  "main": "src/server.ts",
+  "main": "src/server.mjs",
   "type": "module",
   "ava": {
     "extensions": {
@@ -59,8 +59,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "npm run build && ts-node-dev --respawn --pretty --transpile-only src/server.ts",
-    "start": "npm run build && node --loader ts-node/esm --experimental-specifier-resolution=node ./src/server.ts",
+    "dev": "npm run build && ts-node-dev --respawn --pretty --transpile-only src/server.mjs",
+    "start": "npm run build && node --loader ts-node/esm --experimental-specifier-resolution=node ./src/server.mjs",
     "debug": "npm run build && node --loader ts-node/esm --experimental-specifier-resolution=node --experimental-modules ./src/debug_lightning.ts",
     "test": "npm run build && node --loader ts-node/esm --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
