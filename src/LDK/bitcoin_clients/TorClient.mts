@@ -6,6 +6,8 @@ const TIMEOUT = 20000;
 const HOST = "http://localhost";
 const PORT = 3001;
 
+export const TOR_ENDPOINT = "http://localhost:3001";
+
 // Custom Logger
 import { ChalkColor, Logger } from "../utils/Logger.js";
 const DEBUG = new Logger(ChalkColor.Yellow, "TorClient.ts");
