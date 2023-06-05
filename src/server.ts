@@ -61,4 +61,4 @@ const onSigInt = () => {
 process.on("exit", onExit);
 process.on("SIGINT", onSigInt);
 
-export default app;
+export { app };
