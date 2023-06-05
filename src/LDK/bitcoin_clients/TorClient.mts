@@ -3,36 +3,97 @@ import { RawAxiosRequestConfig } from "axios";
 import { BitcoinDaemonClientInterface } from "./BitcoinD.mjs";
 
 const TIMEOUT = 20000;
-export const TOR_ENDPOINT = "http://localhost:3001";
+const HOST = "http://localhost";
+const PORT = 3001;
+
+// Custom Logger
+import { ChalkColor, Logger } from "../utils/Logger.js";
+const DEBUG = new Logger(ChalkColor.Yellow, "TorClient.ts");
 
 class TorClient implements BitcoinDaemonClientInterface {
-  getMerkleProofPosition(txid: string) {
-    throw new Error("Method not implemented.");
+  async getMerkleProofPosition(txid: string): Promise<any> {
+    DEBUG.log(
+      "getMerkleProofPosition... txid->",
+      "getMerkleProofPosition",
+      txid
+    );
+    try {
+      let res = (await TorClient.get(`tx/${txid}/merkle-proof`)).data;
+      return res;
+    } catch (e) {
+      DEBUG.err("[ElectrumClient.mts]: Error getTxOut", e);
+    }
   }
-  setTx(txid: string): Promise<any> {
-    throw new Error("Method not implemented.");
+
+  async setTx(txid: string): Promise<any> {
+    DEBUG.log("setTx...", "setTx");
+    try {
+      let res = TorClient.post("tx", txid);
+      return res;
+    } catch (e) {
+      DEBUG.err("[ElectrumClient.ts]: Error setTx", e);
+    }
   }
-  getTxOut(txid: string, vout: number): any {
-    throw new Error("Method not implemented.");
+  /* 
+    Example output:
+    {"spent":false}
+  */
+  async getTxOut(txid: string, vout: number): Promise<any> {
+    DEBUG.log("getTxOut...", "getTxOut");
+    try {
+      let res = (await TorClient.get(`tx/${txid}/outspend/${vout}`)).data;
+      return res;
+    } catch (e) {
+      DEBUG.err("[ElectrumClient.mts]: Error getTxOut", e);
+    }
   }
-  getRawTransaction(txid: string): any {
-    throw new Error("Method not implemented.");
+  async getRawTransaction(txid: string): Promise<any> {
+    DEBUG.log("getRawTransaction...", "getRawTransaction", txid);
+    try {
+      let res = (await TorClient.get(`tx/${txid}/hex`)).data;
+      return res;
+    } catch (e) {
+      DEBUG.err("[ElectrumClient.mts]: Error Getting raw transaction", e);
+    }
   }
-  getOutputStatus(txid: string, height: number): any {
-    throw new Error("Method not implemented.");
+
+  /* 
+    Example output:
+    00000030e856389b81d90c101f736098a4e023741d5b7e87d6cd0d709a2acbbe5c45f965aa24be79c071ea43c4c59d211ac764507daaa405b397cc475b1308984b1b265b94cf5364ffff7f2000000000
+  */
+  async getHeaderByHash(hash: String) {
+    DEBUG.log("getHeaderByHash...", "getHeaderByHash");
+    let res;
+    try {
+      res = (await TorClient.get(`block/${hash}/header`)).data;
+      DEBUG.log("returning res... ->", "getHeaderByHash", res);
+      return res;
+    } catch (e) {
+      DEBUG.err("[ElectrumClient.mts]: Error getHeaderByHash", e);
+    }
   }
-  getHeaderByHash(hash: string): any {
-    throw new Error("Method not implemented.");
-  }
-  getBlockStatus(hash: string): any {
-    throw new Error("Method not implemented.");
+
+  /*
+    Example output:
+    {"in_best_chain":true,"height":320,"next_best":null}
+  */
+  async getBlockStatus(hash: String) {
+    DEBUG.log("getBlockStatus...", "getBlockStatus");
+    let res;
+    try {
+      res = (await TorClient.get(`block/${hash}/status`)).data;
+      DEBUG.log("returning block status ->", "getBlockStatus", res);
+      return res;
+    } catch (e) {
+      DEBUG.err("[ElectrumClient.mts]: Error getBlockStatus", e);
+    }
   }
 
   async getBestBlockHash() {
     console.log("[TorClient.mts]: getBestBlockHash...");
     let res;
     try {
-      res = await TorClient.get(`${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HASH}`);
+      res = await TorClient.get(`${GET_ROUTE.BLOCKS_TIP_HASH}`);
 
       res = res && res.data;
     } catch (e) {
@@ -47,9 +108,7 @@ class TorClient implements BitcoinDaemonClientInterface {
     console.log("[TorClient.mts]: getBlockHeight...");
     let res;
     try {
-      res = await TorClient.get(
-        `${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HEIGHT}`
-      );
+      res = await TorClient.get(`${GET_ROUTE.BLOCKS_TIP_HEIGHT}`);
 
       res = res && res.data;
     } catch (e) {
@@ -65,12 +124,8 @@ class TorClient implements BitcoinDaemonClientInterface {
     try {
       console.log("[TorClient.mts]: Get latest block header...............");
       console.log("[TorClient.mts]: block_height: ", height);
-      console.log(
-        `[TorClient.mts]: ${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HASH}`
-      );
-      let res = await TorClient.get(
-        `${TOR_ENDPOINT}${GET_ROUTE.BLOCKS_TIP_HASH}`
-      );
+      console.log(`[TorClient.mts]: ${GET_ROUTE.BLOCKS_TIP_HASH}`);
+      let res = await TorClient.get(`${GET_ROUTE.BLOCKS_TIP_HASH}`);
 
       currentBlockHash = res && res.data;
     } catch (e) {
@@ -80,9 +135,7 @@ class TorClient implements BitcoinDaemonClientInterface {
     console.log("[TorClient.mts]: Get Latest Block Header...");
     let res;
     try {
-      res = await TorClient.get(
-        `${TOR_ENDPOINT}/electrs/block/${currentBlockHash}/header`
-      );
+      res = await TorClient.get(`/electrs/block/${currentBlockHash}/header`);
 
       res = res && res.data;
     } catch (e) {
@@ -95,8 +148,7 @@ class TorClient implements BitcoinDaemonClientInterface {
   }
 
   async getTxIdData(txid: string) {
-    let res = (await TorClient.get(`${TOR_ENDPOINT}${GET_ROUTE.TX}/${txid}`))
-      .data;
+    let res = (await TorClient.get(`${GET_ROUTE.TX}/${txid}`)).data;
 
     console.log(JSON.stringify(res));
 
@@ -114,7 +166,7 @@ class TorClient implements BitcoinDaemonClientInterface {
     try {
       const res = (
         await TorClient.get(
-          `${TOR_ENDPOINT}${GET_ROUTE.UTXO_SPENT}`
+          `${GET_ROUTE.UTXO_SPENT}`
             .replace(":txid", txid)
             .replace(":vout", String(vout))
         )
@@ -129,8 +181,8 @@ class TorClient implements BitcoinDaemonClientInterface {
   }
 
   static async get(endpoint: string, timeout_ms = TIMEOUT) {
-    const url = endpoint;
-    const config: RawAxiosRequestConfig = {
+    const url = HOST + ":" + PORT + "/" + endpoint;
+    const config = {
       method: "get",
       url: url,
       headers: { Accept: "application/json" },
@@ -140,27 +192,10 @@ class TorClient implements BitcoinDaemonClientInterface {
     return await axios(config);
   }
 
-  static async post(endpoint: string, timeout_ms = TIMEOUT) {
-    const options = {
-      headers: {
-        "Content-Type": "text/plain",
-      },
-      data: {
-        jsonrpc: "1.0",
-        id: "curltest",
-        method: "getblockchaininfo",
-      },
-    };
-
-    axios
-      .post(endpoint, options)
-      .then((response) => {
-        console.log("[TorClient.mts]: RESPONSE: ", response.data);
-        return response.data;
-      })
-      .catch((error) => {
-        console.log("[TorClient.mts]: ERROR: ", error);
-      });
+  static async post(endpoint: string, body: string, timeout_ms = TIMEOUT) {
+    console.log("[ElectrumClient.ts/post]: body is equal to:", body);
+    const url = HOST + ":" + PORT + "/" + endpoint;
+    return await axios.post(url, body);
   }
 }
 
