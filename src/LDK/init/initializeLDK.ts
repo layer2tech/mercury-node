@@ -82,7 +82,7 @@ export async function initializeLDK(electrum: string = "dev") {
     let network;
     if (electrum === "prod") {
       network = Network.LDKNetwork_Bitcoin;
-    } else if (electrum === "test") {
+    } else if (electrum === "testnet") {
       network = Network.LDKNetwork_Testnet;
     } else {
       network = Network.LDKNetwork_Regtest;

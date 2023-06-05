@@ -88,7 +88,7 @@ class MercuryEventHandler implements EventHandlerInterface {
     this.channelManager = _channelManager;
     if (electrum === "prod") {
       this.network = bitcoin.networks.bitcoin;
-    } else if (electrum === "test") {
+    } else if (electrum === "testnet") {
       this.network = bitcoin.networks.testnet;
     } else {
       this.network = bitcoin.networks.regtest;
