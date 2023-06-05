@@ -20,7 +20,7 @@ class TorClient implements BitcoinDaemonClientInterface {
       txid
     );
     try {
-      let res = (await TorClient.get(`tx/${txid}/merkle-proof`)).data;
+      let res = (await TorClient.get(`electrs/tx/${txid}/merkle-proof`)).data;
       return res;
     } catch (e) {
       DEBUG.err("[ElectrumClient.mts]: Error getTxOut", e);
@@ -30,7 +30,7 @@ class TorClient implements BitcoinDaemonClientInterface {
   async setTx(txid: string): Promise<any> {
     DEBUG.log("setTx...", "setTx");
     try {
-      let res = TorClient.post("tx", txid);
+      let res = TorClient.post("electrs/tx", txid);
       return res;
     } catch (e) {
       DEBUG.err("[ElectrumClient.ts]: Error setTx", e);
@@ -43,7 +43,8 @@ class TorClient implements BitcoinDaemonClientInterface {
   async getTxOut(txid: string, vout: number): Promise<any> {
     DEBUG.log("getTxOut...", "getTxOut");
     try {
-      let res = (await TorClient.get(`tx/${txid}/outspend/${vout}`)).data;
+      let res = (await TorClient.get(`electrs/tx/${txid}/outspend/${vout}`))
+        .data;
       return res;
     } catch (e) {
       DEBUG.err("[ElectrumClient.mts]: Error getTxOut", e);
@@ -52,7 +53,7 @@ class TorClient implements BitcoinDaemonClientInterface {
   async getRawTransaction(txid: string): Promise<any> {
     DEBUG.log("getRawTransaction...", "getRawTransaction", txid);
     try {
-      let res = (await TorClient.get(`tx/${txid}/hex`)).data;
+      let res = (await TorClient.get(`electrs/tx/${txid}/hex`)).data;
       return res;
     } catch (e) {
       DEBUG.err("[ElectrumClient.mts]: Error Getting raw transaction", e);
@@ -67,7 +68,7 @@ class TorClient implements BitcoinDaemonClientInterface {
     DEBUG.log("getHeaderByHash...", "getHeaderByHash");
     let res;
     try {
-      res = (await TorClient.get(`block/${hash}/header`)).data;
+      res = (await TorClient.get(`electrs/block/${hash}/header`)).data;
       DEBUG.log("returning res... ->", "getHeaderByHash", res);
       return res;
     } catch (e) {
@@ -83,7 +84,7 @@ class TorClient implements BitcoinDaemonClientInterface {
     DEBUG.log("getBlockStatus...", "getBlockStatus");
     let res;
     try {
-      res = (await TorClient.get(`block/${hash}/status`)).data;
+      res = (await TorClient.get(`electrs/block/${hash}/status`)).data;
       DEBUG.log("returning block status ->", "getBlockStatus", res);
       return res;
     } catch (e) {
