@@ -1,12 +1,12 @@
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import serverRoutes from "./routes/serverRoutes";
-import peerRoutes from "./routes/peerRoutes";
-import channelRoutes from "./routes/channelRoutes";
-import { closeConnections } from "./LDK/utils/ldk-utils";
-import initialiseWasm from "./LDK/init/initializeWasm";
-import LDKClientFactory from "./LDK/init/LDKClientFactory";
+import serverRoutes from "./routes/serverRoutes.ts";
+import peerRoutes from "./routes/peerRoutes.ts";
+import channelRoutes from "./routes/channelRoutes.ts";
+import { closeConnections } from "./LDK/utils/ldk-utils.ts";
+import initialiseWasm from "./LDK/init/initializeWasm.ts";
+import LDKClientFactory from "./LDK/init/LDKClientFactory.ts";
 
 // Constants
 const PORT = 3003;
