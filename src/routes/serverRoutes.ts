@@ -2,6 +2,7 @@ import express from "express";
 const router = express.Router();
 import { closeConnections, validateInvoiceBody } from "../LDK/utils/ldk-utils";
 import LDKClientFactory from "../LDK/init/LDKClientFactory";
+import { convertToMillisats } from "../LDK/utils/utils";
 
 router.get("/closeConnections", async function (req, res) {
   // Closing all connections
@@ -17,7 +18,7 @@ router.post("/generateInvoice", async function (req, res) {
     validateInvoiceBody(amount_in_sats, invoice_expiry_secs, description);
 
     let invoice = await LDKClientFactory.getLDKClient().createInvoice(
-      BigInt(amount_in_sats),
+      BigInt(convertToMillisats(amount_in_sats)),
       invoice_expiry_secs,
       description
     );
