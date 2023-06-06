@@ -185,6 +185,31 @@ router.get("/allEvents", async function (req, res) {
   });
 });
 
+router.get("/loadEvents/:wallet_name", async function (req, res) {
+  const wallet_id = req.params.wallet_name;
+  const selectData = `
+    SELECT *
+    FROM events
+    WHERE channel_id_hex = (
+        SELECT channel_id
+        FROM channels
+        WHERE wallet_name = ?
+    );
+  `;
+  db.all(selectData, [wallet_id], (err: any, rows: any) => {
+    if (err) {
+      console.log(err.message);
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    if (rows && rows.length > 0) {
+      res.status(200).json(rows);
+    } else {
+      res.json([]); // empty channels
+    }
+  });
+});
+
 // load channels by wallet name e.g. -> localhost:3003/channel/loadChannels/vLDK
 router.get("/loadChannels/:wallet_name", (req, res) => {
   const wallet_id = req.params.wallet_name;
