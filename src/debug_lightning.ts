@@ -82,7 +82,7 @@ export async function debug_lightning() {
       100000,
       0,
       false,
-      "e186fb8e90877e13231f04ec8a09109198d44aafe7f62392c5dcbc7314eb25ae",
+      "511c7848172a3dba8d3e15c27f03ba3f94a7096f94772fef190867744698ce99",
       "bcrt1qa0h3k6mfhjxedelag752k04lkj245e47kaullm",
       hostInfo
     );
