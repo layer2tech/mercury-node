@@ -378,16 +378,18 @@ export const saveEventDataToDb = (
   if (event && (event.channel_id || event.temporary_channel_id)) {
     channel_id_hex = uint8ArrayToHexString(event.channel_id ? event.channel_id : event.temporary_channel_id);
   } else {
-    const hops = event.path.get_hops();
-    const short_channel_id = hops[0].get_short_channel_id();
-    if (short_channel_id) {
-      const channels: ChannelDetails[] = LDKClientFactory.getLDKClient().getChannels();
-      console.log("SHORT CHANNEL ID", short_channel_id)
-      channels.forEach((channel) => {
-        if ((channel.get_outbound_payment_scid() as Option_u64Z_Some).some === short_channel_id) {
-          channel_id_hex = uint8ArrayToHexString(channel.get_channel_id());
-        }
-      });
+    if (event.path) {
+      const hops = event.path.get_hops();
+      const short_channel_id = hops[0].get_short_channel_id();
+      if (short_channel_id) {
+        const channels: ChannelDetails[] = LDKClientFactory.getLDKClient().getChannels();
+        console.log("SHORT CHANNEL ID", short_channel_id)
+        channels.forEach((channel) => {
+          if ((channel.get_outbound_payment_scid() as Option_u64Z_Some).some === short_channel_id) {
+            channel_id_hex = uint8ArrayToHexString(channel.get_channel_id());
+          }
+        });
+      }
     }
   }
 
