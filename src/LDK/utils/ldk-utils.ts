@@ -375,8 +375,9 @@ export const saveEventDataToDb = (
   const event_type = Object.getPrototypeOf(event).constructor.name;
   const event_data = stringifyEvent(event);
   let channel_id_hex;
-  if (event && (event.channel_id || event.temporary_channel_id)) {
-    channel_id_hex = uint8ArrayToHexString(event.channel_id ? event.channel_id : event.temporary_channel_id);
+  if (event && (event.channel_id || event.temporary_channel_id || event.via_channel_id)) {
+    const channel_id = event.channel_id || event.temporary_channel_id || event.via_channel_id;
+    channel_id_hex = uint8ArrayToHexString(channel_id);
   } else {
     if (event.path) {
       const hops = event.path.get_hops();
