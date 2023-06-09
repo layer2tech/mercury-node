@@ -82,7 +82,7 @@ export async function initializeLDK(electrum: string = "dev") {
     let network;
     if (electrum === "prod") {
       network = Network.LDKNetwork_Bitcoin;
-    } else if (electrum === "testnet") {
+    } else if (electrum === "test") {
       network = Network.LDKNetwork_Testnet;
     } else {
       network = Network.LDKNetwork_Regtest;
@@ -406,7 +406,10 @@ export async function initializeLDK(electrum: string = "dev") {
     let eventHandler;
 
     if (channelManager) {
-      let mercuryEventHandler = new MercuryEventHandler(channelManager, electrum);
+      let mercuryEventHandler = new MercuryEventHandler(
+        channelManager,
+        electrum
+      );
       eventHandler = EventHandler.new_impl(mercuryEventHandler);
     }
 
