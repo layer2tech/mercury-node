@@ -25,12 +25,30 @@ app.use("/peer", peerRoutes);
 app.use("/channel", channelRoutes);
 
 // Starting the express server
-app.listen(PORT, async () => {
-  /* PRODUCTION CODE */
-  console.log(
-    `[Server.ts]: lightning-adapter listening at http://localhost:${PORT}`
-  );
-});
+async function startServer() {
+  // Check if the port is in use
+  const net = require("net");
+  const socket = net.createConnection(PORT, () => {
+    socket.destroy();
+  });
+  try {
+    await socket.connect();
+    console.log(`Port ${PORT} is in use. Force closing...`);
+    socket.destroy();
+  } catch (error) {
+    if (error.code !== "EADDRINUSE") {
+      throw error;
+    }
+  }
+
+  // Start the express server
+  app.listen(PORT, async () => {
+    /* PRODUCTION CODE */
+    console.log(
+      `[Server.ts]: lightning-adapter listening at http://localhost:${PORT}`
+    );
+  });
+}
 
 // Exit handlers
 const onExit = () => {
@@ -48,5 +66,7 @@ const onSigInt = () => {
 
 process.on("exit", onExit);
 process.on("SIGINT", onSigInt);
+
+startServer();
 
 export { app };

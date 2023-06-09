@@ -30,57 +30,63 @@ interface Channel {
 
 // Get the Node ID of our wallet
 router.get("/nodeID", async function (req, res) {
-  const nodeId = LDKClientFactory.getLDKClient().getOurNodeId();
-  const hexNodeId = uint8ArrayToHexString(nodeId);
-  res.json({ nodeID: hexNodeId });
+  try {
+    const nodeId = LDKClientFactory.getLDKClient().getOurNodeId();
+    const hexNodeId = uint8ArrayToHexString(nodeId);
+    res.json({ nodeID: hexNodeId });
+  } catch (e) {}
 });
 
 router.get("/balance", async function (req, res) {
-  // for all usable channels, add up the balance and return it
-  let activeChannels = LDKClientFactory.getLDKClient().getUsableChannels();
-  let total_balance: any = 0;
-  activeChannels.forEach((chn: ChannelDetails) => {
-    total_balance += chn.get_balance_msat();
-  });
-  res.json({ balance: total_balance });
+  try {
+    // for all usable channels, add up the balance and return it
+    let activeChannels = LDKClientFactory.getLDKClient().getUsableChannels();
+    let total_balance: any = 0;
+    activeChannels.forEach((chn: ChannelDetails) => {
+      total_balance += chn.get_balance_msat();
+    });
+    res.json({ balance: total_balance });
+  } catch (e) {}
 });
 
 // This is live channels that the LDK adapter has open - different to channels persisted in database.
 router.get("/liveChannels", async function (req, res) {
-  const channels: ChannelDetails[] =
-    LDKClientFactory.getLDKClient().getChannels();
-  let activeChannels = LDKClientFactory.getLDKClient().getUsableChannels();
-  console.log("active channels:", activeChannels);
-  console.log("channels: ", channels);
+  try {
+    const channels: ChannelDetails[] =
+      LDKClientFactory.getLDKClient().getChannels();
+    let activeChannels = LDKClientFactory.getLDKClient().getUsableChannels();
+    console.log("active channels:", activeChannels);
+    console.log("channels: ", channels);
 
-  let jsonChannels = [];
-  if (channels && channels.length > 0) {
-    for (const channel of channels) {
-      jsonChannels.push({
-        //id: channel.get_channel_id().toString(),
-        channel_hexId: uint8ArrayToHexString(channel.get_channel_id()),
-        usable: channel.get_is_usable(),
-        ready: channel.get_is_channel_ready(),
-        counterparty_hexId: uint8ArrayToHexString(
-          channel.get_counterparty().get_node_id()
-        ),
-        funding_txo: uint8ArrayToHexString(
-          channel.get_funding_txo().get_txid()
-        ),
-        balance_msat: channel.get_balance_msat().toString(),
-        amount_in_satoshis: channel.get_channel_value_satoshis().toString(),
-        public: channel.get_is_public(),
-        confirmations: (channel.get_confirmations() as Option_u32Z_Some).some,
-        confirmations_required: (
-          channel.get_confirmations_required() as Option_u32Z_Some
-        ).some,
-      });
-      console.log(channel.get_short_channel_id());
+    let jsonChannels = [];
+    if (channels && channels.length > 0) {
+      for (const channel of channels) {
+        jsonChannels.push({
+          //id: channel.get_channel_id().toString(),
+          channel_hexId: uint8ArrayToHexString(channel.get_channel_id()),
+          usable: channel.get_is_usable(),
+          ready: channel.get_is_channel_ready(),
+          counterparty_hexId: uint8ArrayToHexString(
+            channel.get_counterparty().get_node_id()
+          ),
+          funding_txo: uint8ArrayToHexString(
+            channel.get_funding_txo().get_txid()
+          ),
+          balance_msat: channel.get_balance_msat().toString(),
+          amount_in_satoshis: channel.get_channel_value_satoshis().toString(),
+          public: channel.get_is_public(),
+          confirmations: (channel.get_confirmations() as Option_u32Z_Some).some,
+          confirmations_required: (
+            channel.get_confirmations_required() as Option_u32Z_Some
+          ).some,
+        });
+        console.log(channel.get_short_channel_id());
+      }
+      res.json(jsonChannels);
+    } else {
+      res.json([]);
     }
-    res.json(jsonChannels);
-  } else {
-    res.json([]);
-  }
+  } catch (e) {}
 });
 
 router.post("/createChannel", async (req, res) => {
@@ -98,6 +104,7 @@ router.post("/createChannel", async (req, res) => {
     payment_address,
     funding_txid,
   } = req.body;
+
   if (
     pubkey === undefined ||
     amount === undefined ||
@@ -168,26 +175,31 @@ router.get("/usableChannels", async function (req, res) {
 
 // This gets all the channels from the database of all wallets
 router.get("/allChannels", async function (req, res) {
-  db.all("SELECT * FROM channels", (err: any, rows: any) => {
-    if (err) {
-      throw err;
-    }
-    res.json(rows);
-  });
+  try {
+    db.all("SELECT * FROM channels", (err: any, rows: any) => {
+      if (err) {
+        throw err;
+      }
+      res.json(rows);
+    });
+  } catch (e) {}
 });
 
 router.get("/allEvents", async function (req, res) {
-  db.all("SELECT * FROM events", (err: any, rows: any) => {
-    if (err) {
-      throw err;
-    }
-    res.json(rows);
-  });
+  try {
+    db.all("SELECT * FROM events", (err: any, rows: any) => {
+      if (err) {
+        throw err;
+      }
+      res.json(rows);
+    });
+  } catch (e) {}
 });
 
 router.get("/loadEvents/:wallet_name", async function (req, res) {
-  const wallet_id = req.params.wallet_name;
-  const selectData = `
+  try {
+    const wallet_id = req.params.wallet_name;
+    const selectData = `
     SELECT *
     FROM events
     WHERE channel_id_hex = (
@@ -196,23 +208,25 @@ router.get("/loadEvents/:wallet_name", async function (req, res) {
         WHERE wallet_name = ?
     );
   `;
-  db.all(selectData, [wallet_id], (err: any, rows: any) => {
-    if (err) {
-      console.log(err.message);
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    if (rows && rows.length > 0) {
-      res.status(200).json(rows);
-    } else {
-      res.json([]); // empty channels
-    }
-  });
+    db.all(selectData, [wallet_id], (err: any, rows: any) => {
+      if (err) {
+        console.log(err.message);
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      if (rows && rows.length > 0) {
+        res.status(200).json(rows);
+      } else {
+        res.json([]); // empty channels
+      }
+    });
+  } catch (e) {}
 });
 
 router.get("/loadUnnotifiedEvents/:wallet_name", async function (req, res) {
-  const wallet_id = req.params.wallet_name;
-  const selectData = `
+  try {
+    const wallet_id = req.params.wallet_name;
+    const selectData = `
     SELECT id, channel_id_hex, event_type, event_data
     FROM events
     WHERE channel_id_hex = (
@@ -221,22 +235,23 @@ router.get("/loadUnnotifiedEvents/:wallet_name", async function (req, res) {
         WHERE wallet_name = ?
     ) AND notification_seen = 0;
   `;
-  db.all(selectData, [wallet_id], (err: any, rows: any) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    if (rows && rows.length > 0) {
-      res.status(200).json(rows);
-    } else {
-      res.json([]); // empty channels
-    }
-  });
+    db.all(selectData, [wallet_id], (err: any, rows: any) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      if (rows && rows.length > 0) {
+        res.status(200).json(rows);
+      } else {
+        res.json([]); // empty channels
+      }
+    });
+  } catch (e) {}
 });
 
 router.post("/setEventNotificationSeen", (req, res) => {
   const { id } = req.body;
-  
+
   if (!Number.isInteger(parseInt(id))) {
     res.status(400).json({ error: "Invalid channel ID" });
     return;
@@ -254,25 +269,27 @@ router.post("/setEventNotificationSeen", (req, res) => {
 
 // load channels by wallet name e.g. -> localhost:3003/channel/loadChannels/vLDK
 router.get("/loadChannels/:wallet_name", (req, res) => {
-  const wallet_id = req.params.wallet_name;
-  const selectData = `
+  try {
+    const wallet_id = req.params.wallet_name;
+    const selectData = `
     SELECT channels.*, peers.node, peers.pubkey, peers.host, peers.port
     FROM channels
     INNER JOIN peers ON channels.peer_id = peers.id
     WHERE channels.wallet_name = ?
   `;
-  db.all(selectData, [wallet_id], (err: any, rows: any) => {
-    if (err) {
-      console.log(err.message);
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    if (rows && rows.length > 0) {
-      res.status(200).json(rows);
-    } else {
-      res.json([]); // empty channels
-    }
-  });
+    db.all(selectData, [wallet_id], (err: any, rows: any) => {
+      if (err) {
+        console.log(err.message);
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      if (rows && rows.length > 0) {
+        res.status(200).json(rows);
+      } else {
+        res.json([]); // empty channels
+      }
+    });
+  } catch (e) {}
 });
 
 // This updates the name of a channel by id
