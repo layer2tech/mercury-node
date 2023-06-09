@@ -213,7 +213,7 @@ router.get("/loadEvents/:wallet_name", async function (req, res) {
 router.get("/loadUnnotifiedEvents/:wallet_name", async function (req, res) {
   const wallet_id = req.params.wallet_name;
   const selectData = `
-    SELECT id, channel_id_hex, event_type, notification_seen
+    SELECT id, channel_id_hex, event_type, event_data
     FROM events
     WHERE channel_id_hex = (
         SELECT channel_id
