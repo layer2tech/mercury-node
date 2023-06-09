@@ -36,12 +36,12 @@ class LDKClientFactory {
           this.client = new LightningClient(initLDK);
         } else {
           throw new Error(
-            "[LDKClientFactory/createLDKClient]: Couldn't initialize LDK \n"
+            "[LDKClientFactory/createLDKClient]: initLDK undefined \n"
           );
         }
       } catch (e) {
         throw new Error(
-          `[LDKClientFactory/createLDKClient]: Couldn't initialize LDK  \n ${e} \n`
+          `[LDKClientFactory/createLDKClient]: Couldn't await initializeLDK(bitcoind_client);  \n ${e} \n`
         );
       }
     }
@@ -50,7 +50,7 @@ class LDKClientFactory {
   public getLDKClient(): LightningClient | MockLightningClient {
     if (!this.client) {
       throw new Error(
-        "[LDKClientFactory/getLDKClient]: LDKClient is not instantiated."
+        "[LDKClientFactory/getLDKClient]: Can't getLDKClient - LDKClient is not instantiated."
       );
     }
 

@@ -6,8 +6,12 @@ import { ChannelDetails, Option_u64Z_Some } from "lightningdevkit";
 
 export const closeConnections = () => {
   console.log("[ldk-utils.ts]: Closing all the connections");
-  let LDK = LDKClientFactory.getLDKClient();
-  LDK.netHandler?.stop();
+  try {
+    let LDK = LDKClientFactory.getLDKClient();
+    LDK.netHandler?.stop();
+  } catch (e) {
+    console.error("Trying to get reference to undefined LDKClientFactory");
+  }
 };
 
 export const validateInvoiceBody = (
@@ -39,8 +43,8 @@ export const validateInvoiceBody = (
   }
 };
 
- // This function is called from peerRoutes.ts /create-channel request
- export const savePeerAndChannelToDatabase = async (
+// This function is called from peerRoutes.ts /create-channel request
+export const savePeerAndChannelToDatabase = async (
   amount: number,
   pubkey: string,
   host: string,
@@ -97,13 +101,10 @@ export const validateInvoiceBody = (
     console.log("[ldk-utils.ts]:" + err);
     throw err;
   }
-  console.log(
-    "[ldk-utils.ts]: Channel Created, saved its id: ",
-    channel_id
-  );
+  console.log("[ldk-utils.ts]: Channel Created, saved its id: ", channel_id);
 
   return result;
-}
+};
 
 export const saveChannelFundingToDatabase = async (
   amount: number,
@@ -120,7 +121,7 @@ export const saveChannelFundingToDatabase = async (
     console.log("[ldk-utils.ts]: " + err);
     throw err;
   }
-}
+};
 
 export const saveNewPeerToDB = (
   host: string,
@@ -347,46 +348,45 @@ export const saveTxDataToDB = (
   });
 };
 
-export const saveChannelIdToDb = (
-  channelId: string,
-  pubkey: string
-) => {
+export const saveChannelIdToDb = (channelId: string, pubkey: string) => {
   console.log("[ldk-utils.ts] - saveChannelIdToDB");
   console.log(
     `[ldk-utils.ts] - values: channelId:${channelId}, pubkey:${pubkey}`
   );
   const updateData =
-      "UPDATE channels SET channel_id = ? WHERE peer_id = ( SELECT id FROM peers WHERE pubkey = ?)";
-  db.run(
-    updateData,
-    [channelId, pubkey],
-    function (err: any, result: any) {
-      if (err) {
-        console.log("Error in saving channelId to db: " + err);
-      }
+    "UPDATE channels SET channel_id = ? WHERE peer_id = ( SELECT id FROM peers WHERE pubkey = ?)";
+  db.run(updateData, [channelId, pubkey], function (err: any, result: any) {
+    if (err) {
+      console.log("Error in saving channelId to db: " + err);
     }
-  );
+  });
 };
 
-export const saveEventDataToDb = (
-  event: any
-) => {
+export const saveEventDataToDb = (event: any) => {
   console.log("[ldk-utils.ts] - saveEventDataToDB");
   const event_type = Object.getPrototypeOf(event).constructor.name;
   const event_data = stringifyEvent(event);
   let channel_id_hex;
-  if (event && (event.channel_id || event.temporary_channel_id || event.via_channel_id)) {
-    const channel_id = event.channel_id || event.temporary_channel_id || event.via_channel_id;
+  if (
+    event &&
+    (event.channel_id || event.temporary_channel_id || event.via_channel_id)
+  ) {
+    const channel_id =
+      event.channel_id || event.temporary_channel_id || event.via_channel_id;
     channel_id_hex = uint8ArrayToHexString(channel_id);
   } else {
     if (event.path) {
       const hops = event.path.get_hops();
       const short_channel_id = hops[0].get_short_channel_id();
       if (short_channel_id) {
-        const channels: ChannelDetails[] = LDKClientFactory.getLDKClient().getChannels();
-        console.log("SHORT CHANNEL ID", short_channel_id)
+        const channels: ChannelDetails[] =
+          LDKClientFactory.getLDKClient().getChannels();
+        console.log("SHORT CHANNEL ID", short_channel_id);
         channels.forEach((channel) => {
-          if ((channel.get_outbound_payment_scid() as Option_u64Z_Some).some === short_channel_id) {
+          if (
+            (channel.get_outbound_payment_scid() as Option_u64Z_Some).some ===
+            short_channel_id
+          ) {
             channel_id_hex = uint8ArrayToHexString(channel.get_channel_id());
           }
         });
@@ -394,21 +394,21 @@ export const saveEventDataToDb = (
     }
   }
 
-  console.log("CHANNEL_ID_HEX", channel_id_hex)
+  console.log("CHANNEL_ID_HEX", channel_id_hex);
   if (channel_id_hex) {
     const insertEventData = `INSERT INTO events (event_type, event_data, channel_id_hex) VALUES (?, ?, ?)`;
     db.run(
-      insertEventData, 
-      [event_type, event_data, channel_id_hex], 
-      function(err: any) {
+      insertEventData,
+      [event_type, event_data, channel_id_hex],
+      function (err: any) {
         if (err) {
           console.log("Error in saving event to db: " + err);
         }
-        console.log('Data inserted successfully.');
+        console.log("Data inserted successfully.");
       }
     );
   }
-}
+};
 
 export const replaceTempChannelIdInDb = (
   channel_id: string,
@@ -416,7 +416,7 @@ export const replaceTempChannelIdInDb = (
 ) => {
   console.log("[ldk-utils.ts] - replaceTempChannelIdInDb");
   const updateData =
-      "UPDATE events SET channel_id_hex = ? WHERE channel_id_hex = ?";
+    "UPDATE events SET channel_id_hex = ? WHERE channel_id_hex = ?";
   db.run(
     updateData,
     [channel_id, temp_channel_id],
@@ -426,7 +426,7 @@ export const replaceTempChannelIdInDb = (
       }
     }
   );
-}
+};
 
 export const checkIfChannelExists = (pubkey: string): Promise<boolean> => {
   return new Promise((resolve, reject) => {

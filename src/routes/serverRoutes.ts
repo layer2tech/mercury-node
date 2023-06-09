@@ -8,8 +8,13 @@ router.post("/startLDK", async function (req, res) {
   // initialize an LDK with the network set
   const { network } = req.body;
 
+  console.log("network value is:", network);
+
   // validate network values
-  if (network !== "dev" || network !== "prod" || network !== "test") {
+  // validate network values
+  const validNetworks = ["dev", "prod", "test"];
+
+  if (!validNetworks.includes(network)) {
     res.status(500).json("Invalid network given for initLDK");
   }
 
@@ -24,7 +29,7 @@ router.post("/startLDK", async function (req, res) {
   } catch (e) {
     console.error(`Error occured setting up LDK \n ${e} \n`);
   }
-  res.status(200);
+  res.status(200).json("Started LDK with network " + network);
 });
 
 router.get("/closeLDK", async function (req, res) {

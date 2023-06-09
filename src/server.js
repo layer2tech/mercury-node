@@ -10,7 +10,7 @@ import LDKClientFactory from "./LDK/init/LDKClientFactory";
 await initialiseWasm();
 
 // Constants
-const PORT = 3003;
+const PORT = 4000;
 
 // Express app
 const app = express();
@@ -25,12 +25,23 @@ app.use("/peer", peerRoutes);
 app.use("/channel", channelRoutes);
 
 // Starting the express server
-app.listen(PORT, async () => {
-  /* PRODUCTION CODE */
-  console.log(
-    `[Server.ts]: lightning-adapter listening at http://localhost:${PORT}`
-  );
-});
+async function startServer() {
+  // Check if the port is in use
+  const net = await import("net");
+  const socket = await net.createConnection(PORT);
+  if (socket.connected) {
+    console.log(`Port ${PORT} is in use. Force closing...`);
+    socket.destroy();
+  }
+
+  // Start the express server
+  app.listen(PORT, async () => {
+    /* PRODUCTION CODE */
+    console.log(
+      `[Server.ts]: lightning-adapter listening at http://localhost:${PORT}`
+    );
+  });
+}
 
 // Exit handlers
 const onExit = () => {
@@ -49,4 +60,20 @@ const onSigInt = () => {
 process.on("exit", onExit);
 process.on("SIGINT", onSigInt);
 
-export { app };
+// Force close the port if it is in use
+const fs = await import("fs");
+const path = await import("path");
+const portFile = path.join(process.cwd(), "port.pid");
+if (fs.existsSync(portFile)) {
+  const pid = fs.readFileSync(portFile, "utf8").trim();
+  if (pid) {
+    console.log(`Killing process ${pid}`);
+    try {
+      process.kill(pid, "SIGKILL");
+    } catch (error) {
+      console.error("Error killing process:", error);
+    }
+  }
+}
+
+startServer();
