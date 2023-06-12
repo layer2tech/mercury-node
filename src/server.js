@@ -6,7 +6,7 @@ import peerRoutes from "./routes/peerRoutes";
 import channelRoutes from "./routes/channelRoutes";
 import { closeConnections } from "./LDK/utils/ldk-utils";
 import initialiseWasm from "./LDK/init/initializeWasm";
-import LDKClientFactory from "./LDK/init/LDKClientFactory";
+
 await initialiseWasm();
 
 // Constants
