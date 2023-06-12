@@ -256,7 +256,7 @@ router.post("/setEventNotificationSeen", (req, res) => {
   const { id } = req.body;
 
   if (!Number.isInteger(parseInt(id))) {
-    res.status(400).json({ error: "Invalid channel ID" });
+    res.status(400).json({ error: "Invalid event ID" });
     return;
   }
 

@@ -12,7 +12,7 @@ describe("Channel Routes", () => {
     app = express();
     app.use(express.json());
     app.use(router);
-    await LDKClientFactory.createLDKClient("test");
+    await LDKClientFactory.createLDKClient("mock");
   });
 
   it("GET /nodeID", async () => {
@@ -21,6 +21,13 @@ describe("Channel Routes", () => {
     expect(response.body).toEqual({
       nodeID: uint8ArrayToHexString(MOCK_DATA.NODE_ID),
     });
+  });
+
+  it("GET /balance", async () => {
+    const response = await request(app).get("/balance");
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual({ balance: 0 });
   });
 
   it("GET /liveChannels", async () => {
@@ -50,7 +57,7 @@ describe("Channel Routes", () => {
     expect(response.text).toBe("Created Channel on LDK");
   });
 
-  it("POST /createChannel with valid parameters", async () => {
+  it("POST /createChannel with invalid parameters", async () => {
     const response = await request(app).post("/createChannel").send({});
 
     expect(response.statusCode).toBe(500);
@@ -76,6 +83,54 @@ describe("Channel Routes", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual(expect.any(Array));
+  });
+
+  it("GET /loadEvents should return 200 and the list of events for a given wallet name", async () => {
+    const response = await request(app).get("/loadEvents/ldk1");
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual(expect.any(Array));
+  });
+
+  it("GET /loadEvents if the wallet with the given name does not exist", async () => {
+    const response = await request(app).get("/loadEvents/nonexistentWallet");
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual([]);
+  });
+
+  it("GET /loadUnnotifiedEvents should return 200 and the list of events for a given wallet name", async () => {
+    const response = await request(app).get("/loadUnnotifiedEvents/ldk1");
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual(expect.any(Array));
+  });
+
+  it("GET /loadUnnotifiedEvents if the wallet with the given name does not exist", async () => {
+    const response = await request(app).get("/loadUnnotifiedEvents/nonexistentWallet");
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual([]);
+  });
+
+  it("POST /setEventNotificationSeen with valid parameters", async () => {
+    const response = await request(app).post("/setEventNotificationSeen").send({
+      id: 1
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual({
+      message: "Event notification status updated successfully"
+    });
+  });
+
+  it("POST /setEventNotificationSeen with invalid parameters", async () => {
+    const response = await request(app).post("/setEventNotificationSeen").send({});
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body).toEqual({
+      error: "Invalid event ID"
+    });
   });
 
   it("GET /loadChannels should return 200 and the list of channels for a given wallet name", async () => {

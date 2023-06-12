@@ -20,7 +20,7 @@ export const MOCK_DATA = {
   PAID: true,
   TXID: "6cf30a3fc3a32774494a9b04d06459f1ffd05382cf9e4e943675bea74c99a64c",
   VOUT: 1,
-  PAYMENT_ADDRESS: "tb1q60myaz6078nfggywsjlv6pphpjj2d9x7nas29c",
+  PAYMENT_ADDRESS: "tb324524asda23asdsad234esdaxdasd12312311",
   INVOICE_EXPIRY_SECS: 3600,
   FUNDING_TXID:
     "1ec1ab323d1acad8bea1e24b4a9dbf5f82963838d255b8473255c07aa2b78892",
