@@ -158,6 +158,12 @@ export async function initializeLDK(electrum: string = "dev") {
     DEBUG.log("Step 7: Read ChannelMonitor state from disk");
     DEBUG.log("reading channel monitor data...");
     let channel_monitor_data: ChannelMonitorRead[] = [];
+    if (!fs.existsSync("channels")) {
+      fs.mkdirSync("channels");
+    }
+    if (!fs.existsSync("channels/channel_lookup.json")) {
+      fs.writeFileSync("channels/channel_lookup.json", JSON.stringify([{}]));
+    }
     if (fs.existsSync("channels/channel_lookup.json")) {
       try {
         channel_monitor_data = readChannelsFromDictionary(
@@ -196,6 +202,7 @@ export async function initializeLDK(electrum: string = "dev") {
 
     // Step 10: Create Router
     DEBUG.log("Step 10: Create Router");
+
     let default_router = DefaultRouter.constructor_new(
       networkGraph,
       logger,
@@ -226,59 +233,65 @@ export async function initializeLDK(electrum: string = "dev") {
     if (fs.existsSync("channel_manager_data.bin")) {
       DEBUG.log("Loading the channel manager from disk...");
       const f = fs.readFileSync(`channel_manager_data.bin`);
-      DEBUG.log("create channel_monitor_references");
-      channel_monitor_data.forEach((channel_monitor: ChannelMonitorRead) => {
-        let val: any =
-          UtilMethods.constructor_C2Tuple_BlockHashChannelMonitorZ_read(
-            channel_monitor.bytes,
+
+      try {
+        DEBUG.log("create channel_monitor_references");
+        channel_monitor_data.forEach((channel_monitor: ChannelMonitorRead) => {
+          let val: any =
+            UtilMethods.constructor_C2Tuple_BlockHashChannelMonitorZ_read(
+              channel_monitor.bytes,
+              entropy_source,
+              signer_provider
+            );
+          if (val.is_ok()) {
+            let read_channelMonitor: TwoTuple_BlockHashChannelMonitorZ =
+              val.res;
+            let channel_monitor = read_channelMonitor.get_b();
+            channel_monitor_mut_references.push(channel_monitor);
+          }
+        });
+        DEBUG.log("try and read the channel manager");
+        let readManager: any;
+        readManager =
+          UtilMethods.constructor_C2Tuple_BlockHashChannelManagerZ_read(
+            f,
             entropy_source,
-            signer_provider
+            node_signer,
+            signer_provider,
+            feeEstimator,
+            chainMonitor.as_Watch(),
+            txBroadcaster,
+            router,
+            logger,
+            config,
+            channel_monitor_mut_references
           );
-        if (val.is_ok()) {
-          let read_channelMonitor: TwoTuple_BlockHashChannelMonitorZ = val.res;
-          let channel_monitor = read_channelMonitor.get_b();
-          channel_monitor_mut_references.push(channel_monitor);
+        DEBUG.log("read channel manager constructed successfully");
+        if (
+          readManager instanceof
+            Result_C2Tuple_BlockHashChannelManagerZDecodeErrorZ_OK &&
+          readManager.is_ok()
+        ) {
+          DEBUG.log("readManager is_ok");
+          let read_channelManager: TwoTuple_BlockHashChannelManagerZ =
+            readManager.res;
+          channelManager = read_channelManager.get_b();
+          DEBUG.log(
+            "read_channelManager.get_b() passed as channelManager successfully"
+          );
+        } else if (
+          readManager instanceof
+          Result_C2Tuple_BlockHashChannelManagerZDecodeErrorZ_Err
+        ) {
+          DEBUG.log(
+            "Error occured in reading channel manager received a Decode Error"
+          );
+          console.table(readManager.err);
+        } else {
+          throw Error("Couldn't recreate channel manager from disk \n");
         }
-      });
-      DEBUG.log("try and read the channel manager");
-      let readManager: any;
-      readManager =
-        UtilMethods.constructor_C2Tuple_BlockHashChannelManagerZ_read(
-          f,
-          entropy_source,
-          node_signer,
-          signer_provider,
-          feeEstimator,
-          chainMonitor.as_Watch(),
-          txBroadcaster,
-          router,
-          logger,
-          config,
-          channel_monitor_mut_references
-        );
-      DEBUG.log("read channel manager constructed successfully");
-      if (
-        readManager instanceof
-          Result_C2Tuple_BlockHashChannelManagerZDecodeErrorZ_OK &&
-        readManager.is_ok()
-      ) {
-        DEBUG.log("readManager is_ok");
-        let read_channelManager: TwoTuple_BlockHashChannelManagerZ =
-          readManager.res;
-        channelManager = read_channelManager.get_b();
-        DEBUG.log(
-          "read_channelManager.get_b() passed as channelManager successfully"
-        );
-      } else if (
-        readManager instanceof
-        Result_C2Tuple_BlockHashChannelManagerZDecodeErrorZ_Err
-      ) {
-        DEBUG.log(
-          "Error occured in reading channel manager received a Decode Error"
-        );
-        console.table(readManager.err);
-      } else {
-        throw Error("Couldn't recreate channel manager from disk \n");
+      } catch (e) {
+        throw Error("Error occured reading channel manager:" + e);
       }
     } else {
       DEBUG.log("Create fresh channel manager");

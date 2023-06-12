@@ -19,17 +19,29 @@ router.post("/startLDK", async function (req, res) {
   }
 
   try {
-    console.log("[Server.ts]: Finished initialiseWasm");
-    await LDKClientFactory.createLDKClient(network); // prod/test/dev
-    console.log("[Server.ts]: Finished create LDK");
-    const LightningClient = LDKClientFactory.getLDKClient();
-    console.log("[Server.ts]: Starting LDK Client");
-    await LightningClient.start();
-    console.log("[Server.ts]: LDK Client started");
+    if (LDKClientFactory.isInitialized()) {
+      res.status(500).json("LDK already intialized.");
+    } else {
+      console.log("[Server.ts]: Finished initialiseWasm");
+      await LDKClientFactory.createLDKClient(network); // prod/test/dev
+      console.log("[Server.ts]: Finished create LDK");
+      const LightningClient = LDKClientFactory.getLDKClient();
+      console.log("[Server.ts]: Starting LDK Client");
+      await LightningClient.start();
+      console.log("[Server.ts]: LDK Client started");
+      res
+        .status(200)
+        .json(
+          "Started LDK with network " +
+            network +
+            " LDK: " +
+            LightningClient.getOurNodeId()
+        );
+    }
   } catch (e) {
     console.error(`Error occured setting up LDK \n ${e} \n`);
+    res.status(500).json({ message: "Error occured when starting LDK: " + e });
   }
-  res.status(200).json("Started LDK with network " + network);
 });
 
 router.get("/closeLDK", async function (req, res) {
@@ -40,6 +52,7 @@ router.get("/closeLDK", async function (req, res) {
     // Close all intervals
     const LightningClient = LDKClientFactory.getLDKClient();
     LightningClient.stop();
+    LDKClientFactory.destroy();
   } catch (e) {
     console.error("Error occured stopping LDK");
   }

@@ -47,6 +47,14 @@ class LDKClientFactory {
     }
   }
 
+  public isInitialized() {
+    return this.client !== null;
+  }
+
+  public destroy() {
+    this.client = null;
+  }
+
   public getLDKClient(): LightningClient | MockLightningClient {
     if (!this.client) {
       throw new Error(

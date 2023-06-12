@@ -28,13 +28,16 @@ interface Channel {
   payment_address: string;
 }
 
-// Get the Node ID of our wallet
 router.get("/nodeID", async function (req, res) {
+  // Get the Node ID of our wallet
+
   try {
     const nodeId = LDKClientFactory.getLDKClient().getOurNodeId();
     const hexNodeId = uint8ArrayToHexString(nodeId);
     res.json({ nodeID: hexNodeId });
-  } catch (e) {}
+  } catch (e) {
+    res.status(500).json({ message: "Error'd with" + e });
+  }
 });
 
 router.get("/balance", async function (req, res) {
@@ -289,7 +292,11 @@ router.get("/loadChannels/:wallet_name", (req, res) => {
         res.json([]); // empty channels
       }
     });
-  } catch (e) {}
+  } catch (e) {
+    res
+      .status(500)
+      .json({ message: "couldn't load a channel that doesn't exist" });
+  }
 });
 
 // This updates the name of a channel by id

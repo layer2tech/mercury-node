@@ -296,12 +296,14 @@ router.get("/default_peerlist", async function (req, res) {
 
 // get the peerlist that's stored in the database
 router.get("/peers", async function (req, res) {
-  db.all("SELECT * FROM peers", (err: any, rows: any) => {
-    if (err) {
-      throw err;
-    }
-    res.json(rows);
-  });
+  try {
+    db.all("SELECT * FROM peers", (err: any, rows: any) => {
+      if (err) {
+        throw err;
+      }
+      res.json(rows);
+    });
+  } catch (e) {}
 });
 
 export default router;
