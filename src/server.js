@@ -10,7 +10,7 @@ import LDKClientFactory from "./LDK/init/LDKClientFactory";
 await initialiseWasm();
 
 // Constants
-const PORT = 4000;
+const PORT = 3003;
 
 // Express app
 const app = express();
