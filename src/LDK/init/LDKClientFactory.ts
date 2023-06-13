@@ -18,6 +18,7 @@ class LDKClientFactory {
   }
 
   public async createLDKClient(
+    wallet_name: string,
     bitcoind_client: string = "prod"
   ): Promise<void> {
     console.log(
@@ -31,7 +32,7 @@ class LDKClientFactory {
         return;
       }
       try {
-        const initLDK = await initializeLDK(bitcoind_client);
+        const initLDK = await initializeLDK(wallet_name, bitcoind_client);
         if (initLDK) {
           this.client = new LightningClient(initLDK);
         } else {

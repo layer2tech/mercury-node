@@ -94,21 +94,22 @@ class MercuryEventHandler implements EventHandlerInterface {
       this.network = bitcoin.networks.regtest;
     }
 
-    try {
-      let electrum_wallet = ECPair.fromPrivateKey(
-        MercuryEventHandler.privateKey,
-        {
+    if (MercuryEventHandler.privateKey !== undefined) {
+      try {
+        let electrum_wallet = ECPair.fromPrivateKey(
+          MercuryEventHandler.privateKey,
+          {
+            network: this.network,
+          }
+        );
+        const p2wpkh = bitcoin.payments.p2wpkh({
+          pubkey: electrum_wallet.publicKey,
           network: this.network,
-        }
-      );
-
-      const p2wpkh = bitcoin.payments.p2wpkh({
-        pubkey: electrum_wallet.publicKey,
-        network: this.network,
-      });
-      DEBUG.log("Pay to this address: " + p2wpkh.address);
-    } catch (e) {
-      DEBUG.log("Error on reading private key", "constructor");
+        });
+        DEBUG.log("Pay to this address: " + p2wpkh.address);
+      } catch (e) {
+        DEBUG.log("Error on reading private key" + e, "constructor");
+      }
     }
 
     this.payments = new Map();
@@ -165,9 +166,7 @@ class MercuryEventHandler implements EventHandlerInterface {
   }
   handleHTLCHandlingFailed(e: any) {}
 
-  handlePaymentPathSuccessful(e: Event_PaymentPathSuccessful) {
-    
-  }
+  handlePaymentPathSuccessful(e: Event_PaymentPathSuccessful) {}
 
   handlePaymentClaimable(e: Event_PaymentClaimable) {
     const { payment_hash, amount_msat, purpose } = e;
