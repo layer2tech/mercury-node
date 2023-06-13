@@ -12,7 +12,7 @@ router.post("/startLDK", async function (req, res) {
 
   // validate network values
   // validate network values
-  const validNetworks = ["dev", "prod", "test"];
+  const validNetworks = ["dev", "prod", "test", "mock"];
 
   if (!validNetworks.includes(network)) {
     res.status(500).json("Invalid network given for initLDK");
