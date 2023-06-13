@@ -30,6 +30,7 @@ import MercuryEventHandler from "../structs/MercuryEventHandler";
 import EsploraSyncClient from "../sync/EsploraSyncClient.js";
 
 export default interface LightningClientInterface {
+  walletName: string;
   feeEstimator: FeeEstimator;
   bitcoind_client: TorClient | ElectrumClient; // Electrum for dev, Tor for prod
   logger: Logger;

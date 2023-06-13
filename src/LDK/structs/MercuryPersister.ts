@@ -8,9 +8,19 @@ import {
 } from "lightningdevkit";
 
 class MercuryPersister implements PersisterInterface {
+  private rootPath: string;
+
+  constructor(_walletName: string) {
+    this.rootPath = "./wallets/" + _walletName;
+
+    if (!fs.existsSync(this.rootPath)) {
+      fs.mkdirSync(this.rootPath);
+    }
+  }
+
   persist_manager(channel_manager: ChannelManager): Result_NoneErrorZ {
     let data = channel_manager.write();
-    let tempFilePath = "channel_manager_data_temp.bin";
+    let tempFilePath = this.rootPath + "/channel_manager_data_temp.bin";
     try {
       const buffer = Buffer.from(data);
 
@@ -18,7 +28,7 @@ class MercuryPersister implements PersisterInterface {
       fs.writeFileSync(tempFilePath, buffer);
 
       // Rename the temporary file to the final file name
-      fs.renameSync(tempFilePath, "channel_manager_data.bin");
+      fs.renameSync(tempFilePath, this.rootPath + "/channel_manager_data.bin");
 
       return Result_NoneErrorZ.constructor_ok();
     } catch (e: any) {
@@ -31,7 +41,7 @@ class MercuryPersister implements PersisterInterface {
   }
   persist_graph(network_graph: NetworkGraph): Result_NoneErrorZ {
     let data = network_graph.write();
-    let tempFilePath = "network_graph_data_temp.bin";
+    let tempFilePath = this.rootPath + "/network_graph_data_temp.bin";
     try {
       const buffer = Buffer.from(data);
 
@@ -39,7 +49,7 @@ class MercuryPersister implements PersisterInterface {
       fs.writeFileSync(tempFilePath, buffer);
 
       // Rename the temporary file to the final file name
-      fs.renameSync(tempFilePath, "network_graph_data.bin");
+      fs.renameSync(tempFilePath, this.rootPath + "/network_graph_data.bin");
 
       return Result_NoneErrorZ.constructor_ok();
     } catch (e: any) {
@@ -53,7 +63,7 @@ class MercuryPersister implements PersisterInterface {
 
   persist_scorer(scorer: WriteableScore): Result_NoneErrorZ {
     let data = scorer.write();
-    let tempFilePath = "writable_score_data_temp.bin";
+    let tempFilePath = this.rootPath + "/writable_score_data_temp.bin";
     try {
       // write to disk
       const buffer = Buffer.from(data);
@@ -62,7 +72,7 @@ class MercuryPersister implements PersisterInterface {
       fs.writeFileSync(tempFilePath, buffer);
 
       // Rename the temporary file to the final file name
-      fs.renameSync(tempFilePath, "writable_score_data.bin");
+      fs.renameSync(tempFilePath, this.rootPath + "/writable_score_data.bin");
 
       return Result_NoneErrorZ.constructor_ok();
     } catch (e: any) {

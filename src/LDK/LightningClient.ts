@@ -91,8 +91,13 @@ export default class LightningClient implements LightningClientInterface {
   // keep track of intervals to stop later
   eventInterval: any;
   syncInterval: any;
+  walletName: string;
+  static WALLET_NAME: string = ""; // for access into persister
 
   constructor(props: LightningClientInterface) {
+    this.walletName = props.walletName;
+    LightningClient.WALLET_NAME = this.walletName;
+
     this.feeEstimator = props.feeEstimator;
     this.bitcoind_client = props.bitcoind_client;
     this.logger = props.logger;

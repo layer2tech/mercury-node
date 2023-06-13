@@ -57,12 +57,22 @@ import { uint8ArrayToHexString } from "../utils/utils.js";
 import { ChalkColor, Logger as UtilLogger } from "../../LDK/utils/Logger.js";
 const DEBUG = new UtilLogger(ChalkColor.Blue, "initializeLDK.ts");
 
-export async function initializeLDK(electrum: string = "dev") {
+export async function initializeLDK(
+  wallet_name: string,
+  electrum: string = "dev"
+) {
   try {
+    DEBUG.log("walletName:" + wallet_name);
+    DEBUG.log("electrum:" + electrum);
+
+    let walletDirectory = "./wallets/" + wallet_name;
+
     DEBUG.log("started initializeLDK");
 
     // Initialize the LDK data directory if necessary.
-    const ldk_data_dir = "./.ldk/";
+    const ldk_data_dir = walletDirectory + "/.ldk/";
+    DEBUG.log("Trying to find ldk_data_dir:" + ldk_data_dir);
+
     if (!fs.existsSync(ldk_data_dir)) {
       fs.mkdirSync(ldk_data_dir);
     }
@@ -115,8 +125,8 @@ export async function initializeLDK(electrum: string = "dev") {
 
     // Step 4: Initialize Persist
     DEBUG.log("Step 4: Initialize Persist");
-    const persist = Persist.new_impl(new MercuryPersist());
-    const persister = Persister.new_impl(new MercuryPersister());
+    const persist = Persist.new_impl(new MercuryPersist(wallet_name));
+    const persister = Persister.new_impl(new MercuryPersister(wallet_name));
 
     // Step 5: Initialize the ChainMonitor
     DEBUG.log("Step 5: Initialize the ChainMonitor, filter and sync client");
@@ -158,16 +168,19 @@ export async function initializeLDK(electrum: string = "dev") {
     DEBUG.log("Step 7: Read ChannelMonitor state from disk");
     DEBUG.log("reading channel monitor data...");
     let channel_monitor_data: ChannelMonitorRead[] = [];
-    if (!fs.existsSync("channels")) {
-      fs.mkdirSync("channels");
+    if (!fs.existsSync(`wallets/${wallet_name}/channels`)) {
+      fs.mkdirSync(`wallets/${wallet_name}/channels`);
     }
-    if (!fs.existsSync("channels/channel_lookup.json")) {
-      fs.writeFileSync("channels/channel_lookup.json", JSON.stringify([{}]));
+    if (!fs.existsSync(walletDirectory + "/channels/channel_lookup.json")) {
+      fs.writeFileSync(
+        walletDirectory + "/channels/channel_lookup.json",
+        JSON.stringify([{}])
+      );
     }
-    if (fs.existsSync("channels/channel_lookup.json")) {
+    if (fs.existsSync(walletDirectory + "channels/channel_lookup.json")) {
       try {
         channel_monitor_data = readChannelsFromDictionary(
-          "channels/channel_lookup.json"
+          walletDirectory + "/channels/channel_lookup.json"
         );
       } catch (e) {
         console.error("error:" + e);
@@ -183,7 +196,7 @@ export async function initializeLDK(electrum: string = "dev") {
     const genesisBlockHash = genesisBlock.block_hash();
     const networkGraph = NetworkGraph.constructor_new(network, logger);
 
-    const ldk_scorer_dir = "./.scorer/";
+    const ldk_scorer_dir = walletDirectory + "/.scorer/";
     if (!fs.existsSync(ldk_scorer_dir)) {
       fs.mkdirSync(ldk_scorer_dir);
     }
@@ -230,9 +243,9 @@ export async function initializeLDK(electrum: string = "dev") {
     const channel_monitor_mut_references: ChannelMonitor[] = [];
     let channelManager: any;
     DEBUG.log("At ChannelManager create/restore");
-    if (fs.existsSync("channel_manager_data.bin")) {
+    if (fs.existsSync(walletDirectory + "/channel_manager_data.bin")) {
       DEBUG.log("Loading the channel manager from disk...");
-      const f = fs.readFileSync(`channel_manager_data.bin`);
+      const f = fs.readFileSync(`${walletDirectory}/channel_manager_data.bin`);
 
       try {
         DEBUG.log("create channel_monitor_references");
@@ -449,6 +462,7 @@ export async function initializeLDK(electrum: string = "dev") {
     // Pass everything to initLDK
     if (chainMonitor && channelManager && peerManager && eventHandler) {
       const LDKInit: LightningClientInterface = {
+        walletName: wallet_name,
         feeEstimator: feeEstimator,
         bitcoind_client: bitcoind_client,
         logger: logger,
