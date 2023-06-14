@@ -12,7 +12,7 @@ describe("Channel Routes", () => {
     app = express();
     app.use(express.json());
     app.use(router);
-    await LDKClientFactory.createLDKClient("mock");
+    await LDKClientFactory.createLDKClient(MOCK_DATA.WALLET_NAME,"mock");
   });
 
   it("GET /nodeID", async () => {
@@ -46,7 +46,7 @@ describe("Channel Routes", () => {
       host: MOCK_DATA.HOST,
       port: MOCK_DATA.PORT,
       channel_name: MOCK_DATA.CHANNEL_NAME,
-      wallet_name: "Test Wallet",
+      wallet_name: MOCK_DATA.WALLET_NAME,
       privkey: MOCK_DATA.PRIVKEY,
       paid: MOCK_DATA.PAID,
       payment_address: MOCK_DATA.PAYMENT_ADDRESS,
@@ -192,7 +192,7 @@ describe("Channel Routes", () => {
       name: MOCK_DATA.CHANNEL_NAME,
       amount: MOCK_DATA.AMOUNT,
       push_msat: MOCK_DATA.PUSH_MSAT,
-      wallet_name: "Test Wallet",
+      wallet_name: MOCK_DATA.WALLET_NAME,
       peer_id: 1,
       privkey: MOCK_DATA.PRIVKEY,
       txid: MOCK_DATA.TXID,

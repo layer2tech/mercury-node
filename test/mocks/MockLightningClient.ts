@@ -24,6 +24,7 @@ export const MOCK_DATA = {
   INVOICE_EXPIRY_SECS: 3600,
   FUNDING_TXID:
     "1ec1ab323d1acad8bea1e24b4a9dbf5f82963838d255b8473255c07aa2b78892",
+  WALLET_NAME: "Test Wallet"
 };
 
 export class MockLightningClient {

@@ -10,7 +10,7 @@ describe("Peer Routes", () => {
     app = express();
     app.use(express.json());
     app.use(router);
-    await LDKClientFactory.createLDKClient("mock");
+    await LDKClientFactory.createLDKClient(MOCK_DATA.WALLET_NAME, "mock");
   });
 
   // it("GET /liveChainMonitors", async () => {
@@ -52,7 +52,7 @@ describe("Peer Routes", () => {
       host: MOCK_DATA.HOST,
       port: MOCK_DATA.PORT,
       channel_name: MOCK_DATA.CHANNEL_NAME,
-      wallet_name: "Test Wallet",
+      wallet_name: MOCK_DATA.WALLET_NAME,
       channelType: MOCK_DATA.CHANNEL_TYPE,
       privkey: MOCK_DATA.PRIVKEY,
       paid: MOCK_DATA.PAID,

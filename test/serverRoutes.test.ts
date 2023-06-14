@@ -15,7 +15,7 @@ describe("GET Routes", () => {
     app = express();
     app.use(express.json());
     app.use(router);
-    await LDKClientFactory.createLDKClient("mock");
+    await LDKClientFactory.createLDKClient(MOCK_DATA.WALLET_NAME, "mock");
   });
 
   it('POST /startLDK should return LDK is already initialized', async () => {
