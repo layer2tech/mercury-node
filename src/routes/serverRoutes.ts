@@ -3,11 +3,40 @@ const router = express.Router();
 import { closeConnections, validateInvoiceBody } from "../LDK/utils/ldk-utils";
 import LDKClientFactory from "../LDK/init/LDKClientFactory";
 import { convertToMillisats } from "../LDK/utils/utils";
+import fs from "fs";
+
+const createAllFolders = (walletName: string) => {
+  const rootPath = "wallets/" + walletName + "/";
+
+  if (!fs.existsSync(rootPath)) {
+    fs.mkdirSync(rootPath);
+  }
+
+  if (!fs.existsSync(rootPath + "./.ldk")) {
+    fs.mkdirSync(rootPath + "./.ldk");
+  }
+
+  if (!fs.existsSync(rootPath + "./.scorer")) {
+    fs.mkdirSync(rootPath + "./.scorer");
+  }
+
+  if (!fs.existsSync(rootPath + "./channels")) {
+    fs.mkdirSync(rootPath + "./channels");
+  }
+
+  if (!fs.existsSync(rootPath + "/channels/channel_lookup.json")) {
+    fs.writeFileSync(rootPath + "/channels/channel_lookup.json", "[]");
+  }
+};
 
 router.post("/startLDK", async function (req, res) {
   // initialize an LDK with the network set
-  const { network } = req.body;
+  const { wallet_name, network } = req.body;
 
+  // create folders that must exist for LDK to exist
+  createAllFolders(wallet_name);
+
+  console.log("wallet value is:", wallet_name);
   console.log("network value is:", network);
 
   // validate network values
@@ -23,7 +52,7 @@ router.post("/startLDK", async function (req, res) {
       res.status(500).json("LDK already intialized.");
     } else {
       console.log("[Server.ts]: Finished initialiseWasm");
-      await LDKClientFactory.createLDKClient(network); // prod/test/dev
+      await LDKClientFactory.createLDKClient(wallet_name, network); // prod/test/dev
       console.log("[Server.ts]: Finished create LDK");
       const LightningClient = LDKClientFactory.getLDKClient();
       console.log("[Server.ts]: Starting LDK Client");
