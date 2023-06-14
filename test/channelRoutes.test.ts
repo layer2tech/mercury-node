@@ -193,7 +193,7 @@ describe("Channel Routes", () => {
       amount: MOCK_DATA.AMOUNT,
       push_msat: MOCK_DATA.PUSH_MSAT,
       wallet_name: MOCK_DATA.WALLET_NAME,
-      peer_id: 1,
+      peer_id: 5,
       privkey: MOCK_DATA.PRIVKEY,
       txid: MOCK_DATA.TXID,
       vout: MOCK_DATA.VOUT,

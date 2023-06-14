@@ -1,5 +1,5 @@
 import express from "express";
-import db from "../db/db.js";
+import { getDatabase } from "../db/db.js";
 
 import LDKClientFactory from "../LDK/init/LDKClientFactory.js";
 import { hexToUint8Array, uint8ArrayToHexString } from "../LDK/utils/utils.js";
@@ -179,6 +179,7 @@ router.get("/usableChannels", async function (req, res) {
 // This gets all the channels from the database of all wallets
 router.get("/allChannels", async function (req, res) {
   try {
+    const db = await getDatabase();
     db.all("SELECT * FROM channels", (err: any, rows: any) => {
       if (err) {
         throw err;
@@ -190,6 +191,7 @@ router.get("/allChannels", async function (req, res) {
 
 router.get("/allEvents", async function (req, res) {
   try {
+    const db = await getDatabase();
     db.all("SELECT * FROM events", (err: any, rows: any) => {
       if (err) {
         throw err;
@@ -211,6 +213,7 @@ router.get("/loadEvents/:wallet_name", async function (req, res) {
         WHERE wallet_name = ?
     );
   `;
+    const db = await getDatabase();
     db.all(selectData, [wallet_id], (err: any, rows: any) => {
       if (err) {
         console.log(err.message);
@@ -238,6 +241,7 @@ router.get("/loadUnnotifiedEvents/:wallet_name", async function (req, res) {
         WHERE wallet_name = ?
     ) AND notification_seen = 0;
   `;
+    const db = await getDatabase();
     db.all(selectData, [wallet_id], (err: any, rows: any) => {
       if (err) {
         res.status(500).json({ error: err.message });
@@ -252,7 +256,7 @@ router.get("/loadUnnotifiedEvents/:wallet_name", async function (req, res) {
   } catch (e) {}
 });
 
-router.post("/setEventNotificationSeen", (req, res) => {
+router.post("/setEventNotificationSeen", async (req, res) => {
   const { id } = req.body;
 
   if (!Number.isInteger(parseInt(id))) {
@@ -261,6 +265,7 @@ router.post("/setEventNotificationSeen", (req, res) => {
   }
 
   const updateData = `UPDATE events SET notification_seen = 1 WHERE id=?`;
+  const db = await getDatabase();
   db.run(updateData, [id], function (err: any) {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -271,7 +276,7 @@ router.post("/setEventNotificationSeen", (req, res) => {
 });
 
 // load channels by wallet name e.g. -> localhost:3003/channel/loadChannels/vLDK
-router.get("/loadChannels/:wallet_name", (req, res) => {
+router.get("/loadChannels/:wallet_name", async (req, res) => {
   try {
     const wallet_id = req.params.wallet_name;
     const selectData = `
@@ -280,6 +285,7 @@ router.get("/loadChannels/:wallet_name", (req, res) => {
     INNER JOIN peers ON channels.peer_id = peers.id
     WHERE channels.wallet_name = ?
   `;
+    const db = await getDatabase();
     db.all(selectData, [wallet_id], (err: any, rows: any) => {
       if (err) {
         console.log(err.message);
@@ -300,7 +306,7 @@ router.get("/loadChannels/:wallet_name", (req, res) => {
 });
 
 // This updates the name of a channel by id
-router.put("/updateChannelName/:id", (req, res) => {
+router.put("/updateChannelName/:id", async (req, res) => {
   // update the name of a channel by id
   const { name } = req.body;
 
@@ -310,6 +316,7 @@ router.put("/updateChannelName/:id", (req, res) => {
   }
 
   const updateData = `UPDATE channels SET name=? WHERE id=?`;
+  const db = await getDatabase();
   db.run(updateData, [name, req.params.id], function (err: any) {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -320,7 +327,7 @@ router.put("/updateChannelName/:id", (req, res) => {
 });
 
 // This updates the paid value of a channel by id
-router.put("/updateChannelPaid/:id", (req, res) => {
+router.put("/updateChannelPaid/:id", async (req, res) => {
   // update the paid value of a channel by id
   const { paid } = req.body;
 
@@ -330,6 +337,7 @@ router.put("/updateChannelPaid/:id", (req, res) => {
   }
 
   const updateData = `UPDATE channels SET paid=? WHERE id=?`;
+  const db = await getDatabase();
   db.run(updateData, [paid, req.params.id], function (err: any) {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -340,7 +348,7 @@ router.put("/updateChannelPaid/:id", (req, res) => {
 });
 
 // This updates an entire channel by id
-router.put("/updateChannel/:id", (req, res) => {
+router.put("/updateChannel/:id", async (req, res) => {
   // update a channel by id
   const {
     name,
@@ -361,6 +369,7 @@ router.put("/updateChannel/:id", (req, res) => {
   }
 
   const updateData = `UPDATE channels SET name=?, amount=?, push_msat=?, wallet_name=?, peer_id=?, privkey=?, txid=?, vout=?, paid=?, payment_address=?  WHERE id=?`;
+  const db = await getDatabase();
   db.run(
     updateData,
     [
@@ -387,7 +396,7 @@ router.put("/updateChannel/:id", (req, res) => {
 });
 
 // This removes duplicate channels from the database
-router.get("/removeDuplicateChannels", (req, res) => {
+router.get("/removeDuplicateChannels", async (req, res) => {
   const query = `
     DELETE FROM channels
     WHERE id NOT IN (
@@ -398,7 +407,7 @@ router.get("/removeDuplicateChannels", (req, res) => {
     )
     AND id NOT NULL
   `;
-
+  const db = await getDatabase();
   db.run(query, [], function (err: any) {
     if (err) {
       console.error(err);
@@ -444,9 +453,10 @@ router.delete("/mutualCloseChannel/:id", async (req, res) => {
   }
 });
 
-router.delete("/deleteChannelByPaymentAddr/:addr", (req, res) => {
+router.delete("/deleteChannelByPaymentAddr/:addr", async (req, res) => {
   // delete channel by payment address
   const deleteData = `DELETE FROM channels WHERE payment_address=?`;
+  const db = await getDatabase();
   db.run(deleteData, [req.params.addr], function (err: any) {
     if (err) {
       res.status(500).json({ error: err.message });

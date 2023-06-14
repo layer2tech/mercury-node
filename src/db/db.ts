@@ -1,12 +1,10 @@
-import database from "./database";
-import dbmock from "../../test/db-mock";
+import { createMockDatabase } from "../../test/db-mock";
+import { createDatabase } from "./database";
 
-let db: any;
-
-if (process.env["NODE_ENV"] === "test") {
-  db = dbmock;
-} else {
-  db = database;
-}
-
-export default db;
+export const getDatabase = async () => {
+  if (process.env["NODE_ENV"] === "test") {
+    return createMockDatabase();
+  } else {
+    return createDatabase();
+  }
+};

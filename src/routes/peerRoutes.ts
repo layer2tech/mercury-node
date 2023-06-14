@@ -6,7 +6,7 @@ import {
   TwoTuple_PublicKeyCOption_NetAddressZZ,
 } from "lightningdevkit";
 const router = express.Router();
-import db from "../db/db";
+import { getDatabase } from "../db/db";
 import LDKClientFactory from "../LDK/init/LDKClientFactory";
 import { hexToUint8Array, uint8ArrayToHexString } from "../LDK/utils/utils";
 import {
@@ -247,9 +247,10 @@ router.post("/saveChannelPaymentInfoToDb", async (req, res) => {
 });
 
 // gives you peer details with the peer_id
-router.get("/getPeer/:peer_id", (req, res) => {
+router.get("/getPeer/:peer_id", async (req, res) => {
   const peer_id = req.params.peer_id;
   const selectData = "SELECT node, pubkey, host, port FROM peers WHERE id = ?";
+  const db = await getDatabase();
   db.get(selectData, [peer_id], (err: any, row: any) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -297,6 +298,7 @@ router.get("/default_peerlist", async function (req, res) {
 // get the peerlist that's stored in the database
 router.get("/peers", async function (req, res) {
   try {
+    const db = await getDatabase();
     db.all("SELECT * FROM peers", (err: any, rows: any) => {
       if (err) {
         throw err;
