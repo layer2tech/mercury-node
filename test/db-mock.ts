@@ -212,7 +212,7 @@ export const createMockDatabase = () => {
               });
             } else {
               console.log(
-                "[db-mock.ts]: Table 'events' already contains data, skipping the sample data insertion."
+                "[db-mock.ts]: Table 'peers' already contains data, skipping the sample data insertion."
               );
             }
           });

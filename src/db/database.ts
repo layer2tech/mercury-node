@@ -212,7 +212,7 @@ export const createDatabase = () => {
               });
             } else {
               console.log(
-                "[database.ts]: Table 'events' already contains data, skipping the sample data insertion."
+                "[database.ts]: Table 'peers' already contains data, skipping the sample data insertion."
               );
             }
           });
