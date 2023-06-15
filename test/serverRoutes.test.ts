@@ -15,14 +15,36 @@ describe("GET Routes", () => {
     app = express();
     app.use(express.json());
     app.use(router);
-    await LDKClientFactory.createLDKClient("test");
+    await LDKClientFactory.createLDKClient(MOCK_DATA.WALLET_NAME, "mock");
   });
 
-  it("GET /closeConnections should call the closeConnections function", async () => {
-    const response = await request(app).get("/closeConnections");
+  it('POST /startLDK should return LDK is already initialized', async () => {
+    const validNetwork = 'mock';
+
+    const response = await request(app)
+      .post('/startLDK')
+      .send({ network: validNetwork });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toBe('LDK already intialized.');
+  });
+
+  it("GET /closeLDK should call the closeConnections function and stop LightningClient", async () => {
+    const response = await request(app).get("/closeLDK");
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({ message: "Connections closed" });
+  });
+
+  it('POST /startLDK should start LDK with valid network', async () => {
+    const validNetwork = 'mock';
+
+    const response = await request(app)
+      .post('/startLDK')
+      .send({ network: validNetwork });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatch(/Started LDK with network/);
   });
 
   it("POST /generateInvoice", async () => {

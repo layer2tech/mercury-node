@@ -1,5 +1,5 @@
 import LDKClientFactory from "../init/LDKClientFactory";
-import db from "../../db/db";
+import { getDatabase } from "../../db/db";
 import fs from "fs";
 import { uint8ArrayToHexString, stringifyEvent } from "./utils";
 import { ChannelDetails, Option_u64Z_Some } from "lightningdevkit";
@@ -140,7 +140,8 @@ export const saveNewPeerToDB = (
   peer_id?: number;
 }> => {
   console.log("[ldk-utils.ts] - saveNewPeerToDB");
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
+    const db = await getDatabase();
     db.get(
       `SELECT id FROM peers WHERE host = ? AND port = ? AND pubkey = ?`,
       [host, port, pubkey],
@@ -221,8 +222,9 @@ export const saveNewChannelToDB = (
   channel_id?: number;
 }> => {
   console.log("[ldk-utils.ts] - saveNewChannelToDB");
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     let channelId: number;
+    const db = await getDatabase();
     db.get(
       `SELECT id FROM channels WHERE peer_id = ?`,
       [peer_id],
@@ -305,9 +307,10 @@ export const saveTxDataToDB = (
   console.log(
     `[ldk-utils.ts] - values: amount:${amount}, paid:${paid}, txid:${txid}, vout:${vout}, addr:${addr}`
   );
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const updateData =
       "UPDATE channels SET amount=?, paid=?, txid=?, vout=? WHERE payment_address=?";
+    const db = await getDatabase();
     db.run(
       updateData,
       [amount, paid, txid, vout, addr],
@@ -348,13 +351,14 @@ export const saveTxDataToDB = (
   });
 };
 
-export const saveChannelIdToDb = (channelId: string, pubkey: string) => {
+export const saveChannelIdToDb = async (channelId: string, pubkey: string) => {
   console.log("[ldk-utils.ts] - saveChannelIdToDB");
   console.log(
     `[ldk-utils.ts] - values: channelId:${channelId}, pubkey:${pubkey}`
   );
   const updateData =
     "UPDATE channels SET channel_id = ? WHERE peer_id = ( SELECT id FROM peers WHERE pubkey = ?)";
+  const db = await getDatabase();
   db.run(updateData, [channelId, pubkey], function (err: any, result: any) {
     if (err) {
       console.log("Error in saving channelId to db: " + err);
@@ -362,7 +366,7 @@ export const saveChannelIdToDb = (channelId: string, pubkey: string) => {
   });
 };
 
-export const saveEventDataToDb = (event: any) => {
+export const saveEventDataToDb = async (event: any) => {
   console.log("[ldk-utils.ts] - saveEventDataToDB");
   const event_type = Object.getPrototypeOf(event).constructor.name;
   const event_data = stringifyEvent(event);
@@ -397,6 +401,7 @@ export const saveEventDataToDb = (event: any) => {
   console.log("CHANNEL_ID_HEX", channel_id_hex);
   if (channel_id_hex) {
     const insertEventData = `INSERT INTO events (event_type, event_data, channel_id_hex) VALUES (?, ?, ?)`;
+    const db = await getDatabase();
     db.run(
       insertEventData,
       [event_type, event_data, channel_id_hex],
@@ -410,13 +415,14 @@ export const saveEventDataToDb = (event: any) => {
   }
 };
 
-export const replaceTempChannelIdInDb = (
+export const replaceTempChannelIdInDb = async (
   channel_id: string,
   temp_channel_id: string
 ) => {
   console.log("[ldk-utils.ts] - replaceTempChannelIdInDb");
   const updateData =
     "UPDATE events SET channel_id_hex = ? WHERE channel_id_hex = ?";
+  const db = await getDatabase();
   db.run(
     updateData,
     [channel_id, temp_channel_id],
@@ -429,7 +435,8 @@ export const replaceTempChannelIdInDb = (
 };
 
 export const checkIfChannelExists = (pubkey: string): Promise<boolean> => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
+    const db = await getDatabase();
     db.get(
       `SELECT channel_id FROM channels WHERE peer_id = (SELECT id FROM peers WHERE pubkey = ?)`,
       [pubkey],
@@ -455,7 +462,8 @@ export const deleteChannelById = (
   message?: string;
   error?: string;
 }> => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
+    const db = await getDatabase();
     db.run(
       `DELETE FROM channels WHERE id = ?`,
       [channelId],
@@ -483,7 +491,8 @@ export const deleteChannelByPaymentAddr = (
   message?: string;
   error?: string;
 }> => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
+    const db = await getDatabase();
     db.run(
       `DELETE FROM channels WHERE payment_address = ?`,
       [addr],
