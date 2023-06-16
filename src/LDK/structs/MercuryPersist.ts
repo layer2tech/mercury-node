@@ -13,7 +13,6 @@ class MercuryPersist implements PersistInterface {
   private rootPath: string;
   private channelsDict = [];
 
-  private CHANNELS_DIR = "./channels";
   private CHANNELS_DICT_FILE = "channel_lookup.json";
 
   constructor(_walletName: string) {
@@ -150,7 +149,7 @@ class MercuryPersist implements PersistInterface {
       });
       fileCounter += 1;
       const monitor_file_name = `${this.rootPath}/channelMonitor_${fileCounter}.dat`;
-      const id_file_name = `${this.rootPath}/channels/channelId_${fileCounter}.dat`;
+      const id_file_name = `${this.rootPath}/channelId_${fileCounter}.dat`;
 
       // save the channel monitor data to a file
       fs.writeFileSync(monitor_file_name, channel_monitor_bytes);
